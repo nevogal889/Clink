@@ -1,0 +1,1305 @@
+<title>Clink Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: header + two tabs. Prototype = phone on the left, live notes + friend simulator on the right (stacks on phones). Flows = grouped flow cards with "Play" links into the phone. */
+:root{
+  --bg:#ECEFE8; --surface:#FFFFFF; --ink:#1C2018; --muted:#5C6456; --line:#D3D8CB;
+  --accent:#4A7838; --accent-ink:#FFFFFF; --accent-soft:#DFEAD5; --later:#8A6A2E;
+  --f-display:'Bricolage Grotesque','Inter',system-ui,sans-serif;
+  --f-body:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  /* The phone is one deliberate dark look in both themes, like the real app */
+  --p-bg:#15110E; --p-raise:#231D18; --p-raise2:#30281F; --p-ink:#F6F0E9; --p-muted:#A99D90; --p-line:#3B3129;
+  --coffee:#8D552E; --matcha:#5E8C4A; --tea:#B86B35; --p-good:#9BD27E;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#10120E; --surface:#191C16; --ink:#E8ECE2; --muted:#9AA290; --line:#2B3026; --accent:#8CBB72; --accent-ink:#10120E; --accent-soft:#243020; --later:#D9AE62; color-scheme:dark }
+}
+:root[data-theme="dark"]{ --bg:#10120E; --surface:#191C16; --ink:#E8ECE2; --muted:#9AA290; --line:#2B3026; --accent:#8CBB72; --accent-ink:#10120E; --accent-soft:#243020; --later:#D9AE62; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 72px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;margin-bottom:24px}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.05;margin:0;letter-spacing:-.02em;text-wrap:balance}
+.brand p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:6px;margin-bottom:8px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);padding:4px;border-radius:12px}
+.tabs a{padding:8px 16px;border-radius:9px;text-decoration:none;color:var(--muted);font-weight:600;font-size:14px}
+.tabs a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+
+/* Prototype layout */
+.proto{display:grid;grid-template-columns:auto minmax(0,1fr);gap:40px;align-items:start}
+@media (max-width:860px){.proto{grid-template-columns:minmax(0,1fr)}.phone-col{justify-self:center;width:100%;display:flex;justify-content:center}}
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.card h2{font-family:var(--f-display);font-size:20px;font-weight:700;margin:0 0 6px;letter-spacing:-.01em}
+.card h3{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:600}
+.note-id{font-family:var(--f-mono);font-size:12px;color:var(--accent)}
+.note p{margin:0;color:var(--ink);max-width:62ch}
+.sim{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.sim button{text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;font-weight:500;display:flex;flex-direction:column;gap:1px}
+.sim button small{color:var(--muted);font-weight:400;font-size:12px}
+.sim button:disabled{opacity:.45;cursor:not-allowed}
+.sim button:not(:disabled):hover{border-color:var(--accent)}
+.log{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;max-height:132px;overflow:auto}
+.log li b{color:var(--ink);font-weight:500}
+.tips{margin:0;padding-left:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:4px}
+
+/* Flows tab */
+.flows-intro{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:baseline;margin-bottom:20px;color:var(--muted)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.group{margin-top:32px}
+.group>h2{font-family:var(--f-display);font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
+.group>p{margin:0 0 14px;color:var(--muted);max-width:70ch}
+.flow-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr));gap:12px}
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.flow-head{display:flex;align-items:baseline;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.flow-head h3{margin:0;font-size:16px;font-weight:700;display:flex;gap:10px;align-items:baseline}
+.flow-head .fid{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:500}
+.play{font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-soft);border:0;border-radius:8px;padding:5px 10px;white-space:nowrap}
+.trig{font-size:13px;color:var(--muted);margin:0}
+.trig b{color:var(--ink);font-weight:600}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 0;align-items:center}
+.steps li{font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 9px;line-height:1.35}
+.steps li.or{background:transparent;border-style:dashed}
+.steps li+li::before{content:"";display:none}
+.steps .arr{border:0;background:none;padding:0 5px;color:var(--muted)}
+.edge{margin:0;padding-left:18px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.edge b{color:var(--ink);font-weight:600}
+.later .flow{border-style:dashed}
+.later .fid{color:var(--later)}
+
+/* ---------- PHONE ---------- */
+.phone{width:350px;max-width:100%;height:720px;border-radius:52px;background:#0A0908;padding:11px;box-shadow:0 30px 60px -20px rgba(20,16,10,.45),inset 0 0 0 2px #2A2520}
+.scr{position:relative;width:100%;height:100%;border-radius:42px;overflow:hidden;background:var(--p-bg);color:var(--p-ink);font-family:var(--f-body);font-size:14px;line-height:1.35;display:flex;flex-direction:column}
+:where(.scr) button{border:0;background:none;color:inherit}
+.sb{height:46px;flex:0 0 46px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;font-weight:600;font-size:14px;position:relative;z-index:5}
+.sb .bat{display:inline-flex;gap:5px;align-items:center;font-size:12px}
+.sb .bat i{width:22px;height:11px;border:1.5px solid currentColor;border-radius:3px;position:relative;opacity:.9}
+.sb .bat i::after{content:"";position:absolute;inset:1.5px 4px 1.5px 1.5px;background:currentColor;border-radius:1px}
+.isl{position:absolute;left:50%;top:10px;transform:translateX(-50%);height:28px;min-width:96px;border-radius:20px;background:#000;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 12px;font-size:12px;font-weight:600;color:#fff;transition:min-width .3s}
+.isl.live{min-width:190px;justify-content:space-between}
+.isl.live .cd{font-family:var(--f-mono);color:var(--p-good)}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+.pad{padding:0 22px}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:128px;height:5px;border-radius:3px;background:rgba(255,255,255,.6) !important;z-index:30;padding:0}
+.homebar::after{content:"";position:absolute;inset:-10px -10px}
+.homebar-hint{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:10px;color:var(--p-muted);z-index:29;pointer-events:none}
+
+/* shared phone controls */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:50px;border-radius:16px;font-weight:600;font-size:15px}
+.btn-light{background:#F6F0E9 !important;color:#15110E !important}
+.btn-ghost{background:var(--p-raise) !important}
+.btn-accent{background:var(--dc,#8D552E) !important;color:#fff !important}
+.btn:disabled{opacity:.4}
+.link{color:var(--p-muted) !important;font-size:13px;padding:8px;text-decoration:underline;text-underline-offset:3px}
+.ttl{font-family:var(--f-display);font-weight:700;font-size:27px;line-height:1.1;letter-spacing:-.01em;margin:6px 0 6px;text-wrap:balance}
+.sub{color:var(--p-muted);margin:0 0 16px;font-size:14px}
+.step{font-family:var(--f-mono);font-size:11px;color:var(--p-muted);letter-spacing:.05em}
+.field{width:100%;height:50px;border-radius:14px;border:1px solid var(--p-line);background:var(--p-raise);color:var(--p-ink);padding:0 14px;font:inherit;font-size:16px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:var(--p-raise) !important;font-size:13px;font-weight:500;border:1px solid var(--p-line) !important}
+.chip.on{background:var(--p-ink) !important;color:var(--p-bg) !important;border-color:var(--p-ink) !important}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.av{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#1a1410;flex:0 0 auto;border:2px solid var(--p-bg)}
+.avs{display:flex}.avs .av{margin-left:-8px}.avs .av:first-child{margin-left:0}
+.foot{margin-top:auto;padding:12px 22px 34px;display:flex;flex-direction:column;gap:6px;align-items:center}
+.scroll{overflow-y:auto;min-height:0;flex:1;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+
+/* sign in */
+.splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:0 28px}
+.logo{font-family:var(--f-display);font-weight:700;font-size:52px;letter-spacing:-.03em;line-height:1}
+.logo-cups{width:120px;height:80px}
+.invite-banner{display:flex;align-items:center;gap:10px;background:var(--p-raise);border:1px solid var(--p-line);border-radius:14px;padding:10px 12px;margin:0 22px;font-size:13px;text-align:left}
+.legal{font-size:11px;color:var(--p-muted);text-align:center;max-width:250px}
+
+/* code boxes */
+.code{display:flex;gap:8px;justify-content:space-between}
+.code span{flex:1;height:54px;border-radius:12px;background:var(--p-raise);border:1px solid var(--p-line);display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:22px}
+.autofill{margin-top:12px;background:var(--p-raise2);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--p-muted)}
+
+/* avatar picker */
+.avatar-big{width:104px;height:104px;border-radius:50%;margin:12px auto 18px;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-size:38px;font-weight:700;background:#E0A458;color:#1a1410;position:relative}
+.avatar-big small{position:absolute;bottom:-2px;right:-2px;background:var(--p-ink);color:var(--p-bg);font-size:11px;font-family:var(--f-body);padding:3px 8px;border-radius:10px}
+
+/* usual 3 */
+.slots{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.slot{display:flex;align-items:center;gap:8px;min-height:44px;border-radius:12px;background:var(--p-raise);border:1px dashed var(--p-line);padding:7px 8px 7px 12px;font-size:14px}
+.slot.filled{border-style:solid}
+.slot .n{font-family:var(--f-mono);font-size:12px;color:var(--p-muted);width:18px}
+.slot .x{margin-left:auto;color:var(--p-muted) !important;font-size:16px;padding:4px 6px}
+.cat{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--p-muted);margin:12px 0 7px;font-weight:600}
+
+/* invite */
+.share-card{background:linear-gradient(135deg,#3A2A1E,#1F2A1B);border-radius:18px;padding:16px;margin-bottom:12px}
+.share-card .lnk{font-family:var(--f-mono);font-size:12px;color:var(--p-muted);margin:6px 0 12px}
+.share-row{display:flex;gap:8px}
+.share-row button{flex:1;height:40px;border-radius:12px;background:rgba(255,255,255,.1) !important;font-size:13px;font-weight:600}
+.contact{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--p-line)}
+.contact .meta{flex:1;min-width:0}
+.contact .meta small{display:block;color:var(--p-muted);font-size:12px}
+.contact button{padding:6px 12px;border-radius:999px;background:var(--p-ink) !important;color:var(--p-bg) !important;font-weight:600;font-size:12px}
+.contact button.done{background:var(--p-raise2) !important;color:var(--p-good) !important}
+.meter{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--p-muted);margin:4px 0 10px}
+.meter i{flex:1;height:5px;border-radius:3px;background:var(--p-raise2);overflow:hidden;position:relative}
+.meter i b{position:absolute;inset:0 auto 0 0;background:var(--p-good);border-radius:3px}
+
+/* notif pre-prompt & widget guide */
+.illus{margin:10px 0 18px;border-radius:20px;background:var(--p-raise);padding:16px;display:flex;flex-direction:column;gap:8px}
+.mini-notif{background:rgba(255,255,255,.08);border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:center;font-size:12.5px}
+.mini-notif .ic{width:30px;height:30px;border-radius:8px;background:#2C2219;display:flex;align-items:center;justify-content:center;font-size:16px;flex:0 0 auto}
+.gsteps{display:flex;flex-direction:column;gap:10px;margin:8px 0}
+.gstep{display:flex;gap:12px;align-items:center;background:var(--p-raise);border-radius:14px;padding:12px}
+.gstep .k{width:28px;height:28px;border-radius:50%;background:var(--p-ink);color:var(--p-bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 auto}
+.alert-back{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:center;justify-content:center}
+.alert{width:250px;border-radius:16px;background:rgba(48,44,40,.97);text-align:center;overflow:hidden}
+.alert .t{padding:16px 16px 4px;font-weight:600;font-size:15px}
+.alert .m{padding:0 16px 14px;font-size:12.5px;color:#d9d2ca}
+.alert .r{display:flex;border-top:1px solid rgba(255,255,255,.14)}
+.alert .r button{flex:1;height:44px;color:#6CB4FF !important;font-size:15px}
+.alert .r button+button{border-left:1px solid rgba(255,255,255,.14);font-weight:600}
+
+/* home screen */
+.home{background:radial-gradient(120% 70% at 20% 0%,#5B6E4B 0%,#2E3A2A 45%,#1A1714 100%)}
+.home .sb{color:#fff}
+.hs{padding:6px 14px 0;display:flex;flex-direction:column;gap:18px;flex:1}
+.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 0;justify-items:center}
+.app-ic{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10.5px;color:#fff}
+.app-ic i{width:56px;height:56px;border-radius:14px;display:block;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.dock{margin:auto 10px 26px;background:rgba(255,255,255,.16);border-radius:30px;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);justify-items:center;backdrop-filter:blur(10px)}
+.dock i{width:54px;height:54px;border-radius:14px;display:block}
+.clink-ic{background:linear-gradient(140deg,#8D552E,#5E8C4A 55%,#3E8FC4) !important;display:flex !important;align-items:center;justify-content:center;font-family:var(--f-display);font-style:normal;font-weight:700;color:#fff;font-size:22px}
+.wlabel{display:block;width:100%;font-size:10.5px;color:rgba(255,255,255,.85) !important;text-align:center;margin-top:-12px}
+
+/* WIDGET */
+.w{height:166px;border-radius:24px;background:#1E1915;position:relative;overflow:hidden;color:#F6F0E9;box-shadow:0 8px 24px rgba(0,0,0,.3);text-align:left}
+.w-idle{display:grid;grid-template-columns:1fr 112px;grid-template-rows:auto 1fr auto;gap:0 10px;padding:13px 13px 11px 15px}
+.w-cups{display:flex;align-items:baseline;gap:6px;font-size:13px;color:#d8cfc4}
+.w-cups b{font-family:var(--f-display);font-size:30px;color:#fff;line-height:1;font-weight:700}
+.w-water{margin-left:8px;display:inline-flex;align-items:baseline;gap:3px;color:#9CCBEA}.w-water b{font-size:20px !important;color:#CFE8F7 !important}
+.w-meta{font-size:11.5px;color:#b9ad9f;line-height:1.35;margin-top:4px}
+.w-meta .nudge{color:#E3C27E}
+.w-snap{grid-column:2;grid-row:1/3;border-radius:14px;overflow:hidden;position:relative;background:#2a221c}
+.w-snap svg{width:100%;height:100%;display:block}
+.w-snap .cap{position:absolute;left:0;right:0;bottom:0;padding:14px 7px 5px;background:linear-gradient(transparent,rgba(0,0,0,.72));font-size:10px;display:flex;align-items:center;gap:4px}
+.w-snap .cap .av{width:16px;height:16px;font-size:8px;border-width:1px}
+.w-snap.empty{display:flex;align-items:center;justify-content:center;text-align:center;font-size:10.5px;color:#9c8f82;padding:8px}
+.w-row{grid-column:1/3;display:flex;align-items:center;gap:6px;margin-top:9px}
+.w-row .avs .av{width:22px;height:22px;font-size:9px;border-width:1.5px;border-color:#1E1915}
+.w-row .who{font-size:11px;color:#b9ad9f;margin-right:auto;margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.wb{height:30px;border-radius:15px;padding:0 11px;font-size:12px;font-weight:600;background:rgba(255,255,255,.12) !important;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.wb.pri{background:#F6F0E9 !important;color:#15110E !important}
+.w-plus{position:absolute;top:12px;left:auto;right:136px}
+.w-over{position:absolute;inset:0;background:#1E1915;padding:12px 13px;display:flex;flex-direction:column;gap:7px;z-index:2}
+.w-over .h{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#b9ad9f}
+.w-over .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;flex:1}
+.w-over .opts button{border-radius:14px;min-width:0;overflow-wrap:break-word;background:rgba(255,255,255,.09) !important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:600;padding:4px 2px;text-align:center;line-height:1.2}
+.w-over .opts button span{font-size:20px}
+.w-over .opts button em{font-style:normal;font-family:var(--f-mono);font-size:9px;color:#9c8f82}
+.w-flare{padding:13px 15px;display:flex;flex-direction:column;gap:4px;background:linear-gradient(140deg,var(--dc),#1E1915 85%)}
+.w-flare .hd{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:rgba(255,255,255,.8)}
+.w-flare .cd{font-family:var(--f-mono);font-size:13px;background:rgba(0,0,0,.35);padding:2px 8px;border-radius:8px;color:#fff}
+.w-flare .big{font-family:var(--f-display);font-weight:700;font-size:21px;line-height:1.1}
+.w-flare .pl{font-size:12px;color:rgba(255,255,255,.8)}
+.w-flare .rs{display:flex;gap:5px;flex-wrap:wrap;margin-top:auto}
+.rchip{font-size:11px;background:rgba(0,0,0,.35);border-radius:999px;padding:3px 8px 3px 3px;display:inline-flex;align-items:center;gap:5px}
+.rchip .av{width:18px;height:18px;font-size:8px;border-width:0}
+.w-in{padding:0;display:flex;flex-direction:column}
+.w-bg{position:absolute;inset:0}
+.w-bg svg{width:100%;height:100%;display:block}
+.w-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.78))}
+.w-in .ct{position:relative;padding:12px 14px 11px;display:flex;flex-direction:column;gap:3px;height:100%}
+.w-in .from{display:flex;align-items:center;gap:7px;font-size:12px}
+.w-in .from .av{width:24px;height:24px;font-size:10px;border-width:0}
+.w-in .acts{display:flex;gap:7px;margin-top:auto}
+.w-in .acts .wb{flex:1;justify-content:center;height:34px;border-radius:17px}
+.w-done{font-size:12.5px;color:var(--p-good);font-weight:600;margin-top:auto;display:flex;align-items:center;gap:6px}
+.w-flash{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:var(--p-good);color:#15200F;font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;z-index:4;animation:pop .25s ease-out}
+@keyframes pop{from{transform:translate(-50%,-6px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+
+/* banner (push notification) */
+.banner{position:absolute;top:50px;left:10px;right:10px;z-index:50;border-radius:20px;background:rgba(40,36,32,.94);backdrop-filter:blur(14px);padding:11px 13px;display:flex;gap:10px;align-items:center;text-align:left;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:drop .35s ease-out;width:auto}
+.banner .ic{width:34px;height:34px;border-radius:9px;flex:0 0 auto;font-size:15px}
+.banner .tx{flex:1;min-width:0;font-size:12.5px}
+.banner .tx b{display:block;font-size:13px}
+.banner .tx span{color:#d7cec4}
+.banner time{font-size:11px;color:#a99d90;align-self:flex-start}
+@keyframes drop{from{transform:translateY(-30px);opacity:0}to{transform:none;opacity:1}}
+
+/* APP (camera) */
+.appbar{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 10px}
+.appbar .me{width:36px;height:36px;border-radius:50%;background:#E0A458 !important;color:#1a1410 !important;font-weight:700}
+.appbar .pill{height:36px;border-radius:18px;padding:0 12px 0 6px;background:var(--p-raise) !important;display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.appbar .pill .avs .av{width:24px;height:24px;font-size:9px;border-color:var(--p-raise)}
+.appbar .cupb{height:36px;border-radius:18px;padding:0 12px;background:var(--p-raise) !important;font-size:13px;font-weight:600}
+.frame{margin:0 16px;aspect-ratio:1/1;max-width:100%;border-radius:38px;overflow:hidden;position:relative;background:#2a221c}
+.frame svg{width:100%;height:100%;display:block}
+.frame.live svg{animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.04) rotate(1deg)}}
+.frame .ftop{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center}
+.frame .live-dot{font-size:11px;font-weight:700;background:rgba(0,0,0,.45);padding:3px 9px;border-radius:10px;display:inline-flex;gap:5px;align-items:center}
+.frame .live-dot::before{content:"";width:6px;height:6px;border-radius:50%;background:#FF5A4F}
+.frame .headline{position:absolute;left:14px;right:14px;top:44px;font-family:var(--f-display);font-weight:700;font-size:21px;line-height:1.12;text-shadow:0 2px 10px rgba(0,0,0,.5);text-wrap:balance}
+.place{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-radius:14px;padding:0 10px;height:40px}
+.place input{flex:1;min-width:0;background:transparent;border:0;color:#fff;font:inherit;font-size:14px;outline:none}
+.place input::placeholder{color:#bdb3a8}
+.seg{display:flex;margin:12px 16px 0;background:var(--p-raise);border-radius:14px;padding:3px}
+.seg button{flex:1;height:34px;border-radius:11px;font-size:12px;padding:0 2px;white-space:nowrap;font-weight:600;color:var(--p-muted) !important}
+.seg button.on{background:var(--dc) !important;color:#fff !important}
+.timing{display:flex;gap:6px;margin:8px 16px 0;justify-content:center}
+.timing .chip{padding:5px 10px;white-space:nowrap}
+.actrow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin:12px 16px 0}
+.shutter{width:66px;height:66px;border-radius:50%;border:4px solid var(--dc) !important;background:#F6F0E9 !important;box-shadow:inset 0 0 0 3px var(--p-bg);justify-self:center}
+.shutter:active{transform:scale(.94)}
+.side-b{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--p-muted)}
+.side-b .sq{width:42px;height:42px;border-radius:12px;overflow:hidden;background:var(--p-raise);display:flex;align-items:center;justify-content:center;font-size:18px;position:relative}
+.side-b .sq svg{width:100%;height:100%}
+.side-b .badge{position:absolute;top:-3px;right:-3px;background:#FF5A4F;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:0 5px;line-height:15px}
+.flare-cta{margin:12px 16px 0;width:auto}
+.cta-pair{display:flex;gap:8px;margin:12px 16px 0}
+.cta-pair .btn{height:48px;font-size:14px}
+.flash{position:absolute;left:50%;top:56px;transform:translateX(-50%);background:var(--p-good);color:#15200F;font-weight:700;font-size:12.5px;padding:6px 14px;border-radius:14px;z-index:40;white-space:nowrap;animation:pop .25s ease-out}
+
+/* flare live */
+.ring{width:190px;height:190px;margin:4px auto 10px;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ring .in b{font-family:var(--f-mono);font-size:34px;font-weight:500}
+.ring .in small{color:var(--p-muted);font-size:12px}
+.fsum{text-align:center;margin-bottom:12px}
+.fsum .big{font-family:var(--f-display);font-weight:700;font-size:22px}
+.fsum .pl{color:var(--p-muted);font-size:13px}
+.resp{display:flex;flex-direction:column;gap:6px;margin:0 18px}
+.resp .r{display:flex;align-items:center;gap:10px;background:var(--p-raise);border-radius:14px;padding:9px 12px;font-size:13.5px;animation:pop2 .3s ease-out}
+@keyframes pop2{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
+.resp .r .tag2{margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--p-raise2)}
+.resp .wait{color:var(--p-muted);font-size:13px;text-align:center;padding:12px;border:1px dashed var(--p-line);border-radius:14px}
+.order{margin:10px 18px 0;background:#2B2117;border:1px solid #4A3826;border-radius:14px;padding:10px 12px;font-size:13px}
+.order b{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:#E3C27E;margin-bottom:4px}
+
+/* incoming full screen / snap viewer */
+.full{position:absolute;inset:0;display:flex;flex-direction:column}
+.full .bgart{position:absolute;inset:0}
+.full .bgart svg{width:100%;height:100%;display:block}
+.full .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,.05) 35%,rgba(0,0,0,.85) 72%)}
+.full .ct{position:relative;flex:1;display:flex;flex-direction:column;padding:52px 20px 34px}
+.full .hdr{display:flex;align-items:center;gap:10px}
+.full .hdr .meta{flex:1;font-size:13px}
+.full .hdr .meta small{display:block;color:#d4cbc1;font-size:12px}
+.full .x{width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.45) !important;font-size:16px}
+.full .bot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.full .big{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1.05;text-wrap:balance}
+.full .pl{font-size:14px;color:#e3dbd2}
+.full .cd2{font-family:var(--f-mono);font-size:13px;background:rgba(0,0,0,.45);padding:3px 9px;border-radius:9px;align-self:flex-start}
+.pick3{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.pick3 button{background:rgba(255,255,255,.14) !important;border-radius:14px;padding:10px 6px;font-size:11.5px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.2}
+.pick3 button span{font-size:20px}
+.reacts{display:flex;gap:8px;justify-content:center}
+.reacts button{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.45) !important;font-size:22px}
+.reacts button.on{background:#F6F0E9 !important}
+.snapnav{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#d4cbc1}
+.snapnav button{padding:8px 10px;font-weight:600;color:#fff !important}
+.hint{font-size:11.5px;color:#cfc6bc;text-align:center}
+
+/* sheets */
+.sheet-back{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:45;display:flex;align-items:flex-end}
+.sheet{width:100%;max-height:86%;background:var(--p-raise);border-radius:28px 28px 0 0;padding:8px 20px 34px;display:flex;flex-direction:column;animation:up .28s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--p-line);margin:0 auto 10px}
+.sheet h4{font-family:var(--f-display);font-size:20px;margin:0 0 4px}
+.sheet .sub{margin-bottom:10px}
+.rows{display:flex;flex-direction:column}
+.rowb{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--p-line);text-align:left;width:100%;font-size:14px}
+.rowb .r{margin-left:auto;color:var(--p-muted);font-size:13px}
+.rowb.danger{color:#FF8B7E !important}
+.rowb.off{color:var(--p-muted) !important}
+.rowb .soon{margin-left:auto;font-size:10px;font-family:var(--f-mono);border:1px solid var(--p-line);border-radius:6px;padding:1px 6px;color:var(--p-muted)}
+.tgl{margin-left:auto;width:44px;height:26px;border-radius:13px;background:var(--p-raise2);position:relative;flex:0 0 auto}
+.tgl::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s}
+.tgl.on{background:#5E8C4A}
+.tgl.on::after{left:21px}
+.cuplist{display:flex;flex-direction:column;gap:6px;margin:6px 0 12px}
+.cuplist div{display:flex;justify-content:space-between;font-size:13.5px;background:var(--p-raise2);border-radius:10px;padding:8px 12px}
+.cuplist time{font-family:var(--f-mono);color:var(--p-muted);font-size:12px}
+.nudgebox{background:#2B2117;border:1px solid #4A3826;color:#E9D3A6;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-bottom:10px}
+.mini3{display:flex;gap:6px;margin-bottom:8px}
+.mini3 button{flex:1;background:var(--p-raise2) !important;border-radius:12px;padding:8px 4px;font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px}
+.mini3 button span{font-size:18px}
+.empty-note{color:var(--p-muted);font-size:13px;text-align:center;padding:24px 8px}
+
+/* order details */
+.sl-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.sl-main small{color:var(--p-muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk{font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:999px;background:var(--p-raise2) !important;white-space:nowrap;flex:0 0 auto}
+.mk.has{color:var(--p-good) !important}
+.contact .meta small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ocard{background:var(--p-raise2);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px}
+.ocard .od{font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1.15}
+.orows{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13.5px}
+.orows span{color:var(--p-muted)}
+.olab{display:block;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--p-muted);margin-bottom:2px;font-weight:600}
+.onote{font-size:13.5px}
+.oone{background:#2B2117;border:1px solid #4A3826;color:#E9D3A6;border-radius:10px;padding:8px 10px;font-size:13px}
+.oone .olab{color:#E3C27E}
+.oplan{font-size:13px}
+.ordrow{display:flex !important;width:100%;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;text-align:left;font-size:13px}
+.ordrow .nt{font-size:11.5px;font-weight:700;color:#E3C27E;white-space:nowrap}
+.ordrow .nt.none{color:var(--p-muted);font-weight:500}
+.pick3 small{font-size:10px;font-weight:500;color:#d8cfc4}
+.prev{background:rgba(0,0,0,.45);border-radius:14px;padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:3px}
+.prev b{font-size:14px}
+.prev small{color:#d8cfc4}
+.oneoff{width:100%;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.4);color:#fff;padding:0 12px;font:inherit;font-size:14px}
+.oneoff::placeholder{color:#bdb3a8}
+.barista{position:absolute;inset:0;z-index:70;background:#FFFDF8 !important;color:#15110E !important;display:flex !important;flex-direction:column;align-items:flex-start;text-align:left;padding:64px 26px 40px;gap:12px}
+.barista .bk{font-size:13px;font-weight:600;color:#7a6f64;letter-spacing:.06em;text-transform:uppercase}
+.barista .bd{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1.05}
+.barista .bl{font-size:22px;font-weight:600;line-height:1.3}
+.barista .bn{font-size:17px;background:#F3E6CF;padding:8px 12px;border-radius:10px;line-height:1.35}
+.barista .bf{margin-top:auto;font-size:13px;color:#7a6f64}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="tag">v1 prototype · iOS</span>
+      <h1>Clink</h1>
+      <p>Drink breaks with your close friends (coffee, matcha, tea, juice), plus a private daily drink and water tracker. Tap through the phone to check we mean the same product, then read every flow in the second tab.</p>
+    </div>
+    <nav class="tabs" aria-label="Views">
+      <a href="#prototype" id="tab-prototype">Prototype</a>
+      <a href="#flows" id="tab-flows">All user flows</a>
+    </nav>
+  </header>
+
+  <section id="view-prototype">
+    <div class="proto">
+      <div class="phone-col">
+        <div class="phone" id="phone-frame"><div class="scr" id="phone" aria-live="polite"></div></div>
+      </div>
+      <div class="side">
+        <div class="card note">
+          <h3>Now on screen</h3>
+          <div class="note-id" id="note-id"></div>
+          <h2 id="note-title"></h2>
+          <p id="note-body"></p>
+        </div>
+        <div class="card">
+          <h3>Play your friends</h3>
+          <div class="sim" id="sim">
+            <button data-act="sim-flare">A friend sends a flare<small>Maya: matcha in 10m · then Noa: juice in 25m</small></button>
+            <button data-act="sim-snap">A friend shares a mug snap<small>Shows on your widget, silently</small></button>
+            <button data-act="sim-join" id="sim-join">A friend taps "I'm in"<small>Needs your live flare</small></button>
+            <button data-act="sim-bring" id="sim-bring">A friend asks "Bring me one"<small>Needs your live flare</small></button>
+            <button data-act="sim-skip">Skip 15 minutes<small>Flares expire, timers move</small></button>
+            <button data-act="sim-home">Go to home screen<small>See the widget</small></button>
+            <button data-act="sim-skipon">Skip onboarding<small>Start as a set-up user</small></button>
+            <button data-act="sim-reset">Start over<small>Back to sign in</small></button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>What just happened</h3>
+          <ul class="log" id="log"><li>Prototype loaded. Start with “Sign in with Apple”.</li></ul>
+        </div>
+        <div class="card">
+          <h3>How to use it</h3>
+          <ul class="tips">
+            <li>Everything on the phone is tappable: buttons, the widget, chips, the home bar at the bottom.</li>
+            <li>Friends are simulated. After you send a flare, two friends reply on their own within a few seconds.</li>
+            <li>Photos are drawn mugs; the real app uses your camera.</li>
+            <li>The “All user flows” tab has a Play button on each flow that jumps here.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-flows" hidden>
+    <div class="flows-intro">
+      <span id="flow-count"></span>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--accent)"></i>In v1, with a Play button where the prototype covers it</span>
+        <span><i class="dot" style="background:var(--later)"></i>Planned after v1</span>
+      </div>
+    </div>
+    <div id="flows"></div>
+  </section>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const DR = {
+  coffee:{label:'Coffee', e:'☕', c:'#8D552E', list:['Iced Oat Flat White','Espresso','Cappuccino','Cortado','Cold Brew','Filter Coffee']},
+  matcha:{label:'Matcha', e:'🍵', c:'#5E8C4A', list:['Ceremonial Matcha','Iced Matcha Latte','Hojicha Latte','Strawberry Matcha']},
+  tea:{label:'Tea', e:'🫖', c:'#B86B35', list:['Jasmine Tea','Masala Chai','Earl Grey','Chamomile','Peppermint']},
+  juice:{label:'Juice', e:'🧃', c:'#C9772A', list:['Fresh Orange Juice','Green Smoothie','Berry Smoothie','Lemonade']},
+  water:{label:'Water', e:'💧', c:'#3E8FC4', list:['Water','Sparkling Water']}
+};
+const FLARE_CATS = ['coffee','matcha','tea','juice'];   // water is tracked, never a flare
+const tlabel = m => m ? `In ${m}m` : 'Now';
+const flareDur = m => Math.max(15, m) * 60000;          // open until meet time, at least 15 min
+const HERBAL = ['Chamomile','Peppermint'];
+const catOf = n => Object.keys(DR).find(k => DR[k].list.includes(n)) || 'coffee';
+const PRESETS = [
+  ['Hybrid mix', ['Iced Oat Flat White','Ceremonial Matcha','Jasmine Tea']],
+  ['Matcha & Japanese tea', ['Ceremonial Matcha','Iced Matcha Latte','Hojicha Latte']],
+  ['Loose leaf & chai', ['Masala Chai','Earl Grey','Chamomile']]
+];
+const FR = {
+  Maya:{c:'#E0A458', u:'Ceremonial Matcha'}, Leo:{c:'#6FA8DC', u:'Cold Brew'}, Sam:{c:'#D58DAE', u:'Cortado'},
+  Noa:{c:'#8FC1A9', u:'Green Smoothie'}, Ari:{c:'#B5A3E0', u:'Cappuccino'}
+};
+const ALLF = Object.keys(FR);
+const MIN = 60000;
+
+const NOTES = {
+  signin:['F1','Sign in','Two ways in. Sign in with Apple is one tap, and App Store rules require it once you offer any other login. A phone number is what lets friends find each other later, so Apple users are asked for it on the invite step.'],
+  phone:['F1','Phone number','Used only to match you with friends who have your number. It is never shown to other people.'],
+  code:['F1','Verify the code','iOS fills the SMS code in from Messages, so this is usually one tap.'],
+  profile:['F1','Your name and photo','The photo is optional. Initials are the fallback, so nobody gets stuck here.'],
+  usual:['F4','Your usual 3','These three drinks power two things: the +1 Drink button on the widget and Bring Me One. Drink #1 shows on your widget and picks the default drink for a quick flare. “Make it yours” saves how you like each one (milk, temperature, sugar, a note, a Plan B). It’s optional.'],
+  invite:['F5','Invite your people','The growth step, built like Locket. It is pushed hard, with a progress meter and contacts already on Clink, but “Later” stays so nobody quits the app here.'],
+  notif:['F7','Notifications','A short explainer before the iOS dialog. Flares depend on notifications, and you only get one chance at the system prompt, so we explain first.'],
+  widgetguide:['F8','Add the widget','The widget is the product. The app can check whether it was added and keeps a reminder until it is.'],
+  home:['Widget','Your home screen','The widget switches between idle (drinks, water + latest friend snap), your live flare, a friend’s flare, and the +1 Drink / Bring Me One pickers. On a real iPhone, a friend’s flare also arrives as a notification, because widgets don’t refresh instantly.'],
+  app:['F12 · F16','The camera screen','The only full screen in the app. The shutter shares a mug snap. “Who joins?” sends a flare to whoever the “To:” chip shows: a group or everyone, picked by time of day. Friends, settings and cups open as sheets from the top bar.'],
+  flare:['F17','Your live flare','Counts down to the meet time (at least 15 minutes), mirrored in the Live Activity. You only ever see positive replies: who is in and who wants a drink. Nobody is shown as “declined”. Tap 📝 on a drink-run order to see exactly how they like it.'],
+  incoming:['F18 · F19','A friend’s flare','Join in one tap, or ask for one of your usual 3. Your saved details go with it, and from the app you can add a note just for this time. Closing it tells nobody anything.'],
+  snap:['F13','Friend snaps','Snaps last 24 hours. Reactions are quiet. Report and block are required by App Store rules for apps with user photos.']
+};
+
+/* ---------------- state ---------------- */
+let S;
+const now = () => Date.now() + S.offset;
+function base(){
+  return {offset:0, screen:'signin', sheet:null, invitedBy:null, returning:false, name:'Dana', usual:[], friends:[], invitesSent:0,
+    cups:[], drink:'coffee', place:'Kaffa Roastery', timing:0, flast:{}, captured:false, outgoing:null, incoming:[], curIn:null,
+    snaps:[], snapIdx:0, wmode:null, banner:null, notif:null, widget:false, ended:null, flash:null, alert:null, menuFriend:null,
+    pickFor:null, groups:[], audience:null, widgetAud:'auto', editGroup:null, pickDrink:null, oneoff:'', details:{}, editDrink:null, sheetBack:null, viewOrder:null, barista:false, prefs:{flares:true, replies:true, snaps:false, quiet:true, shareLast:false}};
+}
+function onboarded(){
+  const s = base(), t = Date.now();
+  Object.assign(s, {screen:'home', usual:['Iced Oat Flat White','Ceremonial Matcha','Jasmine Tea'], friends:[...ALLF],
+    cups:[{d:'Water', at:t-230*MIN}, {d:'Espresso', at:t-200*MIN}, {d:'Water', at:t-150*MIN}, {d:'Iced Oat Flat White', at:t-102*MIN}, {d:'Water', at:t-40*MIN}],
+    flast:{Maya:t-130*MIN, Leo:t-25*MIN},
+    groups:[{id:'work', name:'Work', e:'🏢', members:['Leo','Sam','Ari']}, {id:'home', name:'Home friends', e:'🏡', members:['Maya','Noa','Leo']}],
+    details:{'Iced Oat Flat White':{size:'Regular', temp:'Iced', milk:'Oat milk', sweet:'No sugar', shots:'Double shot', extras:[], note:'Not too much ice', planB:'No oat? Almond milk'},
+             'Ceremonial Matcha':{temp:'Hot', milk:'Oat milk', sweet:'Lightly sweet', strength:'Strong', extras:[], note:'Hot but not boiling, whisked well', planB:''}},
+    snaps:[{from:'Leo', drink:'coffee', place:'Office kitchen', at:t-38*MIN, seed:1, react:null}], notif:true, widget:true});
+  return s;
+}
+S = base();
+
+/* ---------------- helpers ---------------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function ago(t){ const m = Math.floor((now()-t)/MIN); if (m < 1) return 'Just now'; if (m < 60) return m+'m ago'; return Math.floor(m/60)+'h '+(m%60)+'m ago'; }
+function cd(t){ const s = Math.max(0, Math.ceil((t-now())/1000)); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function clock(t){ const d = new Date(t); return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+const av = (n, extra='') => `<span class="av" style="background:${n==='You'?'#E0A458':FR[n]?.c||'#ccc'}" ${extra}>${n==='You'?esc(S.name[0]||'D'):n[0]}</span>`;
+const caff = () => S.cups.filter(c => { const k = catOf(c.d); return k==='coffee' || k==='matcha' || (k==='tea' && !HERBAL.includes(c.d)); }).length;
+const drinks = () => S.cups.filter(c => catOf(c.d) !== 'water').length;
+const waters = () => S.cups.filter(c => catOf(c.d) === 'water').length;
+const lastCup = () => { const l = S.cups.filter(c => catOf(c.d) !== 'water'); return l.length ? l[l.length-1] : null; };
+const pickOpts = () => [...S.usual, 'Water'];
+const SIZE = ['Small','Regular','Large'];
+const MILK = ['No milk','Whole milk','Skim milk','Oat milk','Almond milk','Soy milk','Lactose-free milk'];
+const OPTS = {
+  coffee:[['size','Size',SIZE],['temp','Temperature',['Iced','Warm','Hot','Extra hot']],['milk','Milk',MILK],['sweet','Sweetness',['No sugar','½ sugar','1 sugar','2 sugars','Sweetener']],['shots','Coffee',['Single shot','Double shot','Decaf']],['extras','Extras',['Extra foam','No foam','Vanilla syrup','Caramel syrup','Cinnamon'],true]],
+  matcha:[['size','Size',SIZE],['temp','Temperature',['Iced','Warm','Hot']],['milk','Milk',MILK],['sweet','Sweetness',['Unsweetened','Lightly sweet','Sweet','Honey']],['strength','Strength',['Light','Regular','Strong']],['extras','Extras',['Vanilla','Extra foam','Cold foam'],true]],
+  tea:[['size','Size',SIZE],['temp','Temperature',['Iced','Hot','Extra hot']],['milk','Add',['Nothing','Splash of milk','Oat milk','Lemon']],['sweet','Sweetness',['No sugar','1 sugar','Honey']],['strength','Strength',['Light','Regular','Strong, bag left in']]],
+  juice:[['size','Size',SIZE],['ice','Ice',['No ice','Light ice','Regular ice']],['sweet','Sweetness',['No added sugar','Regular']],['extras','Add-ins',['Ginger shot','Protein','Chia seeds','No straw'],true]]
+};
+const FR_DET = {
+  Sam:{size:'Regular', temp:'Extra hot', milk:'Oat milk', sweet:'No sugar', shots:'Double shot', extras:[], note:'Extra hot please, I drink it slowly', planB:'No oat milk? Almond is fine'},
+  Leo:{size:'Large', temp:'Iced', milk:'Whole milk', sweet:'1 sugar', extras:['Vanilla syrup'], note:'Light ice', planB:''},
+  Maya:{temp:'Hot', milk:'Oat milk', sweet:'Unsweetened', strength:'Strong', extras:[], note:'', planB:'If no ceremonial grade: skip it, get me a hojicha'},
+  Noa:{size:'Large', ice:'No ice', sweet:'No added sugar', extras:['Ginger shot'], note:'', planB:''},
+  Ari:{size:'Small', temp:'Hot', milk:'Lactose-free milk', sweet:'Sweetener', shots:'Single shot', extras:['Cinnamon'], note:'', planB:''}
+};
+function detVals(name, det){ if (!det) return []; const o = OPTS[catOf(name)] || []; const v = []; o.forEach(([k,,,multi]) => { if (multi) (det[k]||[]).forEach(x => v.push(x)); else if (det[k]) v.push(det[k]); }); return v; }
+const hasDetObj = (name, det) => !!det && (detVals(name, det).length > 0 || !!(det.note||'').trim() || !!(det.planB||'').trim());
+const detSummary = (name, det) => detVals(name, det).join(' · ');
+const myDet = name => S.details[name];
+const GEMOJI = ['🏢','🏡','🎓','🏃','✈️','☕','🎨','💻'];
+function isWorkHours(){ const d = new Date(now()), day = d.getDay(), h = d.getHours(); return day >= 1 && day <= 5 && h >= 8 && h < 18; }
+function suggestedAud(){ const work = S.groups.find(g=>g.id==='work'), home = S.groups.find(g=>g.id==='home'); if (isWorkHours() && work) return 'work'; if (!isWorkHours() && home) return 'home'; return 'all'; }
+function audObj(id){ const g = S.groups.find(x=>x.id===id); if (!g) return {id:'all', name:'Everyone', e:'👥', members:[...S.friends]}; return {id:g.id, name:g.name, e:g.e, members:g.members.filter(m=>S.friends.includes(m))}; }
+const widgetAudId = () => S.widgetAud === 'auto' ? suggestedAud() : S.widgetAud;
+const groupsOf = f => S.groups.filter(g=>g.members.includes(f)).map(g=>g.e).join('');
+function audChip(){ const a = audObj(S.audience || suggestedAud()); return `<button class="chip" style="background:rgba(0,0,0,.5)!important;border-color:transparent!important;color:#fff" data-act="sheet" data-arg="aud">To: ${a.e} ${esc(a.name)} ▾</button>`; }
+function wlabel(){ const a = audObj(widgetAudId()); return `<button class="wlabel" data-act="sheet" data-arg="wedit">Clink · ${a.e} ${esc(a.name)}${S.widgetAud==='auto'?' (auto)':''} · Edit widget</button>`; }
+function audRows(sel, act){
+  const auto = audObj(suggestedAud());
+  const row = (id, a, extra) => `<button class="rowb" data-act="${act}" data-arg="${id}"><span>${a.e} ${esc(a.name)}<br><small style="color:var(--p-muted)">${extra || (a.members.length ? a.members.join(', ') : 'Nobody yet')}</small></span><span class="r">${sel===id?'✓':''}</span></button>`;
+  return row('auto', {e:'🕘', name:'Automatic'}, `By time of day · now ${auto.e} ${esc(auto.name)}`) + S.groups.map(g => row(g.id, audObj(g.id))).join('') + row('all', audObj('all'));
+}
+function groupsChips(){
+  return `<div class="cat" style="margin-top:4px">Your groups · only you see these</div><div class="chips" style="margin-bottom:8px">${S.groups.map(g=>`<button class="chip" data-act="group-open" data-arg="${g.id}">${g.e} ${esc(g.name)} · ${audObj(g.id).members.length}</button>`).join('')}<button class="chip" data-act="group-new">+ New group</button></div>`;
+}
+const dc = k => DR[k].c;
+function log(msg){ const ul = document.getElementById('log'); const li = document.createElement('li'); li.innerHTML = `<b>${clock(now())}</b> ${msg}`; ul.prepend(li); while (ul.children.length > 14) ul.lastChild.remove(); }
+
+function art(drink, seed=0){
+  if (drink === 'juice' || drink === 'water') {
+    const gb = drink==='juice' ? ['#2F6E6A','#163E3B'] : ['#CBD8DF','#8EA2AD'];
+    const lq = drink==='juice' ? '#F0A03A' : '#BFE3F5';
+    const gid = 'g'+drink+seed, r = [0,20,-25,40,-10][seed % 5];
+    const extra = drink==='juice'
+      ? `<circle cx="120" cy="128" r="26" fill="#F7C35A"/><circle cx="120" cy="128" r="20" fill="#FBD98A"/><path d="M120 108v40M100 128h40M106 114l28 28M134 114l-28 28" stroke="#F0A03A" stroke-width="2"/><rect x="150" y="70" width="10" height="120" rx="5" fill="#E2574C" transform="rotate(30 155 130)"/>`
+      : `<rect x="118" y="118" width="30" height="30" rx="7" fill="#fff" opacity=".55" transform="rotate(15 133 133)"/><rect x="152" y="140" width="28" height="28" rx="7" fill="#fff" opacity=".45" transform="rotate(-20 166 154)"/><ellipse cx="128" cy="120" rx="22" ry="9" fill="#fff" opacity=".5"/>`;
+    return `<svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${gb[0]}"/><stop offset="1" stop-color="${gb[1]}"/></linearGradient></defs><rect width="300" height="300" fill="url(#${gid})"/><g transform="rotate(${r} 150 150)"><circle cx="160" cy="164" r="86" fill="#000" opacity=".22"/><circle cx="150" cy="150" r="84" fill="#fff" opacity=".35"/><circle cx="150" cy="150" r="76" fill="${lq}"/>${extra}</g></svg>`;
+  }
+  const bg = {coffee:['#7A5236','#3B271A'], matcha:['#E2DED3','#AFA99B'], tea:['#3D4D53','#1E2A2F']}[drink];
+  const liquid = {coffee:'#93592F', matcha:'#79A453', tea:'#C27B3B'}[drink];
+  const rot = [0, 28, -34, 52, -12][seed % 5];
+  let top = '';
+  if (drink === 'coffee') top = `<path d="M150 130c-9-17-37-13-37 7 0 19 25 31 37 43 12-12 37-24 37-43 0-20-28-24-37-7z" fill="#F1E2CC" opacity=".9"/><circle cx="150" cy="150" r="64" fill="none" stroke="#B57A4C" stroke-width="5" opacity=".5"/>`;
+  if (drink === 'matcha') top = `<circle cx="150" cy="150" r="56" fill="#A6C882" opacity=".55"/><circle cx="141" cy="143" r="30" fill="#C4DCA2" opacity=".65"/><circle cx="163" cy="164" r="9" fill="#D8EAC0" opacity=".7"/>`;
+  if (drink === 'tea') top = `<ellipse cx="130" cy="132" rx="26" ry="11" fill="#fff" opacity=".2"/><path d="M164 162c9-7 19-5 21 4-9 5-16 4-21-4z" fill="#5E7A3A"/><path d="M150 168c6-5 13-3 14 3-6 3-11 3-14-3z" fill="#6E8C42"/>`;
+  const gid = 'g'+drink+seed;
+  return `<svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${bg[0]}"/><stop offset="1" stop-color="${bg[1]}"/></linearGradient></defs><rect width="300" height="300" fill="url(#${gid})"/><g transform="rotate(${rot} 150 150)"><ellipse cx="160" cy="164" rx="112" ry="106" fill="#000" opacity=".25"/><circle cx="150" cy="150" r="108" fill="#EFEAE2"/><circle cx="150" cy="150" r="93" fill="#E1DAD0"/><rect x="224" y="136" width="54" height="28" rx="14" fill="#F6F2EC"/><circle cx="150" cy="150" r="80" fill="#F8F5F0"/><circle cx="150" cy="150" r="68" fill="${liquid}"/>${top}</g></svg>`;
+}
+
+/* ---------------- shared phone parts ---------------- */
+function statusBar(){
+  let isl = '<span class="isl"></span>';
+  if (S.outgoing && ['home','incoming','snap'].includes(S.screen)) {
+    const n = S.outgoing.resp.length;
+    isl = `<span class="isl live"><span>${DR[S.outgoing.drink].e} Flare</span><span class="cd" data-until="${S.outgoing.ends}">${cd(S.outgoing.ends)}</span><span>${n} in</span></span>`;
+  }
+  return `<div class="sb"><span>9:41</span>${isl}<span class="bat">5G <i></i></span></div>`;
+}
+function bannerHTML(){
+  if (!S.banner) return '';
+  return `<button class="banner" data-act="banner"><span class="ic clink-ic" style="display:flex">c</span><span class="tx"><b>${esc(S.banner.title)}</b><span>${esc(S.banner.body)}</span></span><time>now</time></button>`;
+}
+function homebar(){ return `<button class="homebar" data-act="go-home" aria-label="Swipe up to go home"></button>`; }
+
+function usualEditor(list, ctx){
+  const slots = [0,1,2].map(i => list[i]
+    ? (() => { const d = list[i], has = hasDetObj(d, S.details[d]), sm = detSummary(d, S.details[d]) || (has ? 'Note saved' : 'No details yet');
+        return `<div class="slot filled"><span class="n">#${i+1}</span><span class="sl-main">${DR[catOf(d)].e} ${esc(d)}<small>${esc(sm)}</small></span><button class="mk ${has?'has':''}" data-act="det-open" data-arg="${esc(d)}">${has?'📝 Edit':'Make it yours'}</button><button class="x" data-act="u-remove" data-arg="${i}" data-ctx="${ctx}" aria-label="Remove">×</button></div>`; })()
+    : `<div class="slot"><span class="n">#${i+1}</span><span style="color:var(--p-muted)">${i===0?'Your go-to drink':'Optional'}</span></div>`).join('');
+  const presets = PRESETS.map((p,i) => `<button class="chip" data-act="u-preset" data-arg="${i}" data-ctx="${ctx}">${esc(p[0])}</button>`).join('');
+  const cats = FLARE_CATS.map(k => `<div class="cat">${DR[k].e} ${DR[k].label}</div><div class="chips">${DR[k].list.map(d => `<button class="chip ${list.includes(d)?'on':''}" data-act="u-toggle" data-arg="${esc(d)}" data-ctx="${ctx}">${esc(d)}</button>`).join('')}</div>`).join('');
+  return `<div class="slots">${slots}</div><div class="cat">Quick presets</div><div class="chips">${presets}</div>${cats}`;
+}
+
+/* ---------------- screens ---------------- */
+const SCREENS = {
+  signin(){
+    const inv = S.invitedBy ? `<div class="invite-banner">${av(S.invitedBy)}<span><b>${S.invitedBy} invited you to Clink.</b><br><span style="color:var(--p-muted)">You’ll be friends as soon as you sign in.</span></span></div>` : '';
+    return `${statusBar()}<div class="body"><div class="splash">
+      <svg class="logo-cups" viewBox="0 0 120 80" aria-hidden="true"><g transform="rotate(-14 40 50)"><rect x="18" y="24" width="40" height="40" rx="9" fill="#8D552E"/><path d="M58 34h6a8 8 0 0 1 0 16h-6" fill="none" stroke="#8D552E" stroke-width="5"/><rect x="18" y="24" width="40" height="9" rx="4" fill="#C08A5E"/></g><g transform="rotate(14 80 50)"><path d="M63 20h38l-5 46H68z" fill="#3E8FC4"/><path d="M63 20h38l-1.3 12H64.3z" fill="#9BD0EE"/></g><path d="M56 12l4-8M64 12l-4-8M60 14V4" stroke="#F6F0E9" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <div class="logo">clink</div>
+      <p class="sub" style="margin:0;font-size:15px">Drink breaks with your people.</p>
+    </div>${inv}
+    <div class="foot" style="gap:10px">
+      <button class="btn btn-light" data-act="apple">Sign in with Apple</button>
+      <button class="btn btn-ghost" data-act="phone">Continue with phone number</button>
+      <p class="legal">By continuing you agree to the Terms and Privacy Policy. We never post anything without you tapping send.</p>
+    </div></div>`;
+  },
+  phone(){
+    return `${statusBar()}<div class="body pad"><span class="step">SIGN IN</span><h2 class="ttl">What’s your number?</h2><p class="sub">Friends who have your number can find you. Nobody sees it.</p>
+      <input class="field" id="f-phone" value="+1 (555) 014-2233" inputmode="tel" aria-label="Phone number">
+      <div class="foot" style="padding-left:0;padding-right:0"><button class="btn btn-light" data-act="phone-next">Send code</button></div></div>`;
+  },
+  code(){
+    return `${statusBar()}<div class="body pad"><span class="step">SIGN IN</span><h2 class="ttl">Enter the 6-digit code</h2><p class="sub">Sent to +1 (555) 014-2233</p>
+      <div class="code">${'418209'.split('').map(d => `<span>${d}</span>`).join('')}</div>
+      <div class="autofill">From Messages · 418209 · filled in for you</div>
+      <div class="foot" style="padding-left:0;padding-right:0"><button class="btn btn-light" data-act="code-next">Continue</button><button class="link">Resend in 0:30</button></div></div>`;
+  },
+  profile(){
+    return `${statusBar()}<div class="body pad"><span class="step">1 OF 4</span><h2 class="ttl">What do friends call you?</h2>
+      <div class="avatar-big">${esc(S.name[0]||'?')}<small>Add photo</small></div>
+      <input class="field" id="f-name" value="${esc(S.name)}" aria-label="Your name" maxlength="20">
+      <div class="foot" style="padding-left:0;padding-right:0"><button class="btn btn-light" data-act="profile-next">Continue</button></div></div>`;
+  },
+  usual(){
+    return `${statusBar()}<div class="body"><div class="pad"><span class="step">2 OF 4</span><h2 class="ttl">Your usual 3</h2><p class="sub" style="margin-bottom:10px">Log a drink or ask for one in one tap. Water is always one tap away, so it doesn’t need a slot.</p></div>
+      <div class="scroll pad">${usualEditor(S.usual,'ob')}<div style="height:12px"></div></div>
+      <div class="foot" style="padding-top:10px"><button class="btn btn-light" data-act="usual-next" ${S.usual.length?'':'disabled'}>Continue</button></div></div>`;
+  },
+  invite(){
+    const n = S.friends.length + S.invitesSent;
+    const pct = Math.min(100, n/2*100);
+    const contacts = ['Maya','Leo'].map(f => {
+      const done = S.friends.includes(f);
+      return `<div class="contact">${av(f)}<div class="meta">${f}<small>${done?'Friends':'On Clink · in your contacts'}</small></div><button class="${done?'done':''}" data-act="add-contact" data-arg="${f}">${done?'✓ Added':'Add'}</button></div>`;
+    }).join('');
+    const msg = S.invitedBy && S.friends.includes(S.invitedBy) ? `<div class="invite-banner" style="margin:0 0 10px">${av(S.invitedBy)}<span>You and ${S.invitedBy} are connected.</span></div>` : '';
+    return `${statusBar()}<div class="body"><div class="pad"><span class="step">3 OF 4</span><h2 class="ttl">Clink is better with your people</h2>
+      <div class="meter"><span>${Math.min(n,2)} of 2</span><i><b style="width:${pct}%"></b></i><span>${n>=2?'Ready':'friends to start'}</span></div></div>
+      <div class="scroll pad">${msg}
+        <div class="share-card"><b>Send your invite link</b><div class="lnk">clink.app/i/dana-7Kq2</div>
+          <div class="share-row"><button data-act="share" data-arg="Messages">Messages</button><button data-act="share" data-arg="WhatsApp">WhatsApp</button><button data-act="share" data-arg="Copy">Copy</button></div></div>
+        <div class="cat">Already on Clink</div>${contacts}
+        <p class="sub" style="font-size:12px;margin-top:10px">Up to 20 close friends. No followers, no public profile.</p>
+      </div>
+      <div class="foot" style="padding-top:10px"><button class="btn btn-light" data-act="invite-next">${n>=1?'Continue':'Continue without friends'}</button>${n>=1?'':'<button class="link" data-act="invite-next">I’ll invite people later</button>'}</div></div>`;
+  },
+  notif(){
+    return `${statusBar()}<div class="body pad"><span class="step">4 OF 4</span><h2 class="ttl">Know when a friend wants a break</h2>
+      <p class="sub">Flares only stay open until the meet time. Notifications are how you catch them.</p>
+      <div class="illus"><div class="mini-notif"><span class="ic">🍵</span><span><b>Maya wants matcha</b><br>Café Lumi · in 10m · Who joins?</span></div>
+      <div class="mini-notif"><span class="ic">☕</span><span><b>Leo is in</b><br>Your flare · Kaffa Roastery</span></div></div>
+      <p class="sub" style="font-size:12.5px">Snaps never ping you. They just show up on your widget. Quiet hours 22:00–08:00 are on.</p>
+      <div class="foot" style="padding-left:0;padding-right:0"><button class="btn btn-light" data-act="notif-allow">Turn on notifications</button><button class="link" data-act="notif-later">Not now</button></div></div>`;
+  },
+  widgetguide(){
+    return `${statusBar()}<div class="body pad"><span class="step">LAST STEP</span><h2 class="ttl">Put Clink on your home screen</h2><p class="sub">That’s where it works. Takes 5 seconds.</p>
+      <div class="gsteps">
+        <div class="gstep"><span class="k">1</span><span>Touch and hold an empty spot on your home screen</span></div>
+        <div class="gstep"><span class="k">2</span><span>Tap <b>Edit</b> → <b>Add Widget</b>, then search “Clink”</span></div>
+        <div class="gstep"><span class="k">3</span><span>Choose the <b>medium</b> size and tap <b>Add</b></span></div>
+      </div>
+      <div class="foot" style="padding-left:0;padding-right:0"><button class="btn btn-light" data-act="widget-done">I added it</button><button class="link" data-act="widget-later">Remind me later</button></div></div>`;
+  },
+  home(){
+    const icons = [['Calendar','#E9E4DA'],['Photos','#F2C14E'],['Camera','#6C6C70'],['Weather','#4E8FD9'],['Maps','#7DBB72'],['Notes','#F5D867'],['Clock','#2B2B2E'],['Clink','clink'],['Music','#E5546B'],['Mail','#3E8BF2'],['Settings','#8E8E93'],['Health','#F2F2F7']];
+    const grid = icons.map(([n,c]) => c==='clink'
+      ? `<button class="app-ic" data-act="open-app"><i class="clink-ic">c</i>Clink</button>`
+      : `<span class="app-ic"><i style="background:${c}"></i>${n}</span>`).join('');
+    return `${statusBar()}<div class="body home-body"><div class="hs">
+      ${S.widget ? widgetHTML() + wlabel() : `<button class="w" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;border:2px dashed rgba(255,255,255,.35);background:rgba(0,0,0,.2)" data-act="add-widget-now"><b>No Clink widget yet</b><span style="font-size:12px;color:#cfc6bc">Tap to add it (simulated)</span></button>`}
+      <div class="apps">${grid}</div></div>
+      <div class="dock"><i style="background:#5BC46A"></i><i style="background:#3E8BF2"></i><i style="background:#58C8F5"></i><i style="background:#F2F2F7"></i></div></div>`;
+  },
+  app(){
+    const d = DR[S.drink];
+    const head = `I want ${d.label.toLowerCase()}, who joins?`;
+    const unseen = S.snaps.length;
+    const lc = S.snaps[0];
+    const thumb = lc ? `<span class="sq">${art(lc.drink, lc.seed)}${unseen?`<span class="badge">${unseen}</span>`:''}</span>` : `<span class="sq">🖼️</span>`;
+    const frame = S.captured
+      ? `<div class="frame">${art(S.drink, 3)}<div class="ftop"><button class="chip" data-act="retake">↺ Retake</button>${audChip()}</div><div class="place"><span>📍</span><input id="f-place" value="${esc(S.place)}" placeholder="Type cafe or tea spot…" aria-label="Place"></div></div>`
+      : `<div class="frame live">${art(S.drink, 2)}<div class="ftop"><span class="live-dot">LIVE</span>${audChip()}</div><div class="headline">${head}</div><div class="place"><span>📍</span><input id="f-place" value="${esc(S.place)}" placeholder="Type cafe or tea spot…" aria-label="Place"></div></div>`;
+    const ctas = S.captured
+      ? `<div class="cta-pair"><button class="btn btn-ghost" data-act="share-snap">Share snap</button><button class="btn btn-accent" data-act="send-flare">👋 Send as flare</button></div>`
+      : `<div class="actrow"><button class="side-b" data-act="open-snaps">${thumb}Snaps</button><button class="shutter" data-act="shutter" aria-label="Take a mug snap"></button><button class="side-b" data-act="sheet" data-arg="cups"><span class="sq">💧</span>${drinks()} · ${waters()} today</button></div>
+         <button class="btn btn-accent flare-cta" data-act="send-flare">👋 Who joins?</button>`;
+    const flareBar = S.outgoing ? `<button class="chip" style="margin:8px auto 0;display:flex" data-act="open-flare">● Your flare is live · <span data-until="${S.outgoing.ends}">${cd(S.outgoing.ends)}</span></button>` : '';
+    return `${statusBar()}<div class="body" style="--dc:${d.c}">
+      <div class="appbar"><button class="me" data-act="sheet" data-arg="settings" aria-label="Settings">${esc(S.name[0]||'D')}</button>
+        <button class="pill" data-act="sheet" data-arg="friends"><span class="avs">${S.friends.slice(0,3).map(f=>av(f)).join('')||'<span class="av" style="background:#555">+</span>'}</span>${S.friends.length} friends</button>
+        <button class="cupb" data-act="sheet" data-arg="cups">${d.e} ${drinks()} · 💧 ${waters()}</button></div>
+      ${frame}
+      <div class="seg">${FLARE_CATS.map(k => `<button class="${k===S.drink?'on':''}" data-act="drink" data-arg="${k}">${DR[k].e} ${DR[k].label}</button>`).join('')}</div>
+      <div class="timing">${[0,5,15,30].map(t => `<button class="chip ${t===S.timing?'on':''}" data-act="timing" data-arg="${t}">${t?t+'m':'Now'}</button>`).join('')}<button class="chip ${[0,5,15,30].includes(S.timing)?'':'on'}" data-act="sheet" data-arg="timing">${[0,5,15,30].includes(S.timing)?'Other…':S.timing+'m ✓'}</button></div>
+      ${ctas}${flareBar}
+      ${homebar()}</div>`;
+  },
+  flare(){
+    if (S.ended) {
+      const e = S.ended, ins = e.resp.filter(r=>r.type==='in'), br = e.resp.filter(r=>r.type==='bring');
+      const body = e.resp.length
+        ? `<div class="fsum"><div class="big">${e.resp.length} ${e.resp.length===1?'friend':'friends'} coming</div><div class="pl">${DR[e.drink].e} ${esc(e.place)} · ${tlabel(e.timing)}</div></div>
+           <div class="resp">${e.resp.map(respRow).join('')}</div>
+           ${br.length?`<div class="order"><b>Drink run · ${br.length} to bring</b>${orderRows(br)}</div>`:''}`
+        : `<div class="fsum" style="margin-top:40px"><div class="big">Nobody was free this time</div><div class="pl">That happens. Nobody was told anything, and your flare is gone from their widgets.</div></div>`;
+      return `${statusBar()}<div class="body"><div class="pad"><span class="step">FLARE ${e.early?'ENDED':'CLOSED'}</span></div>${body}
+        <div class="foot"><button class="btn btn-light" data-act="ended-ok">Done</button></div>${homebar()}</div>`;
+    }
+    const o = S.outgoing; if (!o) return SCREENS.app();
+    const frac = Math.max(0, (o.ends-now())/o.dur);
+    const ins = o.resp.filter(r=>r.type==='in'), br = o.resp.filter(r=>r.type==='bring');
+    return `${statusBar()}<div class="body" style="--dc:${dc(o.drink)}"><div class="pad" style="display:flex;justify-content:space-between;align-items:center"><span class="step">TO ${o.aud.e} ${esc(o.aud.name).toUpperCase()} · ${o.aud.members.length}</span><button class="chip" data-act="flare-back">Camera</button></div>
+      <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="var(--p-raise2)" stroke-width="6"/><circle id="ringarc" cx="50" cy="50" r="45" fill="none" stroke="${dc(o.drink)}" stroke-width="6" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="${282.7*(1-frac)}" data-ring="${o.ends}" data-dur="${o.dur}"/></svg>
+        <div class="in"><b data-until="${o.ends}">${cd(o.ends)}</b><small>${o.timing>=15?'until you leave':'left to join'}</small></div></div>
+      <div class="fsum"><div class="big">${DR[o.drink].e} ${DR[o.drink].label}, ${tlabel(o.timing).toLowerCase()}</div><div class="pl">📍 ${esc(o.place)}</div></div>
+      <div class="resp">${o.resp.length ? o.resp.map(respRow).join('') : `<div class="wait">Waiting for friends… If nobody can make it, the flare just disappears.</div>`}</div>
+      ${br.length?`<div class="order"><b>Drink run · ${br.length} to bring</b>${orderRows(br)}</div>`:''}
+      <div class="foot"><button class="btn btn-ghost" data-act="end-flare">${o.resp.length?'Close flare, we’re going':'Cancel flare'}</button></div>${homebar()}</div>`;
+  },
+  incoming(){
+    const f = S.incoming.find(x => x.id === S.curIn); if (!f) return SCREENS.app();
+    const mine = S.pickFor === f.id;
+    let acts;
+    if (f.resp) acts = `<div class="w-done" style="font-size:15px">✓ ${f.resp.type==='in'?`You’re in. ${f.from} can see it.`:`Asked ${f.from} for your ${esc(f.resp.d)}${hasDetObj(f.resp.d, myDet(f.resp.d))||f.resp.oneoff?', with your notes':''}.`}</div>
+        <button class="link" style="align-self:flex-start;padding-left:0" data-act="cant" data-arg="${f.id}">Can’t make it anymore</button>`;
+    else if (mine && S.pickDrink === null) {
+      const missing = S.usual.some(d => !hasDetObj(d, myDet(d)));
+      acts = `<div class="hint" style="text-align:left">Pick what ${f.from} should bring you</div><div class="pick3">${S.usual.map((d,i)=>`<button data-act="bring-pick" data-arg="${i}"><span>${DR[catOf(d)].e}</span>${esc(d)}<small>${hasDetObj(d,myDet(d))?'📝 with notes':'no notes'}</small></button>`).join('')}</div>${missing?`<button class="link" style="align-self:center" data-act="det-open" data-arg="${esc(S.usual.find(d=>!hasDetObj(d,myDet(d))))}">Add notes so ${f.from} gets it right</button>`:''}<button class="link" style="align-self:center;padding-top:0" data-act="bring-cancel">Back</button>`;
+    } else if (mine) {
+      const d = S.usual[S.pickDrink], det = myDet(d), sm = detSummary(d, det);
+      acts = `<div class="prev"><b>${DR[catOf(d)].e} ${esc(d)}</b>${sm?`<small>${esc(sm)}</small>`:''}${det&&det.note?`<small>“${esc(det.note)}”</small>`:''}${hasDetObj(d,det)?'':'<small>No saved notes</small>'}</div>
+        <input class="oneoff" id="f-oneoff" value="${esc(S.oneoff)}" placeholder="Just this time… e.g. iced today, to-go cup" aria-label="Note for this order only" maxlength="80">
+        <div style="display:flex;gap:8px"><button class="btn btn-ghost" style="background:rgba(255,255,255,.16)!important;flex:0 0 96px" data-act="bring-back">Back</button><button class="btn btn-light" data-act="bring-send">Send order</button></div>`;
+    }
+    else acts = `<div style="display:flex;gap:8px"><button class="btn btn-light" data-act="in" data-arg="${f.id}">I’m in ${DR[f.drink].e}</button><button class="btn btn-ghost" style="background:rgba(255,255,255,.16)!important" data-act="bring" data-arg="${f.id}">Bring me one 🥤</button></div><div class="hint">Can’t go? Just close this. ${f.from} won’t be told.</div>`;
+    const others = S.incoming.filter(x => x.id !== f.id);
+    return `${statusBar()}<div class="body"><div class="full"><div class="bgart">${art(f.drink, f.seed)}</div><div class="scrim"></div><div class="ct">
+      <div class="hdr">${av(f.from)}<div class="meta"><b>${f.from}</b><small>${f.from}’s usual: ${esc(FR[f.from].u)}</small></div><button class="x" data-act="close-incoming" aria-label="Close">×</button></div>
+      ${others.length?`<button class="chip" style="margin-top:10px;align-self:flex-start" data-act="next-incoming">+${others.length} more flare</button>`:''}
+      <div class="bot"><span class="cd2" data-until="${f.ends}">${cd(f.ends)}</span><div class="big">${f.from} wants ${DR[f.drink].label.toLowerCase()}!</div><div class="pl">📍 ${esc(f.place)} · ${tlabel(f.timing)}</div>${acts}</div>
+    </div></div>${homebar()}</div>`;
+  },
+  snap(){
+    const list = S.snaps;
+    if (!list.length) return `${statusBar()}<div class="body"><div class="empty-note" style="margin-top:120px">No snaps in the last 24 hours.<br>Share one from the camera.</div><div class="foot"><button class="btn btn-ghost" data-act="snap-close">Back to camera</button></div>${homebar()}</div>`;
+    const i = Math.min(S.snapIdx, list.length-1), s = list[i];
+    const from = s.mine ? 'You' : s.from;
+    return `${statusBar()}<div class="body"><div class="full"><div class="bgart">${art(s.drink, s.seed)}</div><div class="scrim"></div><div class="ct">
+      <div class="hdr">${av(from)}<div class="meta"><b>${from}</b><small>${ago(s.at)} · 📍 ${esc(s.place)}</small></div>${s.mine?'':`<button class="x" data-act="sheet" data-arg="report" aria-label="More">⋯</button>`}<button class="x" data-act="snap-close" aria-label="Close">×</button></div>
+      <div class="bot">${s.mine ? `<div class="hint">Your snap · on ${S.friends.length} friends’ widgets · gone in 24h</div>` : `<div class="reacts">${['☕','🍵','🫖','❤️','😂'].map(e=>`<button class="${s.react===e?'on':''}" data-act="react" data-arg="${e}">${e}</button>`).join('')}</div><div class="hint">${s.react?`${s.from} gets one quiet ping: “${esc(S.name)} reacted ${s.react}”`:'Reactions are private between you two'}</div>`}
+      <div class="snapnav"><button data-act="snap-prev" ${i===0?'disabled style="opacity:.3"':''}>‹ Newer</button><span>${i+1} of ${list.length}</span><button data-act="snap-next" ${i===list.length-1?'disabled style="opacity:.3"':''}>Older ›</button></div></div>
+    </div></div>${homebar()}</div>`;
+  }
+};
+function orderRows(br){
+  return br.map(r => { const has = hasDetObj(r.d, r.det) || !!r.oneoff;
+    return `<button class="ordrow" data-act="order" data-arg="${r.who}"><span>${r.who}: ${esc(r.d)}</span><span class="nt ${has?'':'none'}">${has?'📝 Notes':'No notes'}</span></button>`; }).join('');
+}
+function orderCard(o){
+  const det = o.det || {}, rows = (OPTS[catOf(o.d)]||[]).map(([k,label,,multi]) => { const v = multi ? (det[k]||[]).join(', ') : det[k]; return v ? `<span>${label}</span><b>${esc(v)}</b>` : ''; }).join('');
+  const has = hasDetObj(o.d, det) || o.oneoff;
+  return `<div class="ocard"><div class="od">${DR[catOf(o.d)].e} ${esc(o.d)}</div>
+    ${rows ? `<div class="orows">${rows}</div>` : ''}
+    ${det.note ? `<div class="onote"><span class="olab">Note</span>${esc(det.note)}</div>` : ''}
+    ${o.oneoff ? `<div class="oone"><span class="olab">Just this time</span>${esc(o.oneoff)}</div>` : ''}
+    ${det.planB ? `<div class="oplan"><span class="olab">Plan B</span>${esc(det.planB)}</div>` : ''}
+    ${has ? '' : `<div class="onote" style="color:var(--p-muted)">No details saved. The standard version is a safe bet.</div>`}</div>`;
+}
+function baristaHTML(){
+  if (!S.barista || !S.viewOrder) return '';
+  const o = S.viewOrder, det = o.det || {};
+  const lines = detVals(o.d, det).map(v => `<div class="bl">${esc(v)}</div>`).join('');
+  return `<button class="barista" data-act="barista-close"><span class="bk">Order for ${esc(o.who)}</span><div class="bd">${esc(o.d)}</div>${lines}
+    ${det.note ? `<div class="bn">${esc(det.note)}</div>` : ''}${o.oneoff ? `<div class="bn">Today: ${esc(o.oneoff)}</div>` : ''}${det.planB ? `<div class="bl" style="font-size:17px;color:#5c5249">Plan B: ${esc(det.planB)}</div>` : ''}
+    <span class="bf">Tap anywhere to close · screen stays on</span></button>`;
+}
+function respRow(r){
+  return `<div class="r">${av(r.who)}<span>${r.who}</span><span class="tag2" style="${r.type==='in'?'color:var(--p-good)':'color:#E3C27E'}">${r.type==='in'?'I’m in':'Bring me: '+esc(r.d)+(hasDetObj(r.d,r.det)||r.oneoff?' 📝':'')}</span></div>`;
+}
+
+/* ---------------- widget ---------------- */
+function widgetHTML(){
+  const flash = S.wflash ? `<span class="w-flash">${esc(S.wflash)}</span>` : '';
+  // Picker overlays
+  if (S.wmode === 'log') {
+    const o = pickOpts();
+    return `<div class="w">${flash}<div class="w-over"><div class="h"><span>Log a drink</span><button class="wb" data-act="w-cancel">Cancel</button></div><div class="opts" style="grid-template-columns:repeat(${o.length},1fr)">${o.map((d,i)=>`<button data-act="w-log-pick" data-arg="${i}"><span>${DR[catOf(d)].e}</span>${esc(d)}<em>${d==='Water'?'+1 glass':'#'+(i+1)}</em></button>`).join('')}</div></div></div>`;
+  }
+  if (S.wmode && S.wmode.startsWith('bring:')) {
+    const f = S.incoming.find(x=>x.id===S.wmode.slice(6));
+    return `<div class="w">${flash}<div class="w-over"><div class="h"><span>Ask ${f?f.from:''} to bring…</span><button class="wb" data-act="w-cancel">Cancel</button></div><div class="opts">${S.usual.map((d,i)=>`<button data-act="w-bring-pick" data-arg="${i}"><span>${DR[catOf(d)].e}</span>${esc(d)}<em>#${i+1}</em></button>`).join('')}</div></div></div>`;
+  }
+  // Incoming flare takes over (newest first)
+  const inc = S.incoming[S.incoming.length-1];
+  if (inc) {
+    const more = S.incoming.length > 1 ? ` · +${S.incoming.length-1}` : '';
+    const acts = inc.resp
+      ? `<div class="w-done">✓ ${inc.resp.type==='in'?`You’re in · ${inc.from} knows`:`Asked for ${esc(inc.resp.d)}`}</div>`
+      : `<div class="acts"><button class="wb pri" data-act="w-in" data-arg="${inc.id}">I’m in ${DR[inc.drink].e}</button><button class="wb" data-act="w-bring" data-arg="${inc.id}">Bring me one 🥤</button></div>`;
+    return `<div class="w w-in">${flash}<div class="w-bg">${art(inc.drink, inc.seed)}</div><div class="w-scrim"></div>
+      <div class="ct"><button style="all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px" data-act="w-open-incoming" data-arg="${inc.id}">
+        <span class="from">${av(inc.from)}<b>${inc.from}</b><span style="margin-left:auto;font-family:var(--f-mono);background:rgba(0,0,0,.4);padding:1px 7px;border-radius:7px" data-until="${inc.ends}">${cd(inc.ends)}</span></span>
+        <span style="font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1.1">${inc.from} wants ${DR[inc.drink].label.toLowerCase()}!${more}</span>
+        <span style="font-size:12px;color:#e3dbd2">📍 ${esc(inc.place)} · ${tlabel(inc.timing)}</span></button>${acts}</div></div>`;
+  }
+  // Outgoing flare
+  if (S.outgoing) {
+    const o = S.outgoing;
+    const rs = o.resp.length ? o.resp.map(r=>`<span class="rchip">${av(r.who)}${r.type==='in'?'In':esc(r.d)+(hasDetObj(r.d,r.det)||r.oneoff?' 📝':'')}</span>`).join('') : `<span style="font-size:11.5px;color:rgba(255,255,255,.7)">Sent to ${esc(o.aud.name)} · ${o.aud.members.length} · waiting…</span>`;
+    return `<button class="w w-flare" style="--dc:${dc(o.drink)};width:100%" data-act="open-flare">${flash}
+      <span class="hd"><span>YOUR FLARE</span><span class="cd" data-until="${o.ends}">${cd(o.ends)}</span></span>
+      <span class="big">${DR[o.drink].e} ${DR[o.drink].label}, ${tlabel(o.timing).toLowerCase()}</span><span class="pl">📍 ${esc(o.place)}</span>
+      <span class="rs">${rs}</span></button>`;
+  }
+  // Idle
+  const lc = lastCup(), n = drinks(), wn = waters();
+  const nudge = caff() >= 4 ? `<span class="nudge">${caff()} caffeinated today · herbal tea is a nice switch tonight</span>` : `Usual: ${esc(S.usual[0]||'Set your usual 3')}`;
+  const snap = S.snaps.find(s=>!s.mine) || S.snaps[0];
+  const snapBox = snap
+    ? `<button class="w-snap" data-act="w-open-snap">${art(snap.drink, snap.seed)}<span class="cap">${av(snap.mine?'You':snap.from)}${snap.mine?'You':snap.from} · <span data-since="${snap.at}">${ago(snap.at)}</span></span></button>`
+    : `<div class="w-snap empty">Friends’ mug snaps show up here</div>`;
+  const wa = audObj(widgetAudId());
+  return `<div class="w w-idle">${flash}
+    <div><button style="all:unset;cursor:pointer;display:block" data-act="open-app"><span class="w-cups"><span>${lc?DR[catOf(lc.d)].e:'☕'}</span><b>${n}</b>${n===1?'drink':'drinks'}<span class="w-water">💧<b>${wn}</b></span></span>
+      <span class="w-meta" style="display:block">Last: <span data-since="${lc?lc.at:''}">${lc?ago(lc.at):'none yet'}</span><br>${nudge}</span></button></div>
+    ${snapBox}
+    <div style="grid-column:1;grid-row:2;align-self:end"><button class="wb" data-act="w-log">+1 Drink</button></div>
+    <div class="w-row"><span class="avs">${wa.members.slice(0,3).map(f=>av(f)).join('')}</span><span class="who" title="${esc(wa.name)}">${S.friends.length?`${wa.e} ${wa.members.length}`:'Invite friends'}</span>
+      <button class="wb" data-act="w-camera" aria-label="Snap a mug">📸</button><button class="wb pri" data-act="w-flare">👋 Who joins?</button></div></div>`;
+}
+
+/* ---------------- sheets ---------------- */
+function sheetHTML(){
+  if (!S.sheet) return '';
+  let inner = '';
+  if (S.sheet === 'settings') {
+    inner = `<h4>${esc(S.name)}</h4><p class="sub">${S.friends.length} of 20 friends · member since today</p><div class="rows scroll">
+      <button class="rowb" data-act="sheet" data-arg="usual">My usual 3<span class="r">${esc(S.usual[0]||'—')} ›</span></button>
+      <button class="rowb" data-act="sheet" data-arg="friends">Friends<span class="r">${S.friends.length}/20 ›</span></button>
+      <button class="rowb" data-act="sheet" data-arg="notifs">Notifications<span class="r">${S.notif?'On':'Off'} ›</span></button>
+      <button class="rowb" data-act="sheet" data-arg="cups">Today’s drinks<span class="r">${drinks()} · 💧 ${waters()} ›</span></button>
+      <button class="rowb" data-act="sheet" data-arg="privacy">Privacy<span class="r">${S.prefs.shareLast?'Last drink shared':'All private'} ›</span></button>
+      <button class="rowb" data-act="sheet" data-arg="friends">Groups<span class="r">${S.groups.map(g=>g.e).join(' ') || 'None'} ›</span></button>
+      <span class="rowb off">Groups that switch by location<span class="soon">LATER</span></span>
+      <span class="rowb off">Meet halfway (midpoint cafe)<span class="soon">LATER</span></span>
+      <span class="rowb off">Widget themes · Clink+<span class="soon">LATER</span></span>
+      <button class="rowb" data-act="sign-out">Sign out</button>
+      <button class="rowb danger" data-act="sheet" data-arg="delete">Delete account</button></div>`;
+  } else if (S.sheet === 'usual') {
+    inner = `<h4>My usual 3</h4><p class="sub">Used by +1 Drink and Bring Me One. Tap 📝 to save how you like each one.</p><div class="scroll">${usualEditor(S.usual,'sheet')}</div>`;
+  } else if (S.sheet === 'friends') {
+    inner = `<h4>Friends · ${S.friends.length}/20</h4><p class="sub">Everyone here gets your flares and snaps.</p>
+      <div class="share-card" style="margin-bottom:6px"><b>Invite link</b><div class="lnk">clink.app/i/dana-7Kq2</div><div class="share-row"><button data-act="share" data-arg="Messages">Messages</button><button data-act="share" data-arg="Copy">Copy</button></div></div>
+      <div class="scroll">${groupsChips()}${S.friends.map(f => S.menuFriend===f
+        ? `<div class="contact">${av(f)}<div class="meta">${f}</div><button data-act="remove-friend" data-arg="${f}" style="background:#5a2a24!important;color:#FFB4AA!important">Remove</button><button class="done" data-act="friend-menu" data-arg="">Keep</button></div>`
+        : `<div class="contact">${av(f)}<div class="meta">${f} <span style="font-size:11px">${groupsOf(f)}</span><small>${S.flast[f]?`Last drink <span data-since="${S.flast[f]}">${ago(S.flast[f])}</span> · `:'Usual: '}${esc(FR[f].u)}</small></div><button class="done" data-act="friend-order" data-arg="${f}" aria-label="${f}’s usual order">📝</button><button class="done" data-act="friend-menu" data-arg="${f}">⋯</button></div>`).join('') || '<div class="empty-note">No friends yet. Send your link.</div>'}
+      <p class="sub" style="font-size:12px;margin-top:10px">Removing someone is silent. They just stop seeing your flares and snaps.</p></div>`;
+  } else if (S.sheet === 'notifs') {
+    const t = (k, label, sub) => `<button class="rowb" data-act="pref" data-arg="${k}"><span>${label}<br><small style="color:var(--p-muted)">${sub}</small></span><span class="tgl ${S.prefs[k]?'on':''}"></span></button>`;
+    inner = `<h4>Notifications</h4>${S.notif===false?'<div class="nudgebox">Notifications are off in iOS Settings, so you will miss most flares. Turn them on in Settings › Clink.</div>':''}<div class="rows">
+      ${t('flares','Friend flares','“Maya wants matcha · in 10m”')}${t('replies','Replies to my flare','“Leo is in”, “Sam: Cortado”')}${t('snaps','Friend snaps','Off by default. Snaps show on your widget anyway.')}${t('quiet','Quiet hours','22:00–08:00, nothing pings you')}</div>`;
+  } else if (S.sheet === 'cups') {
+    const list = S.cups.slice().reverse();
+    inner = `<h4>${drinks()} ${drinks()===1?'drink':'drinks'} · 💧 ${waters()} water today</h4><p class="sub">Resets at midnight. Only you see your counts.</p>
+      ${caff()>=4?`<div class="nudgebox">${caff()} caffeinated cups today. If you want to sleep well, herbal tea is a nice switch from here.</div>`:''}
+      <div class="cat" style="margin-top:0">Log a drink</div><div class="mini3">${pickOpts().map((d,i)=>`<button data-act="log-cup" data-arg="${i}"><span>${DR[catOf(d)].e}</span>${esc(d)}</button>`).join('')}</div>
+      <div class="scroll"><div class="cuplist">${list.map(c=>`<div><span>${DR[catOf(c.d)].e} ${esc(c.d)}</span><time>${clock(c.at)}</time></div>`).join('') || '<div class="empty-note">No cups yet today.</div>'}</div></div>
+      ${S.cups.length?'<button class="btn btn-ghost" style="background:var(--p-raise2)!important" data-act="undo-cup">Undo last</button>':''}`;
+  } else if (S.sheet === 'aud') {
+    inner = `<h4>Who gets this flare?</h4><p class="sub">Snaps always go to all your friends. Only flares are for a group.</p><div class="rows scroll">${audRows(S.audience || 'auto', 'aud-pick')}</div><button class="link" style="align-self:center" data-act="sheet" data-arg="friends">Manage groups</button>`;
+  } else if (S.sheet === 'wedit') {
+    inner = `<h4>Edit widget</h4><p class="sub">Choose who this widget’s 👋 Who joins? goes to. Want both? Add a second Clink widget and set it to the other group.</p><div class="rows scroll">${audRows(S.widgetAud, 'wedit-pick')}</div>`;
+  } else if (S.sheet === 'group') {
+    const g = S.groups.find(x=>x.id===S.editGroup);
+    if (!g) { S.sheet = 'friends'; return sheetHTML(); }
+    inner = `<h4>${g.e} Group</h4><p class="sub">Only you see this group. Friends aren’t told which groups they’re in.</p>
+      <div class="scroll"><input class="field" id="f-gname" value="${esc(g.name)}" maxlength="20" aria-label="Group name">
+      <div class="chips" style="margin:10px 0 4px">${GEMOJI.map(e=>`<button class="chip ${g.e===e?'on':''}" data-act="group-emoji" data-arg="${e}">${e}</button>`).join('')}</div>
+      <div class="cat">Who’s in · ${g.members.filter(m=>S.friends.includes(m)).length}</div>
+      ${S.friends.map(f => { const on = g.members.includes(f); return `<div class="contact">${av(f)}<div class="meta">${f}<small>${groupsOf(f) || 'No groups'}</small></div><button class="${on?'done':''}" data-act="group-member" data-arg="${f}">${on?'✓ In group':'Add'}</button></div>`; }).join('')}
+      <button class="rowb danger" style="border:0" data-act="group-delete">Delete group</button></div>
+      <button class="btn btn-light" style="margin-top:10px;flex:0 0 auto" data-act="group-done">Done</button>`;
+  } else if (S.sheet === 'det') {
+    const d = S.editDrink, det = S.details[d] || {extras:[]};
+    const fields = (OPTS[catOf(d)]||[]).map(([k,label,choices,multi]) => `<div class="cat">${label}${multi?' · pick any':''}</div><div class="chips">${choices.map(c => { const on = multi ? (det[k]||[]).includes(c) : det[k]===c; return `<button class="chip ${on?'on':''}" data-act="det-pick" data-arg="${k}|${esc(c)}">${esc(c)}</button>`; }).join('')}</div>`).join('');
+    inner = `<h4>${DR[catOf(d)].e} ${esc(d)}</h4><p class="sub" style="margin-bottom:4px">How you like it. Friends see this when they bring you one.</p>
+      <div class="scroll">${fields}
+        <div class="cat">Note</div><input class="field" id="f-note" value="${esc(det.note||'')}" placeholder="e.g. very hot, extra foam, no lid" maxlength="80">
+        <div class="cat">Plan B</div><input class="field" id="f-planb" value="${esc(det.planB||'')}" placeholder="If they don’t have it…" maxlength="60"><div style="height:12px"></div></div>
+      <button class="btn btn-light" style="margin-top:10px;flex:0 0 auto" data-act="det-done">Save</button>`;
+  } else if (S.sheet === 'order') {
+    const o = S.viewOrder;
+    inner = `<h4>${esc(o.who)}’s ${o.usual?'usual':'order'}</h4><p class="sub">${o.usual?'What to get if you surprise them.':'From your flare’s drink run.'}</p><div class="scroll">${orderCard(o)}</div>
+      <button class="btn btn-light" data-act="barista">Show to barista</button>`;
+  } else if (S.sheet === 'timing') {
+    inner = `<h4>Leave in…</h4><p class="sub">Your flare stays open until then (at least 15 minutes).</p><div class="chips" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${[5,10,15,20,25,30,35,40,45,50,55,60].map(m=>`<button class="chip ${m===S.timing?'on':''}" style="justify-content:center;height:44px;padding:0;white-space:nowrap" data-act="timing-pick" data-arg="${m}">${m} min</button>`).join('')}</div>`;
+  } else if (S.sheet === 'privacy') {
+    const lc = lastCup();
+    inner = `<h4>Privacy</h4><p class="sub">Your drink and water counts are always private. Nobody else ever sees them.</p><div class="rows">
+      <button class="rowb" data-act="pref" data-arg="shareLast"><span>Friends see my last drink<br><small style="color:var(--p-muted)">Only the time, not what or how many. Water isn’t included.</small></span><span class="tgl ${S.prefs.shareLast?'on':''}"></span></button></div>
+      <div class="cat">What friends see</div><div class="contact" style="border:0">${av('You')}<div class="meta">${esc(S.name)}<small>${S.prefs.shareLast ? (lc?`Last drink ${ago(lc.at)}`:'No drink yet today') : 'Nothing about your drinks'}</small></div></div>
+      <p class="sub" style="font-size:12px">A quiet hint that you might be up for a break. Friends who share theirs show it on your friends list.</p>`;
+  } else if (S.sheet === 'report') {
+    const s = S.snaps[S.snapIdx];
+    inner = `<h4>${s?s.from:''}’s snap</h4><p class="sub">Reports are reviewed within 24 hours. Blocking hides them right away.</p><div class="rows">
+      <button class="rowb" data-act="report">Report this snap</button><button class="rowb danger" data-act="block">Block ${s?s.from:''}</button><button class="rowb" data-act="close-sheet">Cancel</button></div>`;
+  } else if (S.sheet === 'delete') {
+    inner = `<h4>Delete your account?</h4><p class="sub">Your profile, friends, cups and snaps are deleted for good. Friends just stop seeing you. This can’t be undone.</p>
+      <div style="display:flex;flex-direction:column;gap:8px"><button class="btn" style="background:#7A2A22!important;color:#fff!important" data-act="confirm-delete">Delete my account</button><button class="btn btn-ghost" style="background:var(--p-raise2)!important" data-act="close-sheet">Keep my account</button></div>`;
+  }
+  return `<div class="sheet-back" data-act="close-sheet-back"><div class="sheet" data-stop="1"><div class="grab"></div>${inner}</div></div>`;
+}
+function alertHTML(){
+  if (S.alert !== 'notif') return '';
+  return `<div class="alert-back"><div class="alert"><div class="t">“Clink” Would Like to Send You Notifications</div><div class="m">Notifications may include alerts, sounds and icon badges.</div><div class="r"><button data-act="alert-deny">Don’t Allow</button><button data-act="alert-allow">Allow</button></div></div></div>`;
+}
+
+/* ---------------- render ---------------- */
+const phone = document.getElementById('phone');
+function render(){
+  const scr = SCREENS[S.screen] ? S.screen : 'app';
+  phone.className = 'scr' + (scr==='home' ? ' home' : '');
+  phone.innerHTML = SCREENS[scr]() + bannerHTML() + sheetHTML() + alertHTML() + baristaHTML() + (S.flash ? `<span class="flash">${esc(S.flash)}</span>` : '');
+  const n = NOTES[scr] || NOTES.app;
+  let id = n[0], title = n[1], body = n[2];
+  if (scr === 'home' && S.wmode === 'log') { id='F9'; title='Log a drink from the widget'; body='Your usual 3 plus water appear right inside the widget. One tap logs it. The app never opens.'; }
+  if (scr === 'home' && S.wmode && S.wmode.startsWith('bring:')) { id='F19'; title='Bring me one'; body='Pick one of your usual 3. The sender gets your exact order, and it lands on their drink-run list.'; }
+  if (scr === 'flare' && S.ended) { id='F17 · F20'; title=S.ended.resp.length?'Flare closed':'Flare ended quietly'; body=S.ended.resp.length?'The sender gets one summary: who is coming and the drink-run list.':'Nobody joined, so it simply vanished. No push, no “0 people came” shame, nothing on friends’ widgets.'; }
+  document.getElementById('note-id').textContent = id;
+  document.getElementById('note-title').textContent = title;
+  document.getElementById('note-body').textContent = body;
+  document.getElementById('sim-join').disabled = !S.outgoing;
+  document.getElementById('sim-bring').disabled = !S.outgoing;
+}
+
+let flashT, bannerT, wflashT;
+function flash(msg){ S.flash = msg; clearTimeout(flashT); flashT = setTimeout(() => { S.flash = null; render(); }, 2200); }
+function wflash(msg){ S.wflash = msg; clearTimeout(wflashT); wflashT = setTimeout(() => { S.wflash = null; render(); }, 2000); }
+function banner(title, body, go){ S.banner = {title, body, go}; clearTimeout(bannerT); bannerT = setTimeout(() => { S.banner = null; render(); }, 5000); }
+function buzz(){ const el = document.getElementById('phone-frame'); if (el.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) el.animate([{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}], {duration:220}); }
+
+/* ---------------- domain actions ---------------- */
+let seq = 0, autoT = [];
+function logCup(d){ S.cups.push({d, at:now()}); log(`Logged <b>${esc(d)}</b> (${drinks()} drinks · ${waters()} water today)`); }
+function sendFlare(fromWidget){
+  const aud = audObj(fromWidget ? widgetAudId() : (S.audience || suggestedAud()));
+  if (!aud.members.length) return false;
+  autoT.forEach(clearTimeout); autoT = [];
+  let drink = fromWidget ? catOf(S.usual[0]||'Espresso') : S.drink; if (!FLARE_CATS.includes(drink)) drink = 'coffee';
+  const timing = fromWidget ? 0 : S.timing;
+  S.outgoing = {aud, drink, place: (S.place||'').trim() || 'Somewhere nearby', timing, photo:S.captured && !fromWidget, at:now(), dur:flareDur(timing), ends:now()+flareDur(timing), resp:[]};
+  S.captured = false; S.ended = null;
+  log(`Flare sent to <b>${aud.e} ${esc(aud.name)}</b> (${aud.members.length}): ${DR[drink].label} at ${esc(S.outgoing.place)}, ${tlabel(S.outgoing.timing)}`);
+  const id = S.outgoing.at;
+  autoT.push(setTimeout(() => { if (S.outgoing && S.outgoing.at===id) { addResp('in'); render(); } }, 4500));
+  autoT.push(setTimeout(() => { if (S.outgoing && S.outgoing.at===id) { addResp('bring'); render(); } }, 9000));
+  return true;
+}
+function addResp(type){
+  const o = S.outgoing; if (!o) return;
+  const pool = (o.aud ? o.aud.members : S.friends).filter(f => !o.resp.some(r => r.who===f));
+  if (!pool.length) return;
+  const who = type==='bring' ? (pool.includes('Sam') ? 'Sam' : pool[pool.length-1]) : (pool.includes('Leo') ? 'Leo' : pool[0]);
+  const r = {who, type, d: type==='bring' ? FR[who].u : null, det: type==='bring' ? FR_DET[who] : null, oneoff: type==='bring' && who==='Sam' ? 'To-go cup today, I’m in a meeting until 3' : ''};
+  o.resp.push(r); buzz();
+  log(type==='in' ? `<b>${who}</b> tapped I’m in` : `<b>${who}</b> asked you to bring: ${esc(r.d)}`);
+  if (S.screen !== 'flare') banner(type==='in' ? `${who} is in ${DR[o.drink].e}` : `${who}: bring me one 🥤`, type==='in' ? `Your flare · ${o.place}` : `${r.d} · added to your drink run`, 'flare');
+}
+function endOutgoing(early){
+  const o = S.outgoing; if (!o) return;
+  S.ended = {resp:o.resp, drink:o.drink, place:o.place, timing:o.timing, early};
+  S.outgoing = null; autoT.forEach(clearTimeout);
+  log(early ? 'You closed your flare' : (o.resp.length ? 'Your flare closed after 15 minutes' : 'Your flare expired quietly. Nobody was told.'));
+  if (!o.resp.length && !early && S.screen !== 'flare') S.ended = null;
+}
+function simFlare(){
+  const usedNames = S.incoming.map(x=>x.from);
+  const from = !usedNames.includes('Maya') ? 'Maya' : 'Noa';
+  const f = from === 'Maya'
+    ? {from, drink:'matcha', place:'Café Lumi', timing:10, seed:4}
+    : {from, drink:'juice', place:'Press Juice Bar', timing:25, seed:2};
+  const it = Object.assign(f, {id:'f'+(++seq), at:now(), ends:now()+flareDur(f.timing), resp:null});
+  S.incoming.push(it);
+  if (S.friends.length && !S.friends.includes(from)) S.friends.push(from);
+  buzz();
+  banner(`${from} wants ${DR[f.drink].label.toLowerCase()} ${DR[f.drink].e}`, `${f.place} · ${tlabel(f.timing).toLowerCase()} · Who joins?`, 'incoming:'+it.id);
+  log(`<b>${from}</b> sent a flare: ${DR[f.drink].label} at ${f.place}`);
+}
+function respond(id, type, d, oneoff){
+  const f = S.incoming.find(x=>x.id===id); if (!f) return;
+  f.resp = type==='in' ? {type:'in'} : {type:'bring', d, oneoff: (oneoff||'').trim()};
+  log(type==='in' ? `You joined <b>${f.from}</b>’s flare` : `You asked <b>${f.from}</b> for your ${esc(d)}${detSummary(d, myDet(d)) ? ' ('+esc(detSummary(d, myDet(d)))+')' : ''}${f.resp.oneoff ? ' + “'+esc(f.resp.oneoff)+'”' : ''}`);
+}
+function finishOnboarding(screen){
+  S.screen = screen; S.sheet = null;
+  if (S.invitesSent > 0) {
+    setTimeout(() => {
+      ['Sam','Noa','Ari'].forEach(f => { if (!S.friends.includes(f)) S.friends.push(f); });
+      banner('Sam joined Clink from your invite', 'Noa and Ari too. Say hi with a snap ☕', 'app'); log('<b>Sam, Noa and Ari</b> joined from your invite link'); render();
+    }, 1800);
+  }
+}
+
+/* ---------------- play presets (from flows tab) ---------------- */
+const PLAY = {
+  signin(){ S = base(); },
+  invited(){ S = base(); S.invitedBy = 'Maya'; },
+  returning(){ S = base(); S.returning = true; },
+  usual(){ S = base(); S.screen = 'usual'; },
+  invite(){ S = base(); S.screen = 'invite'; S.usual = ['Iced Oat Flat White','Ceremonial Matcha','Jasmine Tea']; },
+  notif(){ S = base(); S.screen = 'notif'; S.usual = ['Iced Oat Flat White']; S.friends = ['Maya','Leo']; },
+  widget(){ S = base(); S.screen = 'widgetguide'; S.usual = ['Iced Oat Flat White']; S.friends = ['Maya','Leo']; },
+  home(){ S = onboarded(); },
+  log(){ S = onboarded(); S.wmode = 'log'; },
+  cups(){ S = onboarded(); S.screen = 'app'; S.cups.push({d:'Cappuccino',at:Date.now()-50*MIN},{d:'Iced Matcha Latte',at:Date.now()-12*MIN}); S.sheet = 'cups'; },
+  usualEdit(){ S = onboarded(); S.screen = 'app'; S.sheet = 'usual'; },
+  snap(){ S = onboarded(); S.screen = 'app'; },
+  recvSnap(){ S = onboarded(); S.snaps = []; render(); setTimeout(() => { simSnap(); render(); }, 900); },
+  quick(){ S = onboarded(); },
+  custom(){ S = onboarded(); S.screen = 'app'; S.drink = 'matcha'; },
+  live(){ S = onboarded(); S.screen = 'flare'; sendFlare(false); },
+  recvFlare(){ S = onboarded(); render(); setTimeout(() => { simFlare(); render(); }, 900); },
+  bring(){ S = onboarded(); simFlare(); S.banner = null; S.wmode = 'bring:'+S.incoming[0].id; },
+  expire(){ S = onboarded(); S.screen = 'flare'; sendFlare(false); autoT.forEach(clearTimeout); S.offset += 15*MIN; },
+  two(){ S = onboarded(); simFlare(); simFlare(); S.banner = null; },
+  friends(){ S = onboarded(); S.screen = 'app'; S.sheet = 'friends'; },
+  report(){ S = onboarded(); S.screen = 'snap'; S.snapIdx = 0; S.sheet = 'report'; },
+  notifs(){ S = onboarded(); S.screen = 'app'; S.sheet = 'notifs'; },
+  del(){ S = onboarded(); S.screen = 'app'; S.sheet = 'settings'; },
+  privacy(){ S = onboarded(); S.screen = 'app'; S.sheet = 'privacy'; },
+  groups(){ S = onboarded(); S.screen = 'app'; S.sheet = 'group'; S.editGroup = 'work'; },
+  aud(){ S = onboarded(); S.screen = 'app'; S.sheet = 'aud'; },
+  wedit(){ S = onboarded(); S.sheet = 'wedit'; },
+  bringApp(){ S = onboarded(); simFlare(); S.banner = null; S.screen = 'incoming'; S.curIn = S.incoming[0].id; S.pickFor = S.curIn; S.pickDrink = null; },
+  order(){ S = onboarded(); S.screen = 'flare'; sendFlare(false); autoT.forEach(clearTimeout); addResp('bring'); S.banner = null; S.viewOrder = S.outgoing.resp[0]; S.sheet = 'order'; },
+};
+function simSnap(){
+  const pool = [{from:'Noa',drink:'tea',place:'Home desk'},{from:'Maya',drink:'matcha',place:'Café Lumi'},{from:'Ari',drink:'coffee',place:'Kaffa Roastery'},{from:'Leo',drink:'coffee',place:'Office kitchen'}];
+  const p = pool[seq % pool.length]; seq++;
+  S.snaps.unshift(Object.assign({}, p, {at:now(), seed:seq, react:null}));
+  if (S.screen === 'home') wflash('New snap from ' + p.from);
+  log(`<b>${p.from}</b> shared a mug snap. Your widget updated, no notification.`);
+}
+
+/* ---------------- event handling ---------------- */
+function handle(act, arg, ctx, el){
+  const go = s => { S.screen = s; S.sheet = null; };
+  switch (act) {
+    case 'apple': case 'code-next':
+      if (S.returning) { S = onboarded(); S.screen = 'app'; log('Signed in. Account found, onboarding skipped.'); break; }
+      if (S.invitedBy && !S.friends.includes(S.invitedBy)) S.friends.push(S.invitedBy);
+      log(act==='apple' ? 'Signed in with Apple' : 'Phone number verified'); go('profile'); break;
+    case 'phone': go('phone'); break;
+    case 'phone-next': go('code'); break;
+    case 'profile-next': go('usual'); log(`Profile saved as <b>${esc(S.name)}</b>`); break;
+    case 'u-toggle': { const L = S.usual; const i = L.indexOf(arg); if (i>=0) L.splice(i,1); else if (L.length<3) L.push(arg); else { L[2] = arg; } break; }
+    case 'u-preset': S.usual = PRESETS[+arg][1].slice(); break;
+    case 'u-remove': S.usual.splice(+arg,1); break;
+    case 'usual-next': go('invite'); log(`Usual 3 set: <b>${S.usual.map(esc).join(', ')}</b>`); break;
+    case 'share': S.invitesSent++; flash(arg==='Copy' ? 'Invite link copied' : `Opening ${arg}…`); log(`Invite link sent via ${arg}`); break;
+    case 'add-contact': if (!S.friends.includes(arg)) { S.friends.push(arg); log(`Friend request sent to <b>${arg}</b> (auto-accepted in this demo)`); } break;
+    case 'invite-next': go('notif'); break;
+    case 'notif-allow': S.alert = 'notif'; break;
+    case 'alert-allow': S.alert = null; S.notif = true; go('widgetguide'); log('Notifications allowed'); break;
+    case 'alert-deny': S.alert = null; S.notif = false; go('widgetguide'); log('Notifications denied. Settings will show a reminder.'); break;
+    case 'notif-later': S.notif = false; go('widgetguide'); break;
+    case 'widget-done': S.widget = true; finishOnboarding('home'); log('Widget added. Onboarding done.'); break;
+    case 'widget-later': S.widget = false; finishOnboarding('app'); break;
+    case 'add-widget-now': S.widget = true; break;
+    case 'open-app': go('app'); break;
+    case 'go-home': go('home'); S.pickFor = null; break;
+    case 'banner': { const g = S.banner && S.banner.go; S.banner = null; if (!g) break; if (g.startsWith('incoming:')) { S.curIn = g.slice(9); go('incoming'); } else go(g); break; }
+    case 'w-log': S.wmode = 'log'; break;
+    case 'w-cancel': S.wmode = null; break;
+    case 'w-log-pick': logCup(pickOpts()[+arg]); S.wmode = null; wflash('Logged ✓'); break;
+    case 'w-camera': S.captured = false; go('app'); break;
+    case 'w-flare': if (!S.friends.length) { wflash('Invite a friend first'); break; } if (!sendFlare(true)) { wflash('Nobody in this group yet'); break; } wflash(`Sent to ${S.outgoing.aud.name} ✓`); break;
+    case 'open-flare': go('flare'); break;
+    case 'w-in': respond(arg,'in'); wflash(`${S.incoming.find(x=>x.id===arg).from} knows you’re in`); break;
+    case 'w-bring': S.wmode = 'bring:'+arg; break;
+    case 'w-bring-pick': { const id = S.wmode.slice(6), d = S.usual[+arg]; respond(id,'bring',d); S.wmode = null; wflash(hasDetObj(d, myDet(d)) ? 'Sent with your notes ✓' : 'Order sent ✓'); break; }
+    case 'w-open-incoming': S.curIn = arg; go('incoming'); break;
+    case 'w-open-snap': S.snapIdx = 0; go('snap'); break;
+    case 'drink': S.drink = arg; break;
+    case 'timing': S.timing = +arg; break;
+    case 'timing-pick': S.timing = +arg; S.sheet = null; break;
+    case 'shutter': S.captured = true; log('Mug snap taken'); break;
+    case 'retake': S.captured = false; break;
+    case 'share-snap': S.snaps.unshift({from:S.name, mine:true, drink:S.drink, place:(S.place||'').trim()||'—', at:now(), seed:3, react:null}); S.captured = false; flash(`Snap on ${S.friends.length} friends’ widgets`); log(`You shared a snap to <b>${S.friends.length}</b> widgets (deleted in 24h)`); break;
+    case 'send-flare': if (!S.friends.length) { flash('Invite a friend first'); break; } if (!sendFlare(false)) { flash('Nobody in this group yet'); break; } go('flare'); break;
+    case 'flare-back': go('app'); break;
+    case 'end-flare': endOutgoing(true); break;
+    case 'ended-ok': S.ended = null; go('app'); break;
+    case 'in': respond(arg,'in'); break;
+    case 'bring': S.pickFor = arg; S.pickDrink = null; break;
+    case 'bring-cancel': S.pickFor = null; S.pickDrink = null; break;
+    case 'bring-pick': S.pickDrink = +arg; S.oneoff = ''; break;
+    case 'bring-back': S.pickDrink = null; break;
+    case 'bring-send': respond(S.pickFor,'bring',S.usual[S.pickDrink], S.oneoff); S.pickFor = null; S.pickDrink = null; S.oneoff = ''; break;
+    case 'det-open': S.editDrink = arg; S.sheetBack = (S.sheet && S.sheet !== 'det') ? S.sheet : null; if (!S.details[arg]) S.details[arg] = {extras:[], note:'', planB:''}; S.sheet = 'det'; break;
+    case 'det-pick': { const [k, v] = arg.split('|'); const det = S.details[S.editDrink]; const multi = (OPTS[catOf(S.editDrink)].find(o=>o[0]===k)||[])[3];
+      if (multi) { det[k] = det[k]||[]; const i = det[k].indexOf(v); i>=0 ? det[k].splice(i,1) : det[k].push(v); } else det[k] = det[k]===v ? '' : v; break; }
+    case 'det-done': { const d = S.editDrink; S.sheet = S.sheetBack; S.sheetBack = null; if (hasDetObj(d, S.details[d])) { flash('Saved your ' + d); log(`Saved details for <b>${esc(d)}</b>: ${esc(detSummary(d, S.details[d]) || 'note only')}`); } break; }
+    case 'order': { const src = (S.outgoing || S.ended); const r = src && src.resp.find(x => x.who===arg && x.type==='bring'); if (r) { S.viewOrder = r; S.sheet = 'order'; } break; }
+    case 'friend-order': S.viewOrder = {who:arg, d:FR[arg].u, det:FR_DET[arg], usual:true}; S.sheet = 'order'; break;
+    case 'barista': S.barista = true; log(`Showing ${esc(S.viewOrder.who)}’s order to the barista`); break;
+    case 'barista-close': S.barista = false; break;
+    case 'aud-pick': S.audience = arg==='auto' ? null : arg; S.sheet = null; { const a = audObj(S.audience || suggestedAud()); log(`Flare audience: <b>${a.e} ${esc(a.name)}</b>${S.audience?'':' (automatic)'}`); } break;
+    case 'wedit-pick': S.widgetAud = arg; S.sheet = null; { const a = audObj(widgetAudId()); wflash(`👋 now goes to ${a.name}`); log(`Widget set to <b>${arg==='auto'?'Automatic':a.e+' '+esc(a.name)}</b>`); } break;
+    case 'group-open': S.editGroup = arg; S.sheet = 'group'; break;
+    case 'group-new': { const id = 'g'+(++seq); S.groups.push({id, name:'New group', e:'☕', members:[]}); S.editGroup = id; S.sheet = 'group'; log('Created a new group'); break; }
+    case 'group-emoji': { const g = S.groups.find(x=>x.id===S.editGroup); if (g) g.e = arg; break; }
+    case 'group-member': { const g = S.groups.find(x=>x.id===S.editGroup); if (g) { const i = g.members.indexOf(arg); i>=0 ? g.members.splice(i,1) : g.members.push(arg); } break; }
+    case 'group-delete': { const id = S.editGroup; S.groups = S.groups.filter(x=>x.id!==id); if (S.audience===id) S.audience = null; if (S.widgetAud===id) S.widgetAud = 'auto'; S.sheet = 'friends'; log('Group deleted. Friends stay friends.'); break; }
+    case 'group-done': { const g = S.groups.find(x=>x.id===S.editGroup); S.sheet = 'friends'; if (g) log(`Saved group <b>${g.e} ${esc(g.name)}</b> (${g.members.length})`); break; }
+    case 'cant': { const f = S.incoming.find(x=>x.id===arg); if (f) { f.resp = null; log(`You left ${f.from}’s flare. ${f.from} just sees one fewer.`); } break; }
+    case 'close-incoming': S.pickFor = null; go('app'); break;
+    case 'next-incoming': { const o = S.incoming.filter(x=>x.id!==S.curIn); if (o.length) S.curIn = o[0].id; S.pickFor = null; break; }
+    case 'open-snaps': S.snapIdx = 0; go('snap'); break;
+    case 'snap-next': S.snapIdx = Math.min(S.snaps.length-1, S.snapIdx+1); break;
+    case 'snap-prev': S.snapIdx = Math.max(0, S.snapIdx-1); break;
+    case 'snap-close': go('app'); break;
+    case 'react': { const s = S.snaps[S.snapIdx]; s.react = s.react===arg ? null : arg; if (s.react) log(`You reacted ${arg} to <b>${s.from}</b>’s snap`); break; }
+    case 'report': S.sheet = null; flash('Reported. Thanks for telling us.'); log('Snap reported for review'); break;
+    case 'block': { const s = S.snaps[S.snapIdx]; const who = s.from; S.snaps = S.snaps.filter(x=>x.from!==who); S.friends = S.friends.filter(f=>f!==who); S.snapIdx = 0; S.sheet = null; flash(`${who} is blocked`); log(`Blocked <b>${who}</b>. Their snaps are hidden.`); break; }
+    case 'sheet': S.sheet = arg; S.menuFriend = null; break;
+    case 'close-sheet': S.sheet = null; break;
+    case 'close-sheet-back': if (el === ev_target) S.sheet = null; else return; break;
+    case 'friend-menu': S.menuFriend = arg || null; break;
+    case 'remove-friend': S.friends = S.friends.filter(f=>f!==arg); S.menuFriend = null; log(`Removed <b>${arg}</b>. They weren’t notified.`); break;
+    case 'pref': S.prefs[arg] = !S.prefs[arg]; if (arg==='shareLast') log(S.prefs.shareLast ? 'Friends can now see when you last had a drink (not counts)' : 'Last-drink time is private again'); break;
+    case 'log-cup': logCup(pickOpts()[+arg]); break;
+    case 'undo-cup': { const c = S.cups.pop(); if (c) log(`Undid last cup (${esc(c.d)})`); break; }
+    case 'sign-out': S = base(); log('Signed out'); break;
+    case 'confirm-delete': S = base(); log('Account deleted. All data removed.'); break;
+    // simulator
+    case 'sim-flare': if (S.screen in {signin:1,phone:1,code:1,profile:1,usual:1,invite:1,notif:1,widgetguide:1}) { S = onboarded(); } simFlare(); break;
+    case 'sim-snap': if (S.screen in {signin:1,phone:1,code:1,profile:1,usual:1,invite:1,notif:1,widgetguide:1}) { S = onboarded(); } simSnap(); break;
+    case 'sim-join': addResp('in'); break;
+    case 'sim-bring': addResp('bring'); break;
+    case 'sim-skip': S.offset += 15*MIN; log('Skipped 15 minutes'); tick(true); break;
+    case 'sim-home': if (!S.usual.length) S = onboarded(); go('home'); break;
+    case 'sim-skipon': S = onboarded(); log('Skipped onboarding. You have 5 friends.'); break;
+    case 'sim-reset': S = base(); autoT.forEach(clearTimeout); log('Started over'); break;
+    default: return;
+  }
+  render();
+}
+let ev_target = null;
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  if (el.closest('[data-stop]') && el.dataset.act === 'close-sheet-back') return;
+  ev_target = e.target;
+  if (el.dataset.act === 'close-sheet-back' && e.target !== el) return;
+  if (el.disabled) return;
+  if (el.dataset.act === 'play') { e.preventDefault(); play(el.dataset.arg); return; }
+  handle(el.dataset.act, el.dataset.arg, el.dataset.ctx, el);
+});
+phone.addEventListener('input', e => {
+  if (e.target.id === 'f-place') S.place = e.target.value;
+  if (e.target.id === 'f-name') S.name = e.target.value || 'Dana';
+  if (e.target.id === 'f-note' && S.details[S.editDrink]) S.details[S.editDrink].note = e.target.value;
+  if (e.target.id === 'f-planb' && S.details[S.editDrink]) S.details[S.editDrink].planB = e.target.value;
+  if (e.target.id === 'f-oneoff') S.oneoff = e.target.value;
+  if (e.target.id === 'f-gname') { const g = S.groups.find(x=>x.id===S.editGroup); if (g) g.name = e.target.value || 'Group'; }
+});
+
+/* ---------------- clock ---------------- */
+function tick(force){
+  let changed = !!force;
+  if (S.outgoing && now() >= S.outgoing.ends) { endOutgoing(false); changed = true; }
+  const before = S.incoming.length;
+  S.incoming = S.incoming.filter(f => { if (now() >= f.ends) { log(`${f.from}’s flare expired`); return false; } return true; });
+  if (S.incoming.length !== before) { changed = true; if (S.screen==='incoming' && !S.incoming.find(x=>x.id===S.curIn)) S.screen = 'app'; if (S.wmode && S.wmode.startsWith('bring:')) S.wmode = null; }
+  const n24 = S.snaps.length; S.snaps = S.snaps.filter(s => now() - s.at < 24*60*MIN); if (S.snaps.length !== n24) changed = true;
+  if (changed) { render(); return; }
+  phone.querySelectorAll('[data-until]').forEach(el => el.textContent = cd(+el.dataset.until));
+  phone.querySelectorAll('[data-since]').forEach(el => { if (el.dataset.since) el.textContent = ago(+el.dataset.since); });
+  const ring = phone.querySelector('[data-ring]');
+  if (ring) ring.setAttribute('stroke-dashoffset', 282.7 * (1 - Math.max(0, (+ring.dataset.ring - now())/(+ring.dataset.dur))));
+}
+setInterval(tick, 1000);
+
+/* ---------------- flows tab ---------------- */
+const GROUPS = [
+  {name:'Get in', desc:'From the first launch to a signed-in account. Every path ends in onboarding (new users) or the camera (returning users).', flows:[
+    {id:'F1', name:'First sign in', play:'signin', trig:'Opens the app for the first time', steps:['Splash: “Drink breaks with your people”', ['Sign in with Apple (Face ID)','Continue with phone → number → 6-digit code (auto-filled)'], 'Name + optional photo', 'Onboarding (F4)'],
+      edge:['<b>Wrong code:</b> inline error, resend after 30s', '<b>Apple “Hide my email”:</b> fine, Clink never needs your email', '<b>Number already has an account:</b> signs you into it (F3)']},
+    {id:'F2', name:'Join from a friend’s invite', play:'invited', trig:'Taps Maya’s invite link in Messages or WhatsApp', steps:['Link opens App Store (or the app if installed)', 'Install', 'Splash shows “Maya invited you”', 'Sign in (F1)', 'Already friends with Maya', 'Usual 3 → invite 1 more → notifications → widget'],
+      edge:['<b>Invite must survive install</b> (deferred deep link), or the new user lands friendless', '<b>Maya already has 20 friends:</b> sign up still works, Maya gets a request to make room', '<b>Link opened on a computer:</b> web page with a QR code']},
+    {id:'F3', name:'Returning user or new phone', play:'returning', trig:'Signs in with an existing account', steps:['Sign in', 'Account found', 'Skip onboarding', 'Widget reminder only if no widget is detected', 'Camera screen'],
+      edge:['<b>Cups and usual 3 sync to the account,</b> so a new phone keeps them (the PRD stored cups only on the device)']}
+  ]},
+  {name:'Onboarding', desc:'Four short steps. Built like Locket: inviting friends is the centre of it, but nothing traps the user.', flows:[
+    {id:'F4', name:'Set your usual 3', play:'usual', trig:'Step 2 of onboarding', steps:['Tap a preset (Hybrid mix, Matcha & Japanese tea, Loose leaf & chai)', ['or pick up to 3 across Coffee, Matcha, Tea, Juice & smoothies'], '#1 becomes the widget default', 'Optional: “Make it yours” on each (size, temperature, milk, sweetness, extras, note, Plan B)', 'Continue (needs at least 1)'],
+      edge:['<b>Drink not listed:</b> “Add your own” free-text drink', '<b>Picking a 4th:</b> replaces #3', '<b>Water doesn’t take a slot:</b> it’s always on the +1 picker']},
+    {id:'F5', name:'Invite friends', play:'invite', trig:'Step 3 of onboarding', steps:['Progress meter “0 of 2 friends”', ['Send invite link: Messages / WhatsApp / Copy','Add contacts already on Clink'], 'Meter fills', 'Continue', ['or “I’ll invite people later”']],
+      edge:['<b>Contacts permission denied:</b> link sharing still works', '<b>Apple sign-in users</b> are asked for a phone number here so friends can find them', '<b>Skipped:</b> the widget shows “Invite friends” until someone joins']},
+    {id:'F6', name:'Accept a friend request', trig:'Someone added you from their contacts', steps:['Notification: “Leo wants to be friends”', 'Accept', 'You see each other’s snaps and flares'],
+      edge:['<b>Ignore:</b> the request stays pending, Leo is never told “declined”', '<b>You’re at 20:</b> remove someone first']},
+    {id:'F7', name:'Turn on notifications', play:'notif', trig:'Step 4 of onboarding', steps:['Explainer with example flare notifications', 'Turn on → iOS dialog', ['Allow','Don’t allow'], 'Widget guide'],
+      edge:['<b>Denied:</b> app works, but Settings shows a “you’ll miss flares” card with a link to iOS Settings', '<b>Not now:</b> asked again after the first flare you receive']},
+    {id:'F8', name:'Add the widget', play:'widget', trig:'Last onboarding step', steps:['3-step guide: hold home screen → Add Widget → search Clink → Medium', 'I added it', 'Home screen with the widget'],
+      edge:['<b>Remind me later:</b> a card on the camera screen until the app detects a widget', '<b>Small widget:</b> also offered, showing cups + one button']}
+  ]},
+  {name:'Daily drink & water tracker', desc:'The reason the widget stays on the home screen on days when no friend is around. Counts are private, always.', flows:[
+    {id:'F9', name:'Log a drink or water from the widget', play:'log', trig:'Finished or poured a drink', steps:['Tap +1 Drink', 'Widget shows your usual 3 + 💧 Water', 'Tap one', '“3 drinks · 💧 4 · Last: Just now”'],
+      edge:['<b>Mis-tap:</b> undo in the app (F10)', '<b>Midnight:</b> resets in local time']},
+    {id:'F10', name:'Today’s drinks in the app', play:'cups', trig:'Taps the counter on the camera screen', steps:['Drinks and water today, with times', ['Log another','Undo last']],
+      edge:['<b>Private:</b> friends never see counts (see F26 for the one opt-in)', '<b>4+ caffeinated drinks:</b> neutral note “herbal tea is a nice switch tonight”. No health claims, no caffeine maths in v1']},
+    {id:'F11', name:'Edit your usual 3 and how you like them', play:'usualEdit', trig:'Settings → My usual 3', steps:['Same editor as onboarding', '📝 Edit on a drink: milk, temperature, sugar, extras, note, Plan B', 'Widget and Bring Me One use it right away'],
+      edge:['<b>Water has no details:</b> it’s only tracked']}
+  ]},
+  {name:'Mug snaps', desc:'Locket’s loop: something from a friend lands on your home screen. Works with only one friend, at any time.', flows:[
+    {id:'F12', name:'Share a drink snap', play:'snap', trig:'Taps 📸 on the widget, or opens the app', steps:['Camera is live', 'Shutter', 'Preview + optional place', ['Share snap → on every friend’s widget for 24h','Send as flare (F15)']],
+      edge:['<b>Camera denied:</b> explain + link to iOS Settings; flares still work without photos', '<b>Offline:</b> queued, sends when back online']},
+    {id:'F13', name:'See a friend’s snap', play:'recvSnap', trig:'A friend shares a snap', steps:['Widget updates silently (no notification by default)', 'Tap the snap', 'Full-screen viewer', 'React ☕ 🍵 🫖 ❤️ 😂', 'Friend gets one quiet notification'],
+      edge:['<b>Several snaps:</b> swipe newer / older', '<b>After 24h:</b> snap and photo are deleted']},
+    {id:'F14', name:'Report or block', play:'report', trig:'Something inappropriate in a snap', steps:['⋯ on the snap', ['Report → reviewed within 24h','Block → hidden right away and removed from friends']],
+      edge:['<b>Required by App Store rules</b> for any app with user photos']}
+  ]},
+  {name:'Flares', desc:'The “I want coffee / matcha / tea / juice, who joins?” moment. Open until the meet time (at least 15 minutes), positive replies only, quiet when nobody comes.', flows:[
+    {id:'F15', name:'Quick flare from the widget', play:'quick', trig:'Taps 👋 Who joins? on the widget', steps:['Sends right away to this widget’s group (or Everyone): drink from your usual #1, last place, “Now”', 'Widget flips to your live flare', 'Live Activity + Dynamic Island countdown'],
+      edge:['<b>Sent by accident:</b> cancel from the flare screen, it disappears from friends’ widgets', '<b>No friends yet:</b> “Invite a friend first”']},
+    {id:'F16', name:'Custom flare from the app', play:'custom', trig:'Opens the app', steps:['Pick Coffee / Matcha / Tea / Juice', 'Optional snap', 'Edit place', 'To: a group or Everyone (default by time of day)', ['Now · 5m · 15m · 30m','Other… (5–60 min)'], 'Who joins?', 'Your live flare (F17)'],
+      edge:['<b>One live flare at a time.</b> A new one replaces the old one', '<b>Water isn’t a flare type.</b> Nobody meets up for water', '<b>More than 60 min ahead</b> is planning, not a break, so it isn’t offered']},
+    {id:'F17', name:'Your live flare', play:'live', trig:'Any flare you send', steps:['Countdown to the meet time (at least 15:00)', 'Replies arrive: notification + haptic + Live Activity count', '“Leo is in”, “Sam: Cortado”', ['Close flare, we’re going','Let it run out'], 'Summary with the drink-run list'],
+      edge:['<b>Only positive replies are shown.</b> No “seen”, no “declined”']},
+    {id:'F18', name:'Get a friend’s flare and join', play:'recvFlare', trig:'Maya sends a flare', steps:['Notification “Maya wants matcha · Café Lumi · in 10m”', 'Widget shows Maya’s flare', ['I’m in from the widget','I’m in from the notification','I’m in from the app'], 'Maya is told'],
+      edge:['<b>Changed your mind:</b> “Can’t make it anymore”, Maya just sees one fewer', '<b>Do nothing:</b> Maya is never told']},
+    {id:'F19', name:'Bring me one', play:'bringApp', trig:'You can’t leave your desk', steps:['Bring me one 🥤', 'Pick 1 of your usual 3 (your saved notes go with it)', ['From the widget: sent exactly as saved','From the app: add a note just for this time'], 'Maya’s drink-run list shows “Dana: Iced Oat Flat White 📝”'],
+      edge:['<b>No notes saved:</b> sends the plain drink name and suggests adding notes', '<b>Widget can’t take typing,</b> so one-time notes are app only', '<b>Paying back:</b> in person in v1; one-tap gifting comes later']},
+    {id:'F27', name:'Read a friend’s order at the counter', play:'order', trig:'You’re on a drink run', steps:['Your flare → drink-run list', 'Tap 📝 Notes', 'Order card: size, milk, sugar, note, “just this time”, Plan B', 'Show to barista (big text)'],
+      edge:['<b>Also from Friends:</b> 📝 next to anyone shows their usual, for surprise drinks', '<b>Barista view</b> stays on screen in large text until tapped']},
+    {id:'F20', name:'Flare ends with nobody', play:'expire', trig:'The countdown ends with no replies', steps:['Countdown hits 0', 'Gone from every widget', 'Sender sees “Nobody was free this time” in the app only'],
+      edge:['<b>No notification, no counter</b> of how many saw it']},
+    {id:'F21', name:'Two flares at once', play:'two', trig:'Maya and Noa both send flares', steps:['Widget shows the newest + “+1”', 'App shows both', 'You can join either or both']}
+  ]},
+  {name:'Friends, settings and account', desc:'Everything outside the main loop lives in sheets from the camera screen’s top bar.', flows:[
+    {id:'F22', name:'Manage friends', play:'friends', trig:'Taps the friends pill', steps:['Groups at the top, then the list · 5 of 20', ['Share invite link','Remove someone (silent)']]},
+    {id:'F28', name:'Create and edit groups', play:'groups', trig:'Friends → + New group, or tap a group', steps:['Name + emoji (Work, Home friends, Study…)', 'Tick who’s in', 'Done'],
+      edge:['<b>Private labels:</b> friends never see which groups they’re in', '<b>One friend can be in several groups</b>', '<b>New users start with Everyone only.</b> Clink suggests groups once you have 6+ friends', '<b>Deleting a group</b> doesn’t remove anyone as a friend']},
+    {id:'F29', name:'Choose who gets a flare', play:'aud', trig:'Taps the “To:” chip on the camera', steps:[['Automatic: Work on weekdays 8–18, Home friends otherwise','A specific group','Everyone'], 'Who joins?', 'Only that group is notified'],
+      edge:['<b>No location needed:</b> the default comes from the clock', '<b>Joiners who aren’t friends with each other</b> see “2 others are in”, not names', '<b>Snaps still go to everyone</b>']},
+    {id:'F30', name:'One widget per group', play:'wedit', trig:'Edit widget on the home screen', steps:['Hold the widget → Edit Widget', ['Automatic','Work','Home friends','Everyone'], 'Its 👋 Who joins? goes to that group'],
+      edge:['<b>Two widgets, two groups:</b> e.g. Work on page 1, Home friends on page 2']},
+    {id:'F23', name:'Notifications and quiet hours', play:'notifs', trig:'Settings → Notifications', steps:['Friend flares (on)', 'Replies to my flare (on)', 'Friend snaps (off)', 'Quiet hours 22:00–08:00 (on)']},
+    {id:'F24', name:'Sign out or delete account', play:'del', trig:'Settings', steps:[['Sign out → back to splash','Delete account → confirm → all data removed']],
+      edge:['<b>In-app account deletion is required by App Store rules</b>']},
+    {id:'F26', name:'Share when I last had a drink', play:'privacy', trig:'Settings → Privacy (off by default)', steps:['Turn on “Friends see my last drink”', 'Friends see “Dana · last drink 1h 42m ago”', 'A quiet hint you may be up for a break'],
+      edge:['<b>Counts are never shared,</b> only the time of your last drink', '<b>Water isn’t included</b>']},
+    {id:'F25', name:'Offline or send failed', trig:'No signal', steps:['Action queued, “Sending…”', 'After 30s: “Couldn’t send. Tap to retry.”'],
+      edge:['<b>A flare that can’t send in 2 minutes is dropped,</b> since a stale flare is worse than none']}
+  ]},
+  {name:'After v1', later:true, desc:'In your PRD and still planned. Left out of v1 on purpose so the first release is small enough to ship and learn from.', flows:[
+    {id:'L1', name:'Groups that switch by location', trig:'At the office vs at home', steps:['Office area → Work', 'Home area → Home friends'], edge:['<b>Needs location permission,</b> costs battery and gets extra App Store privacy review. The v1 time-of-day default covers most cases']},
+    {id:'L2', name:'Meet halfway', trig:'Weekend flare with 1+ joiners', steps:['Midpoint cafe between everyone', 'Walking times'], edge:['<b>Needs a privacy fix first:</b> with 2 people, the midpoint plus walking time can reveal roughly where someone lives']},
+    {id:'L3', name:'Clink+ subscription', trig:'Power users', steps:['Widget themes + icons', 'Caffeine curve with Apple Health', 'More circles', 'Yearly recap']},
+    {id:'L4', name:'Cafe perks and Clink for Teams', trig:'Dense usage in one city or office', steps:['Verified cafes with group perks', 'Company circles + Slack']},
+    {id:'L6', name:'Drinks after work (alcohol)', trig:'Evening flares with friends', steps:['Beer and wine flare types'], edge:['<b>Moves the App Store age rating to 17+/18+</b> and clashes with the hydration side']},
+    {id:'L7', name:'Water goal and reminders', trig:'People who want to drink more water', steps:['Optional daily water goal', 'Gentle nudge if nothing logged by noon']},
+    {id:'L5', name:'Android', trig:'After iOS shows retention', steps:['Jetpack Glance widget', 'Same backend']}
+  ]}
+];
+function stepsHTML(steps){
+  return steps.map((s,i) => {
+    const a = i ? '<li class="arr" aria-hidden="true">→</li>' : '';
+    if (Array.isArray(s)) return a + s.map((o,j) => (j?'<li class="arr">or</li>':'') + `<li class="or">${o}</li>`).join('');
+    return a + `<li>${s}</li>`;
+  }).join('');
+}
+function renderFlows(){
+  const total = GROUPS.filter(g=>!g.later).reduce((n,g)=>n+g.flows.length,0);
+  document.getElementById('flow-count').textContent = `${total} flows in v1, starting from sign in · ${GROUPS.find(g=>g.later).flows.length} planned after v1`;
+  document.getElementById('flows').innerHTML = GROUPS.map(g => `<section class="group ${g.later?'later':''}"><h2>${g.name}</h2><p>${g.desc}</p><div class="flow-grid">${g.flows.map(f => `
+    <article class="flow"><div class="flow-head"><h3><span class="fid">${f.id}</span>${f.name}</h3>${f.play?`<button class="play" data-act="play" data-arg="${f.play}">▶ Play</button>`:''}</div>
+      <p class="trig"><b>When:</b> ${f.trig}</p><ol class="steps">${stepsHTML(f.steps)}</ol>
+      ${f.edge?`<ul class="edge">${f.edge.map(e=>`<li>${e}</li>`).join('')}</ul>`:''}</article>`).join('')}</div></section>`).join('');
+}
+function play(key){
+  autoT.forEach(clearTimeout); S = base();
+  (PLAY[key] || PLAY.signin)();
+  log(`Playing flow: <b>${key}</b>`);
+  location.hash = 'prototype';
+  render();
+  document.getElementById('phone-frame').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center'});
+}
+
+/* ---------------- tabs ---------------- */
+function route(){
+  const v = location.hash === '#flows' ? 'flows' : 'prototype';
+  document.getElementById('view-prototype').hidden = v !== 'prototype';
+  document.getElementById('view-flows').hidden = v !== 'flows';
+  document.getElementById('tab-prototype').setAttribute('aria-current', v==='prototype' ? 'page' : 'false');
+  document.getElementById('tab-flows').setAttribute('aria-current', v==='flows' ? 'page' : 'false');
+}
+window.addEventListener('hashchange', route);
+renderFlows(); route(); render();
+</script>
