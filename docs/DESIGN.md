@@ -1,0 +1,1527 @@
+# Clink design system and screen specs
+
+Owner: Design (UI/UX, product design, brand). Audience: app and widget engineers, QA, and whoever draws the drink pictures.
+Status: v1 build spec, revised 2026-11-15 after the Risk and QA reviews (resolution log in `RISK_REVIEW.md`). `DECISIONS.md` wins over this file. Behaviour lives in `PRD.md`, build mechanics in `ARCHITECTURE.md`, every user-facing string in `COPY.md`. Strings quoted here show meaning only.
+
+The prototype's look (dark espresso phone, Bricolage + Inter) is a placeholder. Nothing visual in this file comes from it.
+
+Contents:
+1. Brand
+2. Tokens (colour, type, spacing, shape, elevation, icons, motion, haptics)
+3. Drink imagery system
+4. App screens
+5. Widgets
+6. Live Activity, Dynamic Island, Android ongoing notification, flare notifications
+7. Accessibility
+8. UX rules
+9. Handoff notes for other units
+
+---
+
+## 1. Brand
+
+### 1.1 The idea: the rim
+
+Every drink Clink is about comes in something with a rim: the white enamel mug with a blue edge in the office kitchen, a glazed chawan, a cortado glass, a smoothie glass. The rim is where the glaze or enamel stops, where your mouth goes, and where two cups touch when people clink.
+
+The reference material is **enamelware**: glass fused onto steel. Camping mugs, Japanese Noda Horo kettles, graniteware coffee pots, the chipped mug everyone at work uses. It is cheap, shared, sturdy and a bit worn. That is the tone: everyday breaks with the same few people, in the office kitchen as often as in a cafe.
+
+Why it fits Clink:
+- A widget is small. A thick coloured line still reads at 155 pt, where texture and gradients turn to mush.
+- A rim line in the drink's colour tells you what's inside any container: a widget, the flare panel, an order ticket, a drink icon.
+- Enamel is flat, opaque and glossy. That pushes every surface toward flat colour with one highlight, and away from blur, glass and gradients.
+- "Clink" is the sound of two rims meeting. The logo, the send haptic and the invite meter all use that.
+
+### 1.2 Three rules
+
+1. **Rims carry the colour.** A container that holds a drink (flare panel, flare widget, order ticket, drink icon) is finished by one thick rim line in that drink's category colour. Brand surfaces (idle widget, app icon, splash) get a cobalt rim. Containers that hold people or photos (avatars, snaps, viewfinder) get a neutral rim or none. No other border is coloured.
+2. **Colour belongs to the drink.** App chrome is enamel white, steel and cobalt. Every other colour on screen comes from a drink category or a friend's photo. No decorative colour, no gradients except photo scrims, no illustration without a drink in it.
+3. **Flat enamel, one gleam.** Surfaces are flat and opaque. A drawn shape gets at most one shade tone and one highlight sliver (the gleam). No blur, no translucent panels as style, no shadows on content. Only things that float over the screen (sheets, menus, snackbars) get a shadow.
+
+### 1.3 Wordmark, mark and app icon
+
+**Wordmark.** "clink", all lowercase, drawn from Archivo SemiCondensed ExtraBold at tracking -2%, then hand-adjusted:
+- The tittle of the i is redrawn as a small elliptical ring (a rim seen from above): ellipse ratio 0.42, ring stroke = 0.45 × the i stem width, in cobalt.
+- Letters are steel `#17202A` on light, enamel white `#F6F8F9` on dark or cobalt. One-colour version: the tittle takes the letter colour.
+- Never outlined, never on a gradient, never on a photo without the scrim in 3.7.
+
+**Mark: the chipped rim.** A thick ring (stroke 17% of mark width) with one chip missing at the 1 to 2 o'clock position (38° opening). It reads as a cup rim seen from above, and the chip turns it into a lowercase c.
+- 64 px and up: the chip edge has two small facets, and a thin steel sliver (2% of mark width) shows where enamel flaked off.
+- Under 64 px: the chip is a clean gap.
+
+**App icon.**
+- Cobalt `#2443A6` field, enamel white mark. The ring centre sits 2% below the geometric centre, because the chip lightens the top right.
+- iOS: light, dark (mark `#9DB2F2` on `#17202A`) and tinted (mark only, greyscale) variants.
+- Android adaptive icon: cobalt background layer; mark on the foreground layer inside the 66 dp safe zone of the 108 dp canvas; monochrome layer (mark only) for themed icons.
+- Android notification small icon: the mark as a white silhouette on transparent, 24 dp, no sliver.
+
+Clear space around mark and wordmark: one ring-stroke width. Minimum sizes: mark 16 px, wordmark 56 px wide. Lockup: mark left, wordmark right, mark height = wordmark x-height × 1.5, gap = one ring stroke.
+
+Final artwork waits on the name and trademark check (PRD section 8, question 4). Drawing can start now.
+
+### 1.4 Banned looks (design QA checklist)
+
+Reject any screen or asset with:
+- warm cream background + serif display + terracotta
+- near-black with a single acid-green or vermilion accent
+- purple-to-blue or any decorative gradient
+- emoji used as decoration, icons or section markers (emoji appear only as user content: snap reactions and group emoji)
+- a screen where every block is centred
+- rows of identical rounded cards with shadows
+- frosted glass or background blur used as a style
+- steam swirls, sparkles, confetti
+- drink pictures in mixed styles (photo next to flat next to 3D)
+
+`DECISIONS.md` uses 📝 to mean "this order has notes". We draw it as our own ticket glyph next to the COPY.md word ("Notes"). Reason: emoji render differently on every OS; the meaning is unchanged.
+
+---
+
+## 2. Tokens
+
+Tokens live in `app/src/ui/tokens.ts` (ARCHITECTURE.md repo layout). The widget targets need the same values in Swift and Kotlin; generate them from one JSON file (CTO picks the script).
+
+### 2.1 Core colours
+
+All pairs below were checked with the WCAG 2.x contrast formula. Ratios are on `surface.base` unless stated.
+
+| Token | Light | Dark | Role | Contrast |
+|---|---|---|---|---|
+| `surface.base` | `#F6F8F9` | `#131A22` | Screen background ("enamel", "night enamel") | |
+| `surface.raised` | `#FFFFFF` | `#1B2430` | Sheets, menus, order ticket | |
+| `surface.sunk` | `#E9EDF0` | `#0C1117` | Text fields, empty snap slot, segmented track | |
+| `ink.primary` | `#17202A` | `#EEF2F5` | Text, icon outlines ("steel") | 15.4 / 15.6 |
+| `ink.secondary` | `#4A5563` | `#A9B4BF` | Secondary text, labels | 7.1 / 8.3 |
+| `ink.tertiary` | `#66727F` | `#8A96A2` | Timestamps, placeholders. Only on base and raised. | 4.6 / 5.8 |
+| `line.hairline` | `#D5DCE2` | `#2A3542` | Row separators (decorative) | n/a |
+| `line.control` | `#7D8995` | `#66737F` | Borders of inputs, unselected chips, outlined buttons | 3.4 / 3.6 |
+| `brand.cobalt` | `#2443A6` | `#9DB2F2` | Primary buttons, selection, links, progress, wordmark tittle | 8.1 / 8.4 |
+| `brand.onCobalt` | `#FFFFFF` | `#0E1733` | Text and icons on cobalt | 8.7 / 8.5 |
+| `brand.cobaltTint` | `#E3E9F8` | `#1D2A4D` | Selected row, progress track | cobalt on it 7.1 / 6.8 |
+| `status.danger` | `#A8301F` | `#F2A093` | Destructive text and fills | 6.3 / 8.5 |
+| `status.onDanger` | `#FFFFFF` | `#1A0B08` | Text on danger fill | 6.8 / 9.3 |
+| `inverse.surface` | `#17202A` | `#EEF2F5` | Snackbar background | |
+| `inverse.ink` | `#F6F8F9` | `#131A22` | Snackbar text | 15.4 / 15.6 |
+| `inverse.action` | `#9DB2F2` | `#2443A6` | Snackbar action | 7.9 / 8.6 |
+| `scrim.photo` | `#0E141B`, 0% to 64% | same | Gradient behind text on photos (3.7) | white text ≥ 4.8 at 60% |
+| `scrim.modal` | `#0E141B` at 40% | `#000000` at 55% | Behind sheets and dialogs | |
+
+There is no success green. Confirmations use `ink.primary` and a check glyph. Reason: green would read as matcha.
+
+On a category tint, `line.control` drops to about 2.9:1, so control borders on tinted panels use `ink.secondary` (6.1:1 or better on every tint).
+
+### 2.2 Category colours
+
+Each category has four values: **solid** (filled buttons and flare backgrounds, with `onSolid` text), **tint** (backgrounds of containers holding that drink), **ink** (text, glyphs and rim lines on tint and on surfaces) and **liquid** (illustration only, never text).
+
+| Category | Mode | solid | onSolid | tint | ink | onSolid / solid | ink / tint | ink / base |
+|---|---|---|---|---|---|---|---|---|
+| Coffee | light | `#4B3527` | `#FFFFFF` | `#EFE6DF` | `#4B3527` | 11.4 | 9.3 | 10.7 |
+| Coffee | dark | `#D2B39E` | `#131A22` | `#2A211B` | `#DDC1AE` | 8.9 | 9.4 | 9.3 |
+| Matcha | light | `#36591A` | `#FFFFFF` | `#E3ECD8` | `#36591A` | 8.1 | 6.6 | 7.6 |
+| Matcha | dark | `#A9CC86` | `#131A22` | `#1D2817` | `#B7D69A` | 9.7 | 10.3 | 9.6 |
+| Tea | light | `#86690A` | `#FFFFFF` | `#F5EDCF` | `#6B5306` | 5.2 | 6.3 | 6.9 |
+| Tea | dark | `#E2C561` | `#131A22` | `#2A2512` | `#E8CF78` | 10.3 | 10.9 | 9.9 |
+| Smoothie & Juice | light | `#9E2460` | `#FFFFFF` | `#F7E0EA` | `#9E2460` | 7.3 | 5.9 | 6.9 |
+| Smoothie & Juice | dark | `#F29AC3` | `#131A22` | `#2F1823` | `#F5B0D0` | 8.5 | 9.0 | 9.4 |
+| Water | light | `#0B7391` | `#FFFFFF` | `#DCEEF3` | `#085C74` | 5.4 | 6.3 | 7.1 |
+| Water | dark | `#7FCFE6` | `#131A22` | `#102A33` | `#99D9EB` | 10.0 | 10.6 | 9.6 |
+
+`ink.primary` on every light tint is 13.2:1 or more, `ink.secondary` 6.1:1 or more; on dark tints 13.3:1 and 7.1:1 or more. So body text on any category container passes AA in both modes.
+
+Colour-blind check. Simulated with the Machado 2009 matrices, the smallest CIE76 distance between any two light solids is 35.7 (normal vision), 17.5 (deuteranopia), 16.7 (protanopia), 21.4 (tritanopia). Dark solids: 31.3, 13.9, 11.4, 8.7. That is enough to tell them apart side by side and not enough to rely on alone. Every category appearance therefore also carries its glyph and its name (rule in section 7).
+
+Category order is fixed everywhere: Coffee, Matcha, Tea, Smoothie & Juice, then Water. Code keys: `coffee`, `matcha`, `tea`, `smoothie_juice`, `water` (ARCHITECTURE.md 4.2).
+
+### 2.3 Colour usage rules
+
+1. Primary buttons are cobalt, except the flare send button ("Who joins?") and flare reply buttons ("I'm in", "Bring me one" send), which use the flare's category solid. Reason: the button shows what you are sending or joining.
+2. Your own live flare uses the category **solid** as its background (widget, app header, Live Activity). A friend's flare uses the category **tint**. Reason: mine vs theirs is visible at a glance without reading.
+3. Category tints only appear on containers that hold that drink.
+4. Text on any tint is `ink.primary` or `ink.secondary`. Category ink is for glyphs, rim lines and short labels of 15 pt and up.
+5. Text over photos always sits on `scrim.photo`.
+6. Avatar fallback: `surface.sunk` circle, `ink.primary` initial. People get no colour coding.
+7. Selected states: cobalt on neutral surfaces; `ink.primary` fill with `surface.base` text on tinted panels (15.4:1), so the selection never fights the category colour.
+
+### 2.4 Typography
+
+**Family: Archivo** (Omnibus-Type, SIL Open Font License 1.1, on Google Fonts). One family for the whole app.
+- Why: a grotesque with a real width range. SemiCondensed heavy weights make compact numerals for counts and countdowns; normal width is calm UI text. It is not one of the faces generated apps usually reach for (Inter, DM Sans, Manrope, Space Grotesk, Poppins).
+- Ship static files, because React Native does not drive variable font axes reliably on Android. Files: Archivo Regular 400, Medium 500, SemiBold 600, Bold 700; Archivo SemiCondensed Bold 700 and ExtraBold 800. Take them from the Google Fonts download's static folder, or instance the variable font with fonttools if a cut is missing there.
+- Add the OFL text to the open-source licences screen.
+- Figures: counts, times and countdowns use tabular figures (`fontVariant: ['tabular-nums']`). Check at build time that the shipped cuts contain `tnum`. If they don't, timers alone use the system font with monospaced digits (SwiftUI `.monospacedDigit()`, Android `fontFeatureSettings = "tnum"` on Roboto).
+
+**Widgets.**
+- iOS: the widget extension bundles the same files (`UIAppFonts` in the extension's Info.plist) and uses Archivo.
+- Android: Glance renders through RemoteViews, which can't use our bundled font files dependably. Android widgets use the system sans at the same sizes and weights. The brand carries through colour, rim and pictures.
+
+**Type scale.** Sizes in pt (iOS) and sp (Android). Line heights in the same unit.
+
+| Token | Face | iOS size / line | Android sp / line | iOS `relativeTo` | Max scale | Use |
+|---|---|---|---|---|---|---|
+| `display.xl` | SemiCondensed ExtraBold 800, tnum, -1% | 48 / 50 | 48 / 52 | `.largeTitle` | 1.35× | Live flare countdown, tracker counts in the sheet |
+| `display.l` | SemiCondensed Bold 700, -1% | 32 / 36 | 32 / 38 | `.largeTitle` | 1.5× | Onboarding titles, "Maya wants matcha", category header, level name |
+| `title` | SemiBold 600 | 22 / 28 | 22 / 28 | `.title2` | 2.0× | Screen and sheet titles |
+| `headline` | SemiBold 600 | 17 / 22 | 16 / 22 | `.headline` | 3.0× (Android 2.0×) | Row titles, section labels, drink names |
+| `body` | Regular 400 | 17 / 24 | 16 / 24 | `.body` | 3.0× (2.0×) | Body text, field input |
+| `callout` | Regular 400 | 15 / 20 | 14 / 20 | `.subheadline` | 3.0× (2.0×) | Detail summaries, secondary lines |
+| `label` | SemiBold 600 | 17 / 22 | 16 / 20 | `.body` | 2.0× | Button text |
+| `caption` | Medium 500 | 13 / 18 | 12 / 16 | `.footnote` | 2.0× | Timestamps, hints, "Only you see this" |
+| `numeral.l` | SemiCondensed ExtraBold 800, tnum | 34 / 36 | 34 / 38 | `.title` | 1.35× | Widget counts and countdown |
+| `micro` | Medium 500 | 11 / 13 | 11 / 14 | `.caption2` | 1.3× | Widgets only: "+1", tiny labels. Never smaller. |
+| `barista.drink` | Bold 700 (normal width) | 44 / 50 | 44 / 52 | `.largeTitle` | 1.5× | Show to barista: drink name |
+| `barista.option` | SemiBold 600 | 30 / 38 | 30 / 38 | `.title` | 1.5× | Show to barista: each option |
+| `barista.note` | Regular 400 | 26 / 34 | 26 / 34 | `.title2` | 1.5× | Show to barista: note, Plan B |
+
+Rules:
+- Text is left-aligned. Exceptions: the camera shutter row and numerals inside fixed-size widget buttons.
+- No all-caps labels with wide tracking. Section labels use `headline` in sentence case.
+- Max line length 60 characters in body text (onboarding, delete explanation).
+
+**Dynamic Type and Android font scale.**
+- The app follows system text size everywhere. React Native: `allowFontScaling` stays on; each token sets `maxFontSizeMultiplier` to the "Max scale" column. Native iOS views use `UIFontMetrics` / `Font.custom(_:size:relativeTo:)`.
+- iOS Bold Text and Android font-weight adjustment (Android 12+) step every weight up one stop (400 to 500, 500 to 600, 600 to 700, 700 to 800).
+- Layout changes at iOS `accessibilityMedium` and above, or Android font scale 1.5 and above:
+  - horizontal button pairs stack vertically, primary on top
+  - timing pills and category chips wrap to two rows
+  - the camera flare panel scrolls, with "Who joins?" pinned at the bottom
+  - drink icons in rows grow with text, up to 1.5× (40 pt becomes 60 pt)
+  - two-column rows (order ticket labels and values) become label-above-value
+- Text never truncates in the app except user-entered place names on one-line chips, which end in an ellipsis and show in full on the screen they open.
+- Widgets: iOS clamps with `.dynamicTypeSize(...DynamicTypeSize.xxLarge)` and drops secondary lines at sizes above `.large` (read `@Environment(\.dynamicTypeSize)`). Android widgets read the configuration font scale and drop secondary lines at 1.3 and above. A widget never shows clipped text: lines that don't fit are removed by priority (5.1).
+
+### 2.5 Spacing and layout
+
+Base unit 4.
+
+| Token | Value |
+|---|---|
+| `space.1` | 4 |
+| `space.2` | 8 |
+| `space.3` | 12 |
+| `space.4` | 16 |
+| `space.5` | 20 |
+| `space.6` | 24 |
+| `space.8` | 32 |
+| `space.10` | 40 |
+| `space.12` | 48 |
+| `space.16` | 64 |
+
+- Screen gutter: 20 pt on iOS, 16 dp on Android.
+- Section gap: `space.8`. Gap between a label and its control: `space.2`. Between rows in a list: hairline, no gap.
+- Rows: 56 minimum for one line, 72 for two lines with a 40 pt icon.
+- Touch targets: 44 × 44 pt (iOS), 48 × 48 dp (Android) minimum. Smaller visuals get hit slop up to that size.
+- Bottom action area (onboarding, editors): primary button full width inside gutters, 56 pt high; optional text button below it, 44 pt high; `space.4` above the safe area.
+- App is portrait only on phones (PRD: phones only in v1).
+
+### 2.6 Shape and radius
+
+We follow each platform's shapes and keep one brand through colour, rim and type.
+
+| Element | iOS | Android (Material 3) |
+|---|---|---|
+| Filled and outlined buttons | 14 pt, continuous corners | Full pill |
+| Chips (category, timing, To:, options) | Full pill | 8 dp |
+| Text fields | 12 pt continuous, filled `surface.sunk` | M3 outlined field, 4 dp |
+| Sheets | System sheet with detents | M3 modal bottom sheet, 28 dp top corners |
+| Dialogs | System alert | M3 dialog, 28 dp |
+| Viewfinder | 32 pt continuous | 28 dp |
+| Order ticket | 20 pt continuous, with side notches (4.10) | 16 dp, same notches |
+| Snap tiles, photo previews | 16 pt continuous | 16 dp |
+| Avatars | Circle | Circle |
+| Widget container | System shape (`ContainerRelativeShape`) | `system_app_widget_background_radius` on Android 12+, 16 dp before |
+| Buttons inside widgets | `ContainerRelativeShape` inset, so corners stay concentric | Full pill |
+
+- React Native on iOS: set `borderCurve: 'continuous'` on every rounded view.
+- **Rim line tokens.** `rim.thick` = 4 pt (widgets, flare panel, order ticket, live flare header); `rim.thin` = 2 pt (viewfinder, selected drink rows). A rim is a band along the top inside edge, clipped by the container's corners. Drink icons draw it as the rim-ellipse stroke (3.3).
+
+### 2.7 Elevation and where cards are allowed
+
+- **Level 0 (flat):** everything by default. Rows sit on the surface, separated by hairlines.
+- **Level 1 (floating):** sheets, menus, snackbars.
+  - Light: shadow `0 4 24` at `rgba(14,20,27,0.14)`.
+  - Dark: no shadow. `surface.raised` plus a 1 px top line in `line.hairline`.
+- Nothing else casts a shadow.
+
+A **card** (a bounded block with its own background) is allowed only where the thing is an object you act on:
+1. The order ticket (it stands for a real ticket).
+2. Snap tiles and photo previews.
+3. A friend's incoming flare in the app pager.
+4. One-off notices with an action (widget reminder, notifications-off warning, 6-friend group suggestion).
+
+Everything else is a list on the surface.
+
+### 2.8 UI icons
+
+- Platform-native glyphs for UI plumbing: SF Symbols on iOS (via `expo-symbols`), Material Symbols Rounded on Android (weight 400, grade 0, optical size 24). One mapping table in `app/src/ui/icons.ts`. Reason: back, share, close, flash and settings should look the way each OS teaches.
+- Custom glyphs shared by both platforms, on a 24 grid with a 1.75 stroke, round caps and joins:
+  - the chipped-rim mark
+  - the ticket (order notes marker)
+  - the five category glyphs (3.2)
+  - drinks counter (a plain V3 mug outline) and water counter (V4 tumbler with a water line)
+- Icon colour follows the text it sits beside.
+
+### 2.9 Motion
+
+| Token | Value | Use |
+|---|---|---|
+| `motion.press` | 90 ms, ease-out, scale to 0.97 | Buttons and tappable rows |
+| `motion.quick` | 140 ms, ease-out | Fades, chip selection |
+| `motion.base` | 220 ms, `cubic-bezier(0.3, 0, 0.2, 1)` | Content changes in place |
+| `motion.pour` | 260 ms, same curve | Category switch (below) |
+| `motion.sheet` | Platform default | Sheets and pushes |
+
+Named motions:
+1. **Pour.** Switching category on the camera screen: the new tint fills the flare panel from bottom to top (clip reveal, `motion.pour`). The hero fades out in 120 ms, the new hero fades in over 160 ms with a 6 pt rise. The Who joins? colour cross-fades.
+2. **Clink.** Flare sent, or the invite meter reaching 2 of 2: two rim rings slide together and touch with a one-frame overshoot, 300 ms total, paired with the clink haptic (2.10).
+3. **Count roll.** Tracker numbers roll to the new value (`motion.base`). iOS widgets use `.contentTransition(.numericText())`.
+
+Rules:
+- Every animation can be interrupted, and none blocks input.
+- Nothing loops except the camera feed and live countdown digits.
+- No parallax, no bouncing icons, no confetti, nothing on a level-up beyond 2.9's base fade.
+
+**Reduced motion** (iOS Reduce Motion, Android "Remove animations" or animator scale 0):
+- pour becomes a 150 ms cross-fade
+- clink is dropped (the haptic stays)
+- count roll becomes an instant change
+- sheets fade
+- iOS widgets drop `numericText`
+
+**Widgets** have no custom animation. On Android they don't animate at all.
+
+### 2.10 Haptics
+
+Haptics run through the `clink-native` module (ARCHITECTURE.md 1.1), because `expo-haptics` has no intensity control and no Android compositions. Standard `performHapticFeedback` calls respect the user's system haptics setting. Before playing a composition, check that the device has a vibrator and that system haptic feedback is on.
+
+| Event | iOS | Android (API 30+) | Android fallback (26 to 29) |
+|---|---|---|---|
+| Shutter | Impact `.medium` | `VIRTUAL_KEY` | `VIRTUAL_KEY` |
+| Flare sent ("clink") | Impact `.rigid` at 1.0, then `.rigid` at 0.6 after 70 ms | Composition: `PRIMITIVE_CLICK` 1.0, then `PRIMITIVE_CLICK` 0.6 after 70 ms, if the primitives are supported; else `CONFIRM` | `EFFECT_DOUBLE_CLICK` on API 29, nothing on 26 to 28 |
+| Reply arrives while the app is open | Notification `.success` | `CONFIRM` | `VIRTUAL_KEY` |
+| I'm in or Bring me one sent from the app | Notification `.success` | `CONFIRM` | `VIRTUAL_KEY` |
+| Drink or water logged in the app | Impact `.light` | `KEYBOARD_TAP` | `KEYBOARD_TAP` |
+| Selection change (category, timing, To:, option chips, reaction) | Selection changed | `CLOCK_TICK` (`SEGMENT_TICK` on API 34+) | `CLOCK_TICK` |
+| Undo | Impact `.soft` | `CLOCK_TICK` | `CLOCK_TICK` |
+| Error, "Couldn't send" | Notification `.error` | `REJECT` | nothing |
+| Invite meter full | Same as flare sent | Same | Same |
+| First view of a new level | Notification `.success` | `CONFIRM` | `VIRTUAL_KEY` |
+
+- No haptic on ordinary button presses. Reason: buzzing on every tap makes the meaningful ones invisible.
+- Widgets and Live Activities can't play haptics. Notifications use the system sound and vibration of their channel.
+
+---
+
+## 3. Drink imagery system
+
+CEO guideline 2: when someone picks a drink type, the picture must be stylish and clear. The system has three tiers that share one shape grammar:
+
+| Tier | Count | Where | Format |
+|---|---|---|---|
+| **Heroes** | 5 (one per category incl. Water) | Category selected (camera flare panel, catalog header), flare screens, flare widgets, Live Activity | SVG master 1024 × 1024, exported to WebP |
+| **Drink icons** | 42 (10 per flare category, 2 water), two optical sizes | Every place a specific drink shows: usual 3, catalog, pickers, run list, order ticket, tracker | SVG masters on 24 and 64 grids |
+| **Category glyphs** | 5 | Chips, labels, Dynamic Island, small widget lines, custom drinks | SVG, 24 grid, one colour |
+
+### 3.1 Shape grammar
+
+These rules make 52 drawings read as one family.
+
+**View.**
+- Three-quarter front view, eye about 16° above the rim plane.
+- Every rim, liquid surface and base is an ellipse with minor/major ratio **0.30**. Same ratio on every asset at every size. This one number does most of the work.
+
+**Vessel parts.**
+- Rim: the top ellipse.
+- Walls: straight, or tapered 4° to 8°. Cups, bowls and chawan use a single convex arc. No S-curves.
+- Base: flat. Ceramic vessels add a foot ring 1/24 of the height.
+- Handle: always on the right. D-shape with a flat top bar and a round lower curve, attached at 20% and 70% of the wall height.
+
+**Garnish, straws, layers, ice, bubbles.**
+- Garnish (fruit wheel, leaf, flower, tea tag, cinnamon stick): max one per drink, always at the rim's top right.
+- Straws enter in the right third of the rim and lean 12° to the right.
+- Layers: max 3 horizontal liquid bands. Each boundary is the front half of a 0.30 ellipse.
+- Ice: max 2 cubes, rounded squares rotated 8° and 14°. The top cube breaks the liquid surface.
+- Bubbles: 3 circles, getting smaller as they rise.
+
+**The rim line.** Every vessel's rim ellipse is stroked thicker than the rest, in the category ink (2.2). On dark-glazed bodies (the chawan) the rim line uses the dark-mode ink value so it shows.
+
+**Glass vs opaque.**
+- Glass vessels show the liquid through the wall.
+- Ceramic and enamel vessels show liquid only inside the rim ellipse.
+
+**Vessel set.** Heights are on the 24 grid (base sits on y = 21).
+
+| Id | Vessel | Height | Notes |
+|---|---|---|---|
+| V1 | Demitasse on saucer | 8 | Small cup, handle, saucer ellipse 1.6× cup width |
+| V2 | Cup on saucer | 9 | Wide bowl-shaped cup, handle, saucer 1.5× |
+| V3 | Enamel mug | 11 | Straight walls, D handle. The brand vessel. |
+| V4 | Short glass | 10 | Tumbler, 6° taper, no handle (cortado, rocks, water) |
+| V5 | Tall glass | 16 | 5° taper, no handle (iced drinks, smoothies, juice) |
+| V6 | Chawan | 7 | Low wide bowl, foot ring, no handle |
+| V7 | Glass cup with handle | 10 | Clear, for tisanes and black tea |
+| V8 | Yunomi | 10 | Tall handleless ceramic cup, slight taper |
+| V9 | Gaiwan | 9 | Lidded bowl on saucer, lid tilted 10° |
+| V10 | Dripper on cup | 15 | Cone dripper with 2 ribs on a short cup |
+| V11 | Cold-press bottle | 17 | Straight bottle, short neck, flat cap |
+| V12 | Enamel jug | 18 | Heroes only (water prop) |
+| V13 | Teapot | 12 | Category glyph and tea hero prop only |
+
+**Category glyphs** (one colour, no fills, 24 grid, 1.75 stroke). Each has a different silhouette, so they don't need colour to be told apart:
+
+| Category | Glyph |
+|---|---|
+| Coffee | V2 cup on saucer |
+| Matcha | V6 chawan with whisk standing at its left |
+| Tea | V13 teapot |
+| Smoothie & Juice | V5 tall glass with straw |
+| Water | Water drop inside a V4 tumbler outline |
+
+### 3.2 Stroke, palette, light
+
+**Icon S** (24 grid, used at 16 to 32 pt):
+- Body stroke 1.5, round caps and joins. Rim stroke 2.0 in category ink.
+- Flat fills: liquid colour only. No shade, no gleam.
+- 2 units of padding.
+
+**Icon L** (64 grid, used at 40 to 128 pt):
+- Same geometry as S, scaled. Body stroke 3.0, rim stroke 4.0.
+- Adds one shade tone (right 28% of the body, body colour darkened about 12 L*).
+- Adds the **gleam**: a rounded vertical sliver, 7% of body width, set 18% in from the left wall, running from 30% to 70% of the height. White at 85% (light), 70% (dark). The left wall stroke breaks where the gleam crosses it.
+
+**Heroes** (1024 artboard):
+- No full outline. A steel `#17202A` contour of 8 px on the outer silhouette only, so white vessels separate from pale tints.
+- Rim line 14 px in category ink.
+- One shade tone and one gleam per surface.
+- Flat cast shadow: an ellipse at ratio 0.30, `#17202A` at 14%, offset down and right.
+- Graniteware speckle is allowed on enamel bodies, heroes only: dots 4 to 9 px, about 1.5% coverage, `#17202A` at 35%. Never on glass or ceramic.
+
+**Light** comes from the top left at 45°: shade on the right, gleam on the left, cast shadow down-right. No steam, no reflections, no table surface.
+
+**Outline colour by theme.** Icons use `#17202A` outlines on light surfaces and `#EEF2F5` on dark. Liquid and garnish colours stay the same in both themes.
+
+**Illustration palette.** These are the only colours allowed in drink art (plus category inks for rim lines). None of them is used for text.
+
+| Group | Colours |
+|---|---|
+| Bodies | enamel white `#F4F6F7`, glazed ceramic `#EEF0EE`, glass `#DCEEF3` at 50%, chawan glaze `#2E3A2C` with drip band `#4C5E45`, unglazed clay `#CDBFA6`, steel spoon `#8E9AA6`, bamboo `#C9A86A`, paper tag `#F5EDCF`, bottle cap `#17202A` |
+| Coffee liquids | espresso `#3B2418`, crema `#B77A45`, black coffee `#4A2C1E`, milk coffee `#B88A64`, foam `#F2EFEA`, chocolate `#5A3322`, bean `#4A2A1C` |
+| Matcha liquids | matcha `#7BA23F`, froth `#8CB24A`, froth bubbles `#A9C96A`, matcha milk `#B5CB86`, hojicha `#9A6B45`, milk `#F2EFEA`, strawberry purée `#E0475A` |
+| Tea liquids | black tea `#B8641E`, milky tea `#C49470`, green tea `#C9C26A`, jasmine `#D9C77A`, oolong `#C08A2E`, chai `#B88660`, chamomile `#E3C14F`, peppermint `#A8C77A`, rooibos `#B5482A`, ginger lemon `#E7CF7A`, leaf `#6E7F3A` |
+| Smoothie & Juice liquids | orange `#F2992E`, apple `#E2B84A`, green smoothie `#8DB04A`, berry `#B8325E`, berry seeds `#7E1F43`, mango `#F2B33D`, banana `#E9D49B`, lemonade `#F3E38C`, carrot-ginger `#EE7F2D`, watermelon `#EF6A6F`, açaí `#5A2747` |
+| Water | water `#CFE8F1`, bubble outline `#0B7391` at 60% |
+| Garnish | orange rind `#F2992E`, pith `#FBE3B5`, lemon `#F2D64B`, lime `#9CC23F`, raspberry `#C2345F`, strawberry `#E0475A`, mint `#5E9E4F`, chamomile petal `#FFFFFF` with centre `#F2C230`, jasmine petal `#F7F7F2`, cinnamon `#8A4B2A`, star anise `#6B3A22`, watermelon rind `#4E8F3A`, apple skin `#C83B33`, banana slice `#F3DC7A`, rooibos needle `#7A4A2A` |
+
+### 3.3 Hero briefs
+
+**Artboard (all five).**
+- 1024 × 1024, transparent background.
+- Ground line at y = 880: vessel bases sit on it.
+- Subject box x 112 to 912, y 120 to 900. The main vessel is centred at x ≈ 600. Props go to the left and front.
+- The backdrop is drawn in code (category tint plus the rim band), so one master works in light mode, dark mode, every crop and every widget size.
+
+**Crop test.** Each hero must still read when downscaled to 48 pt (small widget). Run a hallway test: 5 people name the category from the 48 pt version with no label. At least 4 of 5 must get it right.
+
+**Coffee.**
+- Main: V2 cappuccino cup on saucer, glazed ceramic `#EEF0EE`. Rim line coffee ink `#4B3527`.
+- Surface: microfoam `#F2EFEA` with a three-stack tulip drawn in milk coffee `#B88A64`. Thin crema ring `#B77A45` at the edge.
+- Props: a steel teaspoon on the saucer's right side, bowl toward the viewer. Two coffee beans `#4A2A1C` front left, each with one curved crease line.
+- Don't draw: steam, a heart, a paper cup, a logo.
+
+**Matcha.**
+- Main: V6 chawan in dark glaze `#2E3A2C` with a lighter drip band `#4C5E45` falling from the rim in three tongues. Unglazed foot ring `#CDBFA6`. Rim line in dark-mode matcha ink `#B7D69A`.
+- Surface: froth `#8CB24A` with micro-bubbles `#A9C96A` clustered toward the back edge.
+- Props: a chasen (bamboo whisk) standing upright left of the bowl, handle `#C9A86A`, seven tines curling inward at the top. A chashaku (bamboo scoop) lying in front at 20°.
+- Don't draw: a latte glass, powder clouds, cherry blossoms.
+
+**Tea.**
+- Main: V7 clear glass cup with handle, black tea `#B8641E` at 80% fill. Rim line tea ink `#6B5306`.
+- Garnish: a paper tag `#F5EDCF` hanging over the right rim on a steel string.
+- Props: a small white enamel teapot (V13) behind and left, round body, spout pointing toward the cup, lid edge in tea ink, light speckle. One loose leaf `#6E7F3A` in front.
+- Don't draw: steam, a saucer with lemon, a British flag, ornate china patterns.
+
+**Smoothie & Juice.**
+- Main: V5 tall glass, berry smoothie `#B8325E` at 85% fill, sparse seed dots `#7E1F43` on the front face. Rim line `#9E2460`.
+- Straw: plain, in orange `#F2992E`, leaning 12° right. No stripes.
+- Garnish: an orange wheel on the rim top right, rind `#F2992E`, pith `#FBE3B5`, 8 segments.
+- Props: half an orange front left, cut face up. Two raspberries `#C2345F` front right.
+- Don't draw: a blender, splashes, ice cream, a paper straw with a pattern.
+
+**Water.**
+- Main: V4 straight tumbler, clear glass, water `#CFE8F1` at 75% fill, 2 ice cubes, 3 bubbles. Rim line water ink `#085C74`.
+- Prop: a white enamel jug (V12) behind and left, slightly taller than the glass, handle on the right, water-ink rim, light speckle.
+- Don't draw: lemon (plain water stays plain), droplets flying, waves, a plastic bottle.
+
+**Prompt for an image-generation tool** (fill in the braces from one brief above):
+
+> Flat vector illustration in an enamelware style. One {main vessel} seen in three-quarter front view from slightly above, so every rim and surface is an ellipse about 0.3 times as tall as it is wide. Single light from the top left; each surface has one flat shade tone on its right side and one narrow vertical white highlight on its left. A thin dark steel (#17202A) outline around the outer silhouette only, and a thick {rim hex} line on the rim. Flat colours from this palette only: {hex list from the brief}. Liquid: {liquid}. Props: {props}. Isolated on a transparent background, vessel bases on one ground line, flat elliptical cast shadow to the lower right. No gradients, no texture except sparse dark speckles on white enamel, no steam, no text, no logos, no hands, no table, no reflections, no photorealism, no 3D render, no watercolour, no outlines inside the shapes.
+
+The generated image is a reference sketch only. The shipped hero is redrawn as SVG to this grammar. Reason: a generated raster won't hold the exact ellipse ratio, palette and stroke across five images, can't be edited, and its copyright status is unclear. Who draws the set is an open CEO question (section 9).
+
+**Acceptance checks for each hero:**
+1. Passes the 48 pt hallway test.
+2. Every ellipse uses ratio 0.30 (±0.02).
+3. Only palette colours are used.
+4. The silhouette contour gives at least 3:1 against both the light and dark tint of its category (WCAG 1.4.11).
+5. Placed side by side, the five read as one set: same light direction, same stroke weights, same ground line.
+
+### 3.4 Drink icons
+
+The 42 drinks, keyed by the catalog ids in `COPY.md` 2.2 to 2.6, which owns the names and the list. Names below are the COPY.md app names.
+
+Each icon = vessel + liquid + at most one structural marker + at most one garnish. Inside a category, every icon differs from every other by vessel, marker or garnish, never only by liquid colour. The drink name always shows next to the icon.
+
+| Id | Name | Vessel | Liquid | Marker | Garnish |
+|---|---|---|---|---|---|
+| `coffee.espresso` | Espresso | V1 | espresso | crema band at rim | |
+| `coffee.americano` | Americano | V3 | black coffee | full to rim, no foam | |
+| `coffee.filter` | Filter Coffee | V10 | black coffee | dripper cone | |
+| `coffee.cappuccino` | Cappuccino | V2 | foam | foam dome above rim, 3 cocoa dots | |
+| `coffee.latte` | Latte | V5 | milk coffee + foam | 2 layers | |
+| `coffee.flat_white` | Flat White | V2 (90% scale) | foam flush with rim | tulip mark on surface | |
+| `coffee.cortado` | Cortado | V4 | espresso / milk | 2 equal layers | |
+| `coffee.macchiato` | Macchiato | V1 | espresso | foam dot in centre | |
+| `coffee.mocha` | Mocha | V3 | chocolate | cream peak above rim, zigzag drizzle | |
+| `coffee.cold_brew` | Cold Brew | V5 | black coffee | 2 ice cubes | |
+| `matcha.latte` | Matcha Latte | V2 | matcha milk | leaf mark on surface | |
+| `matcha.ceremonial` | Ceremonial Matcha | V6 | froth | 3 micro-bubbles, whisk at left | |
+| `matcha.strawberry` | Strawberry Matcha | V5 | strawberry / milk / matcha | 3 layers | |
+| `matcha.dirty` | Dirty Matcha | V4 | matcha milk, espresso on top | dark top band | |
+| `matcha.hojicha` | Hojicha Latte | V2 | hojicha | foam ring | roasted leaf |
+| `matcha.coconut` | Coconut Matcha | V5 | matcha over coconut water (`#CFE8F1`) | 2 ice cubes | |
+| `matcha.lemonade` | Matcha Lemonade | V4 | lemonade under matcha | 2 layers | lemon wheel |
+| `matcha.tonic` | Matcha Tonic | V5 | clear under matcha | 3 bubbles | lime wheel |
+| `matcha.blended` | Blended Matcha | V5 | matcha milk | straw | |
+| `matcha.mango` | Mango Matcha | V5 | mango purée / matcha milk | 2 layers | mango cube |
+| `tea.english_breakfast` | English Breakfast | V3 | milky tea | | tea tag |
+| `tea.earl_grey` | Earl Grey | V2 | black tea | | tea tag |
+| `tea.green` | Green Tea | V8 | green tea | | single leaf |
+| `tea.jasmine` | Jasmine Tea | V8 | jasmine | | 5-petal flower |
+| `tea.oolong` | Oolong | V9 | oolong | tilted lid | |
+| `tea.chai_latte` | Chai Latte | V4 | chai | foam band at rim | star anise |
+| `tea.bubble` | Bubble Tea | V5 | milky tea | wide straw + 5 pearls at the bottom (espresso `#3B2418`) | |
+| `tea.peppermint` | Peppermint | V7 | peppermint | | 2 mint leaves |
+| `tea.chamomile` | Chamomile | V7 | chamomile | | daisy |
+| `tea.ginger_lemon` | Ginger & Lemon | V7 | ginger lemon | | lemon wheel |
+| `smoothie_juice.orange` | Fresh Orange Juice | V5 | orange | | orange wheel |
+| `smoothie_juice.green_juice` | Green Juice | V4 | green smoothie colour | | apple slice |
+| `smoothie_juice.green_smoothie` | Green Smoothie | V5 | green smoothie | straw | |
+| `smoothie_juice.berry` | Berry Smoothie | V5 | berry | straw | 3-berry cluster |
+| `smoothie_juice.strawberry_banana` | Strawberry Banana | V4 | banana | straw | strawberry |
+| `smoothie_juice.mango` | Mango Smoothie | V5 | mango | straw | mango cube |
+| `smoothie_juice.acai` | Açaí Smoothie | V5 | açaí | straw + 3 dots on top | |
+| `smoothie_juice.lemonade` | Lemonade | V5 | lemonade | 2 ice cubes | lemon wheel |
+| `smoothie_juice.watermelon` | Watermelon Juice | V4 | watermelon | | watermelon wedge |
+| `smoothie_juice.carrot_ginger` | Carrot Ginger | V11 | carrot-ginger | cap | |
+| `water.still` | Water | V4 | water | single water line | |
+| `water.sparkling` | Sparkling Water | V4 | water | 3 bubbles | |
+
+Within each category every icon differs from the others by vessel, marker or garnish, never only by liquid colour. Blended Matcha is the only matcha with a straw, Coconut Matcha the only matcha with ice, and Bubble Tea the only tea in V5. Check the set in the contact sheet (3.5).
+
+**If COPY.md's list changes later:**
+- Map each new drink to a vessel and markers with the grammar above. It must differ from every other icon in its category by vessel, marker or garnish.
+- Design draws it before the release that ships it (images are bundled).
+- Drink names that carry user details ("Iced Oat Flat White") use the base drink's icon. The icon shows the catalog drink only.
+- The rooibos and apple colours in the palette are unused in v1. Keep them for the swaps in `COPY.md` 2.9.
+
+**Custom drinks ("Add your own").** They use their category glyph, drawn L-size in category ink on a tint disc.
+
+### 3.5 Production
+
+**Files** (source of truth in the repo, `design/drinks/`):
+- `heroes/{category}.svg`, e.g. `heroes/smoothie_juice.svg`
+- `icons/S/{drinkId}.svg` and `icons/L/{drinkId}.svg`, e.g. `icons/L/coffee.cortado.svg`
+- `glyphs/{category}.svg`
+
+**SVG rules.**
+- `viewBox` exactly `0 0 24 24`, `0 0 64 64` or `0 0 1024 1024`.
+- No embedded rasters, no filters, no text, no CSS classes.
+- Colours as literal hex in `fill` and `stroke`, so the export script can swap the outline colour for dark mode (`#17202A` becomes `#EEF2F5`).
+- Strokes stay live in masters; the export expands them.
+- Clip paths only where a liquid layer needs clipping to a glass.
+
+**Export** (`scripts/gen-drink-assets`, ARCHITECTURE.md 8.2):
+- Heroes: WebP at 512 and 1024 px for the app; at the exact widget and Live Activity sizes in 3.6 (@2x and @3x for iOS, `drawable-nodpi` for Android). Rasterising heroes keeps widget rendering cheap and inside the Android RemoteViews bitmap limit.
+- Icons in the app: SVG through `react-native-svg`, or WebP at 3× if profiling shows lists stutter. CTO's call; both meet this spec.
+- Icons in widgets: asset catalog vector (SVG with Preserve Vector Data) on iOS, VectorDrawable or WebP on Android. Light and dark variants go in the asset catalog appearance slots and `drawable-night`.
+- Budget: the whole drink set under 1.5 MB in the store download (inside ARCHITECTURE.md's 5 MB).
+
+**QA.** A generated contact sheet of all 42 S icons at 24 pt and all 42 L icons at 48 pt, on light and dark, is reviewed by Design before each release that changes art.
+
+### 3.6 Sizes and treatment in widgets and on photos
+
+| Place | Asset | Size |
+|---|---|---|
+| Widget medium, your flare | Hero | 104 pt (iOS) / 96 dp (Android) |
+| Widget medium, friend's flare | Hero, or the flare photo as a tile | 72 pt / 72 dp high |
+| Widget small, flare states | Hero | 48 pt / 48 dp |
+| Widget pickers | Icon S | 28 pt / 28 dp |
+| Widget idle, usual #1 line | Icon S | 16 pt / 16 dp |
+| Live Activity lock screen | Hero | 52 pt |
+| Dynamic Island expanded | Hero | 44 pt |
+| Dynamic Island compact and minimal | Category glyph | 18 pt |
+| Android ongoing notification large icon | Hero on tint disc | 64 dp |
+| App: catalog rows | Icon L | 40 pt |
+| App: usual 3 slots, Bring me one picker | Icon L | 48 pt |
+| App: order ticket | Icon L | 64 pt |
+| App: Show to barista | Icon L | 96 pt |
+| App: camera flare panel | Hero | 112 pt |
+| App: catalog category header | Hero | 168 pt |
+| App: incoming flare, live flare header | Hero | 240 pt / 160 pt |
+
+**Backdrops.** A hero always sits on its category tint (light or dark tint per system appearance) with the category rim band on top, or on the category solid for your own flare. Never on a photo, never on another category's colour.
+
+**iOS tinted and clear home screens** (iOS 18+):
+- Wrap the widget background in `.containerBackground(for: .widget)` so the system can remove it.
+- Mark the rim band, numerals and primary labels `.widgetAccentable()`.
+- Heroes and drink icons: `.widgetAccentedRenderingMode(.desaturated)`.
+- Friend snaps and avatars: `.widgetAccentedRenderingMode(.fullColor)`. Reason: they're people's photos; chrome follows the user's tint, content stays true.
+- In these modes the category colour is gone, so the glyph and category name carry the meaning. That's already required (section 7).
+- Verify on device at build time. These modes have changed between iOS releases.
+
+**Text on photos** (snap tiles, flare photos, snaps viewer):
+- A bottom scrim gradient of `#0E141B` from 0% at 45% of the height to 64% at the bottom edge.
+- White text sits only in the bottom 40%, where the scrim is at least 60%. That gives at least 4.8:1 even over a pure white photo.
+- Text on photos is 13 pt SemiBold minimum.
+- Snaps viewer adds the same scrim, mirrored, at the top for the sender line.
+
+**Avatars in widgets.** 20 to 28 pt circles with a 1.5 pt `surface.base` ring, so overlapping avatars separate. Up to 3, overlapping by 30%.
+
+---
+
+## 4. App screens
+
+**Structure.** The camera screen is the root and the only full screen people live on. Everything else is a sheet over it or a screen pushed from it. There is no tab bar.
+- iOS: system sheets with medium and large detents; editors use the large detent.
+- Android: M3 modal bottom sheets; editors and long lists open full screen with a top app bar.
+- Back: iOS swipe-down or swipe-back; Android system back closes the top sheet or screen.
+
+**Per screen below:** purpose, layout top to bottom, states, taps. Tap counts start from the unlocked home screen, or from the screen named.
+
+**Shared pieces:**
+- **Primary button:** 56 pt high, full width inside the gutters, `label` type.
+- **Text button:** 44 pt high, `label` type in cobalt (or danger).
+- **Snackbar:** `inverse.surface` background, bottom of the screen above the safe area, 5 s for undo snackbars, announced to screen readers.
+- **Inline explainer** (permission denied, empty states): glyph on the left, text, one button. Never full-screen, except "update required".
+
+### 4.1 Sign in (onboarding step 1)
+
+Purpose: get in with one tap.
+
+Layout:
+1. Wordmark top left (32 pt cap height), `space.8` below the safe area.
+2. "The shelf": the five category heroes standing on one cobalt ground line, cropped so they sit left to right in category order, 50% of screen height. This is the one place all five appear together.
+3. Tagline in `display.l`, left-aligned ("Drink breaks with your people.").
+4. Bottom action area:
+   - iOS: Sign in with Apple (Apple's own button, black in light mode, white in dark, per Apple's guidelines), then "Continue with phone" as an outlined button.
+   - Android: Google's sign-in button (Google's branding rules), then "Continue with phone".
+   - Below them, "Other ways to sign in" as a text button in `caption` weight, cobalt, 44 pt hit area.
+   - One `caption` line with the Terms and Privacy Policy as links (`signin.legal`).
+
+**Other ways to sign in** opens a small sheet (iOS small detent, Android M3 modal bottom sheet) with one button: Continue with Google on iOS, Continue with Apple on Android, each in its provider's own branding. Nothing else in the sheet. Closing it returns to the sign-in screen.
+
+States:
+- **Invited:** above the tagline, the inviter's initials in a 40 pt avatar circle (`surface.sunk`, `ink.primary`) and "Maya invited you" in `headline`. Never the photo before sign-in: `invite-preview` returns a first name only (S-11). The shelf shrinks to 36% height.
+- **Signing in:** the tapped button shows a spinner; the other is disabled.
+- **Error:** inline `callout` text in danger under the buttons, with a retry.
+
+Taps: Apple or Google sign-in is 1 tap plus the system sheet.
+
+### 4.1a Invite check (iOS, before sign-in)
+
+Shown on iOS first launch only when the clipboard holds a probable web URL (PRD 3.2 rule 9). Counts as part of step 1.
+- Wordmark top left, as 4.1.
+- Title `display.l` ("Got an invite?"), one `body` line under it.
+- The system Paste control (`UIPasteControl`), full width inside the gutters, 56 pt high. Its look is the system's; don't restyle it.
+- Text button "Type the code instead": expands an 8-character field (monospaced numerals off, letters uppercase, `surface.sunk`) with a primary "Continue".
+- Text button "Skip" at the bottom.
+- After a valid paste: go straight to 4.1 in the Invited state. Bad code: inline danger caption (`err.invite_code`), field stays.
+
+### 4.1b Age check
+
+After any sign-in method succeeds for a new identity, before the account exists (PRD 3.1 rule 10).
+- Title `display.l` ("When were you born?"), helper in `callout`.
+- Two pickers side by side, Month and Year, both empty at start. iOS: menu pickers; Android: exposed dropdown menus. No default, no pre-scrolled year, no hint of the minimum.
+- Primary "Continue", disabled until both are set.
+- **Refused:** the same frame with the title and body from COPY.md, no buttons except closing to the splash screen. It stays this way for 24 hours on the device. Plain, no illustration, no humour.
+
+### 4.2 Phone number and code
+
+Purpose: sign in with a number, used only for matching.
+
+**Number screen:**
+- Title "Your number".
+- A country chip (flag emoji from the system, plus dial code), defaulting to the device region, then the number field with the phone keypad.
+- Caption: numbers are never shown to anyone (COPY.md).
+- Primary "Send code", disabled until the number parses (libphonenumber).
+
+**Code screen:**
+- Title "Enter the code", with the number in `callout`.
+- Six boxes, one field underneath (one-time-code autofill on iOS; SMS Retriever or the platform autofill on Android).
+- It submits by itself on the 6th digit. No submit button.
+- "Resend" text button, disabled with a countdown for 30 s.
+
+States:
+- Wrong code: boxes get a 2 pt danger rim, danger caption, the field clears.
+- Locked after 5 tries: caption with the wait time, field disabled.
+- Sending: spinner in the primary button.
+
+Taps: usually 2 (Send code, tap the autofill suggestion).
+
+### 4.3 Onboarding steps 2 to 6
+
+**Common frame:**
+- Top row: back button (left) from step 3 on.
+- A 6-segment progress bar under it, matching "{n} of 6". Segment 1 (sign in) is already filled on step 2. Done segments cobalt, the rest `line.hairline`. 4 pt high, 4 pt gaps.
+- Title in `display.l`, left-aligned. One `body` line under it.
+- Content.
+- Bottom action area: one primary, one optional text button.
+
+Killing the app resumes on the same step (PRD 3.2).
+
+**Step 2: name and photo.**
+- Avatar circle 96 pt on the left with a camera button overlapping its bottom right. Live initials fallback.
+- Name field to the right on wide phones, below on narrow ones (under 375 pt), pre-filled from Apple or Google.
+- Primary "Continue", disabled while the name is empty.
+- Photo: camera or library through the system picker.
+- Taps: 1 if the name is pre-filled.
+
+**Step 3: usual 3.** The editor in 4.14, onboarding mode:
+- Title "Your usual 3".
+- Presets first, slots, then the catalog.
+- Primary "Continue", disabled until one drink is picked.
+- Taps: 2 with a preset (preset, Continue).
+
+**Step 4: invite friends.**
+- Title "Invite your people", one line of why.
+- **Meter:** two empty rim rings, 40 pt, side by side, with "0 of 2" in `headline` beside them. Each share-button tap or contact Add fills one ring in cobalt. At 2 of 2 the rings clink (2.9) and the haptic plays.
+- **Share buttons:** three buttons in one row, equal width, 72 pt high, icon above label:
+  - WhatsApp: the official WhatsApp glyph, unmodified, per WhatsApp's brand rules. Hidden if WhatsApp isn't installed; the other two then share the row.
+  - Messages: a speech-bubble glyph, label "Messages". Not Apple's or Google's app icon, because their brand rules don't allow it.
+  - More: the platform share glyph (SF `square.and.arrow.up`, Material `share`).
+  - **No URL, no link preview, no "Invite link" label, no copy button anywhere on this screen** (CEO guideline 6).
+- **On Clink already:** a list of contact matches, each with avatar, name and an "Add" tonal button. Before contacts permission: one row with "Find friends from contacts" (opens the system prompt). Denied: a one-line explainer.
+- **Phone field** (Apple and Google users only): an optional row "Add your number so friends can find you" that expands inline to the 4.2 number field.
+- Bottom: a single button whose label changes. "Later" (text style) while the meter is 0; "Continue" (primary) once at least one ring is filled. Reason: one obvious exit, and no stall at zero.
+- Taps: 1 per share (share button, then the other app).
+
+**Step 5: notifications.**
+- Title, one line.
+- Two example notifications drawn with real platform-style components: a friend's flare, and a reply to yours. Left-aligned, stacked.
+- Primary "Continue" (`perm.notif.yes`), which shows the system dialog. Text button "Not now". The button never says "Allow" or "Turn on" (App Review 5.1.1(iv)).
+- The system dialog never appears before "Continue".
+
+**Step 6: add the widget.**
+- Title, one line.
+- A 3-step guide for this platform, each step a numbered row (number in `numeral.l`, text in `body`) with a looping 3 s illustration on the right. The illustration uses our real widget renders. Under reduced motion it shows a still frame.
+  - iOS: hold the home screen, open the add-widget gallery, search Clink, pick Medium. iOS 17 and iOS 18+ open the gallery differently (+ button vs Edit, then Add Widget), so the illustration and the strings (`onb.widget.ios17.*` vs `onb.widget.ios.*`) follow the OS version. Recheck against the current iOS at build time.
+  - Android: hold the home screen, Widgets, Clink, drag the 4x2.
+- Primary "I added it", text button "Remind me later".
+- If no widget is detected: the guide stays, a caption says it wasn't found, and the text button becomes "Skip for now".
+
+### 4.4 Camera home (the main screen)
+
+Purpose: share a snap, or send a flare with defaults in one tap.
+
+```
+┌─────────────────────────────────────────────┐
+│ (D)•  [ 5 friends ]            [▯ 3  ◦ 4] ⚙ │  top bar, 52
+│ ┌─────────────────────────────────────────┐ │
+│ │ ⚡                                      │ │
+│ │                                         │ │  viewfinder 1:1,
+│ │              live camera                │ │  radius 32, rim.thin
+│ │                                         │ │
+│ └─────────────────────────────────────────┘ │
+│  [snaps]            ( ◯ )              ↺    │  shutter row, 96
+│ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀ rim.thick, category ink ▀▀▀▀ │
+│  (Coffee) (Matcha) (Tea) (Smoothie & Juice)  │  flare panel on
+│  [ Kaffa Roastery            ]   ┌───────┐  │  category tint
+│  (Now) (5m) (15m) (30m) (Other)  │ hero  │  │
+│  Meet 10:30                      └───────┘  │
+│  [ To: Work ▾ ]        [  Who joins?     ]  │  56 high
+└─────────────────────────────────────────────┘
+```
+
+**Top bar** (52 pt), all left-aligned except the last two items:
+- Profile avatar 36 pt (a cobalt dot 8 pt at its top right after a level-up).
+- Friends pill: "5 friends", or "Invite" when there are none.
+- Right side: the tracker chip (drinks glyph and count, water glyph and count, `numeral` style at 17 pt; numerals only, the screen-reader label is `top.today.a11y`) and the settings button.
+
+**Viewfinder.**
+- Square, full width inside the gutters, radius 32, a 2 pt neutral rim (`surface.raised` in dark, `line.control` in light).
+- Flash at top left: a 44 pt button on a `#0E141B` disc at 56%, so it reads on any camera image.
+
+**Shutter row** (96 pt). The one centred arrangement in the app, because that's the camera convention:
+- Shutter 76 pt centred: a 4 pt ring and an inner disc with a 4 pt gap, in `ink.primary` (light) or `#FFFFFF` (dark). Scales to 0.92 on press.
+- Left: the latest friend snap as a 44 pt rounded thumbnail, which opens the snaps viewer (hidden when none).
+- Right: flip camera, 44 pt, in thumb reach.
+
+**Flare panel**, from the shutter row to the bottom:
+- Category tint background, `rim.thick` top band in category ink, top corners 28 pt.
+- Row 1: four category chips (glyph + name). Selected: category solid with `onSolid`. Unselected: `ink.secondary` outline. Scrolls sideways if they don't fit.
+- Row 2: place field (`callout`, 40 chars, pencil glyph, empty placeholder from COPY.md), width minus 128.
+- Row 3: timing pills (4.6) and under them "Meet 10:30" in `caption`.
+- Hero, 112 pt, on the right of rows 2 and 3.
+- Row 4: To: chip on the left (4.5). **Who joins?** on the right: category solid, at least 168 pt wide, 56 pt high, category glyph left of the label.
+
+**Defaults:** category of usual #1, last place, Now, audience from the automatic rule (PRD 3.5).
+
+**Hierarchy.** The camera screen has two zones and one primary each: the shutter for snaps, Who joins? for flares. They never share a style: one is a round camera control, the other a filled button.
+
+States:
+| State | What changes |
+|---|---|
+| Camera not allowed | The viewfinder is `surface.sunk` with an inline explainer (`perm.cam.*`) and its "Continue" button. The flare panel works as normal. |
+| Photo taken | The viewfinder shows the still. The shutter row becomes "Retake" (text, left) and **Share snap** (cobalt, right, 56 pt). Who joins? gets a 24 pt thumbnail of the photo at its left (the photo will go with the flare). The place field applies to both. |
+| No friends | Who joins? becomes "Invite friends" in cobalt and opens the invite sheet. Share snap still works and shows a nudge after sending. |
+| Audience empty | Who joins? disabled. A `caption` hint under the To: chip (PRD 3.5). |
+| Your live flare | A 48 pt bar under the top bar on category solid: glyph, "Your coffee flare", countdown. Tap opens 4.7. Who joins? then asks to replace (system alert, PRD 3.5 rule 7). |
+| Friend's flare unreplied | The same bar on category tint with the friend's avatar: "Maya wants matcha · 9m". Tap opens 4.8. Only one bar shows: friend flare first, then yours, plus "+1" if more. |
+| Widget not added | A one-line notice under the top bar: "Add the widget" with a close button. Shown until a widget is detected. |
+| Sending | Who joins? shows a spinner and "Sending…". After 30 s a danger caption "Couldn't send. Tap to retry." Dropped after 2 minutes (PRD 3.20). |
+| Offline | An "Offline" pill (`off.pill`) in the top bar, `ink.secondary`. |
+| Large text | The panel scrolls, Who joins? stays pinned, chips wrap. |
+
+**Small screens** (under 700 pt tall): the viewfinder shrinks, staying square and at least 240 pt, centred in the width.
+
+Screen reader order: top bar, viewfinder controls, shutter, category chips, place, timing, To:, Who joins?.
+
+Taps:
+- Custom flare with defaults: 2 (open app, Who joins?).
+- Each change costs 1 more: category, timing. To: costs 2. Other costs 2.
+- Share a snap from the widget camera button: 3 (camera, shutter, Share snap).
+
+### 4.5 To: picker
+
+Purpose: choose who gets this flare.
+
+- The chip reads "To: Work" plus a small "Auto" tag when the automatic rule picked it.
+- Sheet, medium detent. Title "Send to".
+- Rows (radio, 64 pt):
+  - Automatic, with a subline of what it resolves to right now ("Work right now").
+  - Each group: user emoji, name, "3 people", up to 3 overlapping avatars.
+  - Everyone, with a count.
+- Selected row: `brand.cobaltTint` background and a check.
+- Tapping a row selects it and closes the sheet. No Done button.
+- Footer text button "Edit groups" opens the groups sheet.
+- An empty group shows "No one yet" and stays selectable; the camera then shows the empty-audience hint.
+
+Taps: 2 (chip, row).
+
+### 4.6 Timing and the Other picker
+
+- Pills: Now, 5m, 15m, 30m, Other. Single choice. 40 pt visual, 44 pt hit area.
+- Selected pill: `ink.primary` fill, `surface.base` text.
+- After a custom pick, the Other pill shows the value ("45m").
+- Under the pills: "Meet 10:45" (clock time, local format) in `caption`.
+
+**Other sheet** (small detent):
+- Title "In how long?".
+- A 3-column × 4-row grid: 5, 10, 15 … 60 minutes. Each cell 56 pt high, `headline` number with "min" in `caption`.
+- The current value is selected. Tapping a value selects it and closes the sheet.
+- Nothing above 60 is offered (DECISIONS.md).
+- Reason for a grid over a wheel: one tap, readable at large text, works with screen readers without a spin control.
+
+Taps: 2 (Other, value).
+
+### 4.7 Your live flare
+
+Purpose: see who's coming, read orders, wrap up.
+
+```
+┌─────────────────────────────────────────────┐
+│ [×]                            Cancel flare │
+│▀▀▀▀▀▀▀▀▀▀▀▀ rim.thick (category tint) ▀▀▀▀▀▀│  header on
+│ Coffee · Kaffa Roastery          ┌────────┐ │  category solid,
+│ Meet 10:45 · to Work             │  hero  │ │  onSolid text
+│ 14:32                            │  160   │ │  display.xl
+│ until it closes                  └────────┘ │
+├─────────────────────────────────────────────┤
+│ In                                          │
+│ (L) Leo                                     │
+│ (A) Ari                                     │
+│ Bring me one                                │
+│ (S) Sam    [icon] Cortado          ▭ Notes ›│  → order ticket
+│                                             │
+│ [              We're going              ]   │  cobalt primary
+└─────────────────────────────────────────────┘
+```
+
+- Opens pushed over the camera. The close button returns to the camera; the flare stays live.
+- Header: category solid, `onSolid` text, rim band in the category tint (as on the widget). Countdown in `display.xl`, ticking every second. For screen readers it's announced at minute level only (section 7).
+- Reply list on `surface.base`:
+  - "In" section: rows 56 with avatar and name. Every replier is your friend (PRD 3.5 rule 16), so names always show.
+  - "Bring me one" section (the run list): rows 72 with avatar, name, drink icon L 40, drink name, and the ticket marker with "Notes" when there are details or a one-time note. Rows are in reply order. Tap opens the order ticket (4.10).
+- New replies slide in 8 pt with a fade (a plain fade under reduced motion). The success haptic plays if the app is open.
+- **We're going** (cobalt primary) appears once there's at least one reply.
+- **Cancel flare** (text button, top right): cancels at once with a snackbar "Flare cancelled · Undo" (5 s). The server call goes out when the snackbar ends or the app goes to the background. Reason: cancelling notifies repliers, so a mis-tap needs a way back, and a confirm dialog would be one more tap every time.
+
+States:
+| State | Look |
+|---|---|
+| No replies yet | Under the header, one `callout` line: "Sent to Work. Replies show up here." No view counts, no "seen". |
+| Replies | As drawn. |
+| Done ("We're going" or closed with replies) | The header switches to category tint with `ink.primary` text: "You're going" and the meet time. The run list stays for 2 hours. The camera's bar shows "Run list" until then. |
+| Nobody came | The header is on tint with the hero and "Nobody was free this time" (COPY.md), plus one primary "Done". No numbers. |
+| Cancelling | Snackbar as above. |
+
+Taps: open a friend's order at the counter is 3 (open app, which lands here; tap the row; Show to barista).
+
+### 4.8 Incoming flare (in the app)
+
+Purpose: join in one tap, or ask for a drink.
+
+```
+┌─────────────────────────────────────────────┐
+│ [×]                                  1 of 2 │
+│ (M) Maya · Café Lumi                        │
+│ Maya wants matcha                           │  display.l
+│ In 10m · meet 10:45 · closes in 14 min      │  callout
+│ ┌─────────────────────────────────────────┐ │
+│ │▀▀▀▀▀▀▀▀▀ rim.thick (matcha ink) ▀▀▀▀▀▀▀▀│ │  card on tint,
+│ │                          ┌───────────┐  │ │  hero 240 right
+│ │                          │   hero    │  │ │  (or Maya's photo,
+│ │                          └───────────┘  │ │   full bleed)
+│ └─────────────────────────────────────────┘ │
+│ Leo is in · 2 others are in                 │
+│ [               I'm in                  ]   │  matcha solid
+│ [            Bring me one               ]   │  outlined, matcha ink
+└─────────────────────────────────────────────┘
+```
+
+- With several live flares: a horizontal pager, newest first, "1 of 2" at the top right. Each page has the same layout.
+- The flare card: category tint, rim band, hero right-aligned at 240 pt. If Maya attached a photo, the photo fills the card (radius 16) and the hero isn't shown.
+- Who else is in: friends by name, non-friends as a count (PRD 3.6 rule 9). Hidden when nobody else is in.
+- **I'm in:** category solid, full width. **Bring me one:** outlined in category ink, full width, below. They stack vertically, so I'm in is the obvious first choice and both stay big.
+
+States:
+| State | Look |
+|---|---|
+| Not replied | As drawn. |
+| You're in | The buttons are replaced by a row: check glyph, "You're in" in `headline`. Text button "Can't make it anymore" under it. |
+| You asked for one | Row: drink icon L 48, "Asked for Cortado", detail summary, a "Just this time" line if any. Text buttons "Change" (reopens 4.9) and "Can't make it anymore". |
+| Ended | The card turns `surface.sunk` with the hero desaturated. "This flare has ended." Buttons removed. |
+| Sending / failed | Spinner in the tapped button, then the retry caption. |
+
+Taps: join is 1 after opening (2 from the home screen via the notification, or 1 from the widget).
+
+### 4.9 Bring me one picker and one-time note
+
+Purpose: send your usual order, with an optional note for this time only.
+
+- Sheet, large detent. Title "Ask Maya for".
+- Three rows (80 pt): icon L 48, drink name in `headline`, detail summary in `callout` (2 lines max), slot number. **Usual #1 is preselected.**
+- Selected row: `rim.thin` in cobalt around the row and a `brand.cobaltTint` background.
+- Below: "Just this time" text field, 80 chars, a placeholder example from COPY.md, a character count from 60.
+- Primary "Send to Maya" in the flare's category solid.
+
+States:
+- **No details on this drink, first time:** the area above the primary button shows "Add how you like it?" with two buttons side by side, "Add details" (opens 4.14 Make it yours, then returns here) and "Send as is". Shown once per drink (PRD 3.6 rule 7).
+- **No usual 3:** the sheet opens the usual 3 editor first.
+- **Flare ended while open:** the sheet closes; a snackbar says it ended.
+
+Taps:
+- From the incoming screen: 2 with usual #1 (Bring me one, Send), 3 for another drink.
+- From the notification's Bring me one action: the app opens on this sheet, so 1 more tap.
+
+### 4.10 Order ticket and Show to barista
+
+Purpose: get every order right without asking.
+
+**Order ticket.** This is a card on purpose: it stands for a paper ticket.
+
+```
+┌─────────────────────────────────────────────┐
+│▀▀▀▀▀▀▀▀▀▀▀▀ rim.thick (coffee ink) ▀▀▀▀▀▀▀▀▀│  surface.raised,
+│ (S) Sam                              1 of 3 │  radius 20
+│ [icon L 64]  Cortado                        │  display.l
+│◖ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ◗│  tear line + notches
+│ ┃ Just this time: iced today               ┃│  tint band
+│ Size          Regular                       │
+│ Temperature   Extra hot                     │
+│ Milk          Oat milk                      │
+│ Sweetness     No sugar                      │
+│ Shots         Double shot                   │
+│ Note          Extra hot please, I drink it  │
+│               slowly                        │
+│ Plan B        No oat milk? Almond is fine   │
+└─────────────────────────────────────────────┘
+[            Show to barista              ]      cobalt primary
+```
+
+- Opens as a sheet (large) from the run list, swipeable between orders ("1 of 3").
+- Header: requester avatar and name, drink icon L 64, drink name `display.l`.
+- **Tear line:** a dashed `line.control` rule with two 12 pt semicircle notches cut into the ticket's sides.
+- **"Just this time"** comes first, right after the drink, because it overrides the rest. It sits in a category-tint band with a 4 pt category-ink bar on its left.
+- Then the fields the requester saved, in the PRD 3.7 order. Labels `callout` `ink.secondary`, values `headline` `ink.primary`. Note and Plan B last. Empty fields are not shown.
+- From the friends list, the same ticket is titled "Sam's usual". It pages through their usual 3 and never shows a one-time note.
+
+**Show to barista** (full screen):
+- Always light, whatever the system theme: background `#FFFFFF`, text `#000000` (21:1). Reason: read at arm's length under cafe lights, often by someone who isn't the phone's owner.
+- Left-aligned, top to bottom:
+  - "1 of 3" (`headline`) top right, close button top left
+  - drink icon L 96
+  - drink name in `barista.drink`
+  - "Just this time" in `barista.option` with a 6 pt black bar on its left
+  - each set option on its own line in `barista.option`
+  - Note and Plan B in `barista.note`, Plan B prefixed by its label
+  - "for Sam" in `title` at the bottom
+- These sizes are minimums; they never shrink. They scale up to 1.5× with system text. Text wraps, never truncates; if it doesn't fit, the page scrolls vertically.
+- Swipe left or right for the next order. Tap the close button or swipe down to close. A single tap on the content does nothing, so a barista's tap doesn't close it.
+- The screen stays awake while open (`expo-keep-awake`). Brightness goes to maximum and is restored on close, if the CTO confirms both platforms restore it reliably. Otherwise skip the brightness part.
+
+Taps: 3 from the home screen (PRD tap budget).
+
+### 4.11 Snaps viewer
+
+Purpose: see friends' drinks from the last 24 hours and react.
+
+- Full screen on `#000000`. The photo fits the width.
+- Top, on the mirrored scrim: close button (left), avatar 32, name `headline`, "38m · Office kitchen" `caption`, ⋯ button (right, 44 pt).
+- Segment ticks across the very top show position among the last 24 hours of snaps. **No auto-advance.** Swipe left for older, right for newer.
+- Bottom, on scrim: the five reaction emoji from DECISIONS.md as 52 pt buttons in one row. They are content, so the system emoji are used. The chosen one gets a 2 pt white ring and a selection haptic. Tapping it again removes it.
+- **Your own snap:** the reaction row is replaced by "Leo and 2 others" (tap for the list). The ⋯ menu adds Delete.
+
+Taps: 2 from the widget (snap, reaction).
+
+### 4.12 Friends sheet
+
+Purpose: your 20 people, your groups, inviting.
+
+Sheet, large detent:
+1. Title "Friends" with "5 of 20" in `caption` under it.
+2. **Groups:** a horizontal row of chips: Everyone (fixed, first), each group (user emoji + name), then "New group". Tap a group to open the editor (4.13).
+3. **6-friend suggestion** (one time, PRD 3.10 rule 4): a notice card, "Make Work and Home friends groups?", with "Make groups" and a close button.
+4. **Requests** (only if any): rows with avatar, name, an "Accept" tonal button. No decline button. Requests expire quietly.
+5. **Invite:** the three share buttons from step 4 (same component). At 20 friends they're replaced by a `caption` line saying you're full.
+6. **Friends:** rows 64 with avatar 40, name `headline`, and "last drink 1h 42m ago" in `caption` only if that friend opted in. Trailing: the ticket button (their usual, 44 pt) and ⋯ (Report, Block, Remove).
+   - Remove takes effect at once with a 5 s undo snackbar. Silent to the other person. As with Cancel flare (4.7), the server call goes out when the snackbar ends or the app goes to the background, so Undo never has to rebuild a friendship.
+
+Empty: the share buttons move to the top with one line of why.
+
+Taps: a friend's usual is 2 from the camera (friends pill, ticket).
+
+### 4.13 Group editor
+
+Purpose: name a private label and tick who's in.
+
+Pushed inside the friends sheet (iOS), full screen (Android):
+- Top row: emoji button 56 pt (opens the emoji keyboard; one grapheme kept), name field next to it (20 chars).
+- `caption`: groups are private; nobody knows they're in one (COPY.md).
+- **"Automatic uses this for"** row (PRD 3.10 rule 6): three radio chips, Weekdays 8:00 to 18:00, Other times, Neither. If another group holds that slot, the chip shows "Used by {group}" in `caption` and picking it moves the slot here. New groups named Work or Home friends start on Weekdays or Other times when that slot is free.
+- Friends list with trailing checkboxes, rows 56.
+- Primary "Done" (disabled until a name exists).
+- "Delete group" text button (danger) at the end of the list: deletes at once with an undo snackbar. Nobody is unfriended.
+
+States: new, editing, no friends yet (the list is replaced by the share buttons).
+
+Settings > Groups uses two pickers ("Daytime group", "Other times") with the same row style as 4.5.
+
+### 4.14 Usual 3, catalog and Make it yours
+
+Purpose: save three drinks once, with exactly how you like them.
+
+**Editor layout:**
+1. **Slots:** three rows, 72 pt.
+   - Each row: slot number in `numeral.l` at 22 pt, icon L 48, drink name, and the detail summary or a "Make it yours" tonal button.
+   - Slot 1 has a `caption` "On your widget".
+   - A drag handle at the trailing edge reorders. Screen readers get "Move up" and "Move down" actions instead.
+   - An empty slot is a dashed `line.control` outline row reading "Add a drink".
+2. **Presets:** four chips (`COPY.md` 2.8) in one sideways-scrolling row, each showing 3 S icons and the preset name. Tapping one fills all slots and shows an undo snackbar.
+3. **Catalog:**
+   - Category tabs (glyph + name), sticky under the slots while scrolling.
+   - **Category header** (this is where guideline 2 lands): category tint, `rim.thick` band, category name in `display.l` on the left, "10 drinks" in `caption`, hero 168 pt on the right. The header changes with the pour motion (2.9).
+   - Ten drink rows, 64 pt: icon L 40, name `headline`. Trailing: the slot number badge (1, 2, 3 in a cobalt circle) if picked, else a "+" button.
+   - Tapping a row adds it to the next free slot. A 4th replaces #3, with a snackbar "Replaced Jasmine Tea · Undo".
+   - Last row: "Add your own" opens a small sheet: name field (30 chars), category chips (4), Add.
+
+**Make it yours** (details editor, large sheet):
+- Header: icon L 64, drink name, and a live summary line ("Regular · Iced · Oat milk · No sugar · Double shot") with a `caption` saying friends see this when you ask for one.
+- One section per option field the drink lists in `COPY.md` 2.2 to 2.5 (its Fields), in PRD 3.7 order: label in `headline`, a wrapping group of chips 40 pt high (44 pt hit area). Ice appears only when Temperature is Iced or the drink is always iced.
+- **More options:** after the drink's own fields, one collapsed row "More options" with a disclosure chevron. Expanded, it shows the category's remaining fields in the same style. It stays collapsed by default, and opens by itself if one of its fields already has a value. Custom drinks have no fold; they show every field.
+  - Single-choice fields: tap selects; tapping the selected chip clears it.
+  - "Any" fields: chips toggle, with a check glyph inside selected ones. The check is there so selection isn't shown by colour alone.
+- Note (multiline, 120 chars, count from 100) and Plan B (80 chars, count from 60).
+- Primary "Done". **Closing the sheet any way saves.** No "Discard changes?" dialog. Reason: everything is optional and easy to change back.
+- Water never reaches this editor.
+
+Taps: onboarding with a preset is 1; Make it yours is 1 to open plus 1 per option.
+
+### 4.15 Tracker sheet
+
+Purpose: today's drinks and water, private.
+
+Sheet, medium detent (large when scrolled):
+1. Title "Today", with "Only you see this" in `caption`.
+2. Two counts side by side, left-aligned: drinks (`display.xl`, drinks glyph, label under it) and water (`display.xl` in water ink, water glyph, label). Under them, "Last drink 1h 42m ago" in `callout`.
+3. **Caffeine note** (4+ caffeinated, PRD 3.11 rule 6): a band on tea tint with the tea glyph and the neutral line from COPY.md. No numbers, no health wording.
+4. **Quick log:** six buttons in a sideways-scrolling row (usual 3, still water, sparkling water, Something else). Each is 72 × 88 with icon L 40 and a two-line name. A tap logs, rolls the count, plays a light haptic, and shows an undo snackbar. "Something else" uses a plus glyph and opens the catalog (4.14 catalog part, in a sheet); a tap on a drink there logs it and closes the sheet, without touching the usual 3.
+5. **Entries:** header "Entries" with an "Undo last" text button on the right. Rows 56: time (tabular, `ink.secondary`), icon S 24, name. A trailing remove button (44 pt) removes that entry, with an undo snackbar.
+
+Empty: "Nothing yet today." under the quick-log row.
+
+Taps: undo is 2 from the camera (tracker chip, Undo last).
+
+### 4.16 Profile with private level
+
+Purpose: your name and photo, and a level only you can see.
+
+Pushed screen:
+1. Avatar 72, name in `title`, "Edit" text button (name and photo sheet).
+2. **Level** (on the surface, no card):
+   - "Level 3" in `headline` `ink.secondary`, the level name (COPY.md) in `display.l`.
+   - Progress bar: 8 pt high, full width, track `brand.cobaltTint`, fill cobalt, 4 pt radius.
+   - Under it, "120 XP to Level 4" left, "580 XP" right, both tabular.
+   - `caption`: "Only you can see your level."
+3. **Recent:** up to 20 rows: "+50" (tabular, cobalt, `headline`), the reason ("Leo joined through you"), and the date in `caption`.
+4. "My usual 3" row, which opens 4.14.
+
+States:
+- **First view after a level-up:** the level name cross-fades in with an 8 pt rise, once, with the success haptic. The top-bar dot clears.
+- **New user:** level 1 with an empty bar, and one line on what earns XP (COPY.md).
+
+There is no share button on this screen, and the level appears nowhere else (PRD 4.5).
+
+### 4.17 Settings
+
+Native grouped list (iOS inset grouped; Android M3 list with section headers). Sections in PRD 3.14 order: Profile, My usual 3, Groups, Widgets, Notifications, Privacy, Account, Blocked people, Help.
+
+- **Account rows sit on the root list** (phone number, Sign out, Delete account). Reason: deletion has to be 3 taps or fewer from Settings.
+- **Widgets:** one row per installed widget ("Medium · Work"). Android: tap opens the audience picker (4.5 style). iOS: rows are read-only (no chevron), with the footer `set.widgets.ios_hint`, because iOS apps can't change a widget's configuration. Plus "How to add a widget".
+- **Notifications sub-screen:** exactly the toggles in PRD 3.16. If system permission is off, a notice card at the top with "Open settings".
+- **No quiet hours, no time windows, no Do Not Disturb of our own** (CEO guideline 5).
+- Sign out: no confirm. It only signs out, and signing back in restores everything.
+- **Help:** Contact us (opens the mail app to support@), Report a problem, Community Guidelines, Terms, Privacy Policy, licences, version.
+
+Taps: every item is within 2 taps of the settings button.
+
+### 4.18 Privacy
+
+- Toggle "Friends see my last drink" (off by default).
+- Under it, a live preview row showing exactly what a friend sees: your avatar and "Dana · last drink 1h 42m ago", or "Nothing" (`see.preview_off`) when off.
+- Toggle "Contact matching" (on).
+- Toggle "People with my number can find me" (on).
+- Toggle "Share usage stats" (on).
+- Row "Stop my old invites": tap runs it at once and shows a snackbar (no confirm; renewing has no downside). No URL and no "link" wording anywhere.
+- "What friends can see": a three-part list, "Friends can see", "Other people can see" and "Only you can see", from PRD 3.17.
+- "Privacy policy" opens in the in-app browser.
+
+### 4.19 Report and block
+
+Entry points: ⋯ on a snap, ⋯ on a flare photo (incoming flare card), ⋯ on a friend row.
+
+- **Menu** (iOS pull-down menu, Android M3 dropdown): Report snap / Report photo / Report Leo, Block Leo. Your own snap: Delete snap.
+- **Report sheet:**
+  - Title, five radio rows (PRD 3.18 reasons, "I'm in it and didn't agree" last). "Something else" expands a text field (200 chars). A `caption` link to the Community Guidelines under the rows.
+  - Primary "Send report".
+  - After sending: the sheet closes, the item disappears, a snackbar "Reported. It's hidden for you."
+- **Block:**
+  - A system alert: "Block Leo?", one line saying they won't be told and you'll stop seeing each other. Buttons: Block (destructive), Cancel.
+  - After: a snackbar. No undo. Unblocking lives in Settings and doesn't restore the friendship, so an undo would promise something it can't do.
+
+Taps: the report sheet is open in 2 taps from a snap (PRD acceptance); sending takes 2 more.
+
+### 4.20 Delete account
+
+1. Settings root, "Delete account" row in danger text (tap 1).
+2. Explanation screen:
+   - title
+   - a plain list of what's deleted (profile, photos, snaps, flares, replies, usual 3, tracker, groups, level)
+   - one line that friends stop seeing you at once and data is gone within 30 days
+   - danger-filled "Delete account" (tap 2), text button "Keep my account"
+3. System alert to confirm (tap 3). If the session is older than 10 minutes, the system re-authentication follows: the Apple sheet for Apple users, a phone code for phone users (4.2 code screen). Then a "Deleting…" state with a spinner; the app returns to the sign-in screen and every widget switches to signed out.
+
+Taps: 3 in Clink's UI from Settings, plus the system re-authentication sheet where required (PRD AC 3.19.1).
+
+### 4.21 Other system states
+
+| State | Treatment |
+|---|---|
+| Permission denied (camera, contacts, notifications) | Inline explainer where the feature lives, with "Open settings". The rest works. |
+| Server error with cached data | Cached content plus one `caption` retry line at the top. |
+| Server error, nothing cached | Full-screen inline explainer with Retry. |
+| App too old | Blocking screen: wordmark, one line, store button. |
+| "Did someone invite you?" (attribution failed) | After sign-in: title, contact matches with Add, text button "No". Needs contacts permission; if not granted, the contacts pre-prompt shows first. |
+| Invite confirm (existing user opens an invite) | A card (allowed: an object you act on, 2.7) over the camera screen: inviter's avatar 56 and name, title, one line, primary "Add", text button "Not now". Nothing happens before Add. |
+| Welcome banner (new user, after an invite) | `headline` line "You and Maya are friends now" under the top bar for the first session, with the text button "Not someone you know?" in `caption`. Tap: removes and blocks at once, snackbar, no confirm (it's the safety exit, so it stays one tap). |
+| Moderation notice | A sheet on next open: title, one paragraph (what, which rule, how to appeal), one "OK". Plain text, no glyph, no colour beyond ink. |
+| Suspended | Full-screen inline explainer: wordmark, title, body with the reason and support address. No other UI is reachable. |
+| Age refused | 4.1b refused state. |
+| Invite opened on desktop | Web page: wordmark, QR code, store badges. Same tokens. |
+
+---
+
+## 5. Widgets
+
+Behaviour, state priority and actions are in PRD 3.3. This section is how each state looks. Sizes: small and medium on iOS; 2x2 and 4x2 (resizable) on Android.
+
+### 5.1 Rules for every widget
+
+**Background and rim.**
+| State | Background | Rim band (top, 4 pt) |
+|---|---|---|
+| Idle, signed out, +1 picker | `surface.base` | cobalt |
+| Your live flare | Category solid | Category tint |
+| Friend's flare, Bring me one picker | Category tint | Category ink |
+
+On a solid background the rim uses the tint, so it reads like the white edge of an enamel mug.
+
+**Margins.**
+- iOS: system default content margins (don't disable them).
+- Android: 16 dp padding; 12 dp when the widget is under 140 dp in either direction.
+
+**Buttons.**
+- At least 44 pt high (iOS), 48 dp (Android).
+- Filled = primary. Tonal (`surface.sunk`, or the drink's tint) = secondary. Outlined (1.5 pt category ink) = secondary on tints.
+- iOS corners concentric with the container. Android full pill.
+
+**Text.** Three sizes per widget at most: `numeral.l` 34, primary 15 SemiBold, secondary 13 Medium. `micro` 11 only for "+1" and tiny counts.
+
+**What drops first.** When text size or a short Android widget leaves no room, remove lines in this order:
+1. avatars inside Who joins?
+2. the usual #1 line
+3. the snap tile's name label (the photo stays)
+4. the "last drink" line
+5. the word "water" (the glyph and count stay)
+
+Never removed: counts, buttons and their labels, a flare's title and countdown.
+
+**Time.** Countdowns and "last drink" use platform timer text (iOS `Text(timerInterval:)` and relative dates; Android `Chronometer` via `AndroidRemoteViews`, ARCHITECTURE.md 3.3). If the Android chronometer falls back to minute text, show "14 min left" instead of "14:32".
+
+**Theme.** Light and dark follow the system: asset catalog colours with a dark appearance on iOS, `values-night` on Android.
+
+**Taps.** Tapping the background opens the matching app screen (deep link). Buttons run their action without opening the app (PRD 3.3 rule 1).
+
+**Sizes for layout.** Lay out for the smallest supported phone, the iPhone SE (2nd and 3rd gen, which run iOS 17.2): small widget 148 pt square, medium about 321 × 148 pt (verify on device). Larger phones go up to about 170 pt small and 364 × 170 pt medium. Re-check the "what drops first" order at the SE size, and check every state in Xcode previews on the smallest and largest phones.
+
+### 5.2 iOS medium and Android 4x2
+
+**Idle**
+
+```
+┌──────────────────────────────────────────────┐
+│▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ rim band: cobalt ▀▀▀▀▀▀▀▀▀▀▀▀▀▀│
+│ 3 drinks   ◦ 4             ┌───────────────┐ │
+│ Last drink 1h 42m ago      │  Leo's snap   │ │
+│ ▯ Flat White               │▄▄ Leo · 38m ▄▄│ │  scrim under label
+│                            └───────────────┘ │
+│ ┌───────────┐ ┌────┐ ┌─────────────────────┐ │
+│ │ + Drink   │ │ ◉  │ │ ▯ Who joins?        │ │  44 pt row
+│ └───────────┘ └────┘ │   Work ●●●          │ │
+│                      └─────────────────────┘ │
+└──────────────────────────────────────────────┘
+```
+
+- **Tracker (left, about 55% of width):**
+  - "3" in `numeral.l` + "drinks" 13; then the water glyph and "4" at 22 pt in water ink.
+  - "Last drink 1h 42m ago" 13 `ink.secondary`, ticking.
+  - Icon S 16 + usual #1 name, 13 SemiBold. After 4 caffeinated drinks this line becomes the tea glyph and the neutral note (PRD 3.11).
+- **Snap tile (right, about 42%, 72 pt high):** the latest friend snap, corners concentric, bottom scrim, "Leo · 38m" 13 SemiBold white. Tap opens the snaps viewer.
+- **Action row:**
+  - "+1 Drink": tonal, plus glyph.
+  - Camera: 44 × 44 tonal, camera glyph.
+  - **Who joins?**: filled in usual #1's category solid. Category glyph + "Who joins?" 15 SemiBold, with a second line of the audience label ("Work", "Everyone", or what Automatic resolves to) in 11 and up to 3 avatars at 14 pt. The colour shows which drink a quick flare will send.
+
+**Idle variants**
+| Variant | Change |
+|---|---|
+| No snap today | The tile is `surface.sunk` with a camera glyph and "No snaps yet" 13. Tap opens the camera. |
+| No friends (empty) | The tile becomes an invite tile: share glyph, "Invite friends" 13 SemiBold. Who joins? becomes "Invite" in cobalt and opens the app on the share buttons (PRD 3.3). |
+| No usual 3 | The usual line reads "Pick your usual 3". +1 Drink opens the app on the usual 3 editor. Who joins? is cobalt and opens the camera screen with the flare panel (there's no default drink to send). |
+
+**+1 picker**
+
+```
+│▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ rim band: cobalt ▀▀▀▀▀▀▀▀▀▀▀▀▀▀│
+│ Log a drink                              [✕] │
+│ ┌─────────┐┌─────────┐┌─────────┐┌─────────┐ │
+│ │  [S]    ││  [S]    ││  [S]    ││  [S]    │ │  each on its
+│ │ Flat    ││ Cerem.  ││ Jasmine ││ Water   │ │  drink's tint
+│ │ white   ││ matcha  ││ tea     ││         │ │
+│ └─────────┘└─────────┘└─────────┘└─────────┘ │
+```
+- Four equal buttons: usual 1 to 3, then Water. Each on its drink's category tint with a 2 pt category-ink rim at the top. Icon S 28, name 13 SemiBold, 2 lines max.
+- Water is always the 4th and always still water.
+- ✕ is 44 pt at the top right.
+- The picker closes by itself after the PRD 3.3 timeout.
+
+**Your live flare**
+
+```
+│▀▀▀▀▀▀▀▀▀▀▀▀▀▀ rim band: category tint ▀▀▀▀▀▀▀▀│  background: category solid
+│ ▯ Coffee · in 15m                 ┌────────┐ │
+│ Kaffa Roastery                    │  hero  │ │
+│ 14:32                             │  104   │ │  numeral.l, onSolid
+│ (Leo in) (Sam · Cortado ▭) +2     └────────┘ │
+```
+- Text in `onSolid`.
+- Reply chips on the category tint with `ink.primary` text: "Leo in", "Sam · Cortado" + ticket glyph when the order has notes. At most 2 chips, then "+N".
+- No replies yet: "Sent to Work" 13.
+- Tap anywhere opens 4.7. No buttons.
+
+**Friend's flare**
+
+```
+│▀▀▀▀▀▀▀▀▀▀▀▀▀▀ rim band: category ink ▀▀▀▀▀▀▀▀▀│  background: category tint
+│ (M) Maya                      +1  ┌────────┐ │
+│ Maya wants matcha                 │  hero  │ │
+│ Café Lumi · in 10m · 14:02 left   │   72   │ │
+│ ┌──────────────────┐ ┌──────────────────────┐│
+│ │      I'm in      │ │    Bring me one      ││  44 pt
+│ └──────────────────┘ └──────────────────────┘│
+```
+- Avatar 20 + name 13 SemiBold; "Maya wants matcha" 17 SemiBold; place, timing and countdown 13.
+- "+1" (`micro` on an `ink.primary` pill) when more friend flares are live.
+- **Photo attached:** the photo replaces the hero as a 72 pt high tile, corners concentric. No full-bleed photo backgrounds. Reason: text and two buttons over a random photo need a heavy scrim and still fail on busy pictures. The tile shows the photo and keeps text on flat colour.
+- **I'm in:** category solid. **Bring me one:** outlined in category ink. Equal width.
+- Tap elsewhere opens 4.8.
+
+**Bring me one picker**
+
+```
+│▀▀▀▀▀▀▀▀▀▀▀▀▀▀ rim band: category ink ▀▀▀▀▀▀▀▀▀│  Maya's flare tint
+│ Ask Maya for                             [✕] │
+│ ┌────────────┐ ┌────────────┐ ┌────────────┐ │
+│ │ [S] Flat   │ │ [S] Cerem. │ │ [S] Jasmine│ │  surface.raised,
+│ │ white    ▭ │ │ matcha   ▭ │ │ tea        │ │  2 pt rim in each
+│ └────────────┘ └────────────┘ └────────────┘ │  drink's ink
+```
+- Three buttons on `surface.raised`, each with a 2 pt rim in its own drink's ink, icon S 28, name 13 SemiBold, and the ticket glyph when details are saved.
+- A tap sends the order exactly as saved (PRD 3.6 rule 4).
+
+**Replied**
+- The friend's flare card with its button row replaced by one 44 pt status row on `surface.raised`: check glyph + "You're in", or icon S 20 + "Asked for Cortado".
+- Tap opens 4.8 to change or cancel.
+
+**Confirmation, sending, failed.** These replace the action row (or the picker) in place:
+- Confirmation: check glyph + "Logged · Flat White", "Sent to Work", "You're in" or "Asked for Cortado", for about 4 s (a timeline entry on iOS, a WorkManager job on Android), then the widget returns to the state the PRD priority gives. Counts have already changed in the tracker area.
+- Sending: clock glyph + "Sending…" in `ink.secondary`.
+- Failed: "Couldn't send. Tap to retry." in danger (`wm.failed`; small: `ws.failed`), drawn 30 s after the tap. Tap retries in place. A flare still unsent at 2 minutes is dropped and the widget returns to its priority state.
+
+**Signed out or not set up**
+- `surface.base`, cobalt rim, the wordmark at 20 pt, "Sign in to Clink" or "Open Clink to finish setup" 13.
+- The whole widget is one tap target to the app.
+
+**Ended flare.** The widget falls back to the next state by priority. A stale I'm in tap opens the app with "This flare has ended" (PRD 3.3 rule 7).
+
+**Your flare closed as done.** The sender's widget returns to idle. The run list is only in the app, through the camera bar "Run list" (4.7, PRD 3.3).
+
+**Who joins? while a flare is already live** (sent from the app or another device): the widget doesn't send; it reloads and shows Your live flare.
+
+**Android 4x2 when short.** Under 150 dp high, the snap tile becomes a 56 dp rounded thumbnail at the right of the tracker lines, and the action row stays 48 dp.
+
+### 5.3 iOS small and Android 2x2
+
+| State | Layout |
+|---|---|
+| Idle | Cobalt rim. "3 drinks" (`numeral.l` + 13), water glyph + "4", "Last 1h 42m ago" 13. Bottom: "+1 Drink" tonal, full width, 44 pt. |
+| +1 picker | Header "Log" 13 SemiBold with ✕ (44 pt hit area). A 2 × 2 grid: usual 1 to 3 and Water, each on its tint, icon S 24 and name 11. |
+| Your live flare | Category solid, tint rim. Glyph + "Coffee" 15, countdown `numeral.l`, "2 in · 1 order" 13. Hero 48 at the bottom right. Tap opens 4.7. |
+| Friend's flare | Category tint, ink rim. Avatar 20 + "Maya", "wants matcha" 15 SemiBold, "14:02 left" 13, hero 48 at the top right. Bottom: "I'm in", full width, category solid. Tap elsewhere opens 4.8. |
+| Replied | The button becomes a status row: check + "You're in". |
+| Confirmation / sending / failed | As medium, in the bottom row. |
+| Signed out | Mark 32, "Open Clink" 13. |
+| No friends | Same as idle (the small size has no Who joins?). |
+
+Android 2x2 under 150 dp high: the picker drops its header and ✕, and the picker's own timeout is the cancel. Reason: four 48 dp cells and a 48 dp close button don't fit. Logged with Product in section 9.
+
+### 5.4 iOS specifics
+
+- **Configuration:** `AppIntentConfiguration` with one parameter, "Who joins? goes to": Automatic, each group, Everyone (ARCHITECTURE.md 3.1). The Edit Widget sheet shows our group names with their emoji. A deleted group in a widget's configuration is treated as Automatic, and the label says so.
+- **Previews:** the widget gallery shows sample data: "3 drinks · 4 water", Flat White, a hero standing in for the snap tile (no real photos in the gallery). Every state has an Xcode preview with fixture data.
+- **Tinted and clear modes:** as 3.6. Test every state in light, dark, tinted and clear.
+- **StandBy and the locked screen:** not designed in v1 (PRD scope). `.containerBackground` lets the system render it plainly. Snap thumbnails, friend names and place text are marked `.privacySensitive()`, so the system redacts them while the phone is locked (S-15). Design the redacted look: the snap tile becomes `surface.sunk` with the camera glyph, names become a neutral placeholder bar.
+- **Lock-screen accessory widgets:** not in v1 (PRD scope table). The Live Activity covers the lock screen for the one time-critical case, your live flare. A small circular tracker count is the first candidate after v1.
+
+### 5.5 Android specifics
+
+- **Glance layout:** `SizeMode.Responsive` with three sizes: 2x2 (about 120 × 120 dp), 4x2 short (250 × 120 dp), 4x2 (250 × 160 dp). Widgets under 230 dp wide use the small layout.
+- **Shapes:** container radius from `system_app_widget_background_radius` (Android 12+), inner elements from `system_app_widget_inner_radius`. Below Android 12, a 16 dp rounded background drawable. Glance `cornerRadius` needs Android 12, so older versions get rounded backgrounds from drawables.
+- **Dynamic colour (Material You):** not used. Reason: it would retint the cobalt and the drink colours, and the category colours carry meaning. Light and dark still follow the system.
+- **Configuration activity** (Compose, M3, opens when the widget is added and from "Reconfigure"):
+  - top: a live preview of the widget
+  - title "Who joins? goes to"
+  - radio list: Automatic (with what it resolves to now), each group, Everyone
+  - pill "Done"
+- **Widget picker preview:** `previewLayout` on Android 12+, with a `previewImage` WebP fallback for older versions. Same sample data as iOS.
+- **Font:** system sans (2.4).
+
+### 5.6 Widget screen reader labels
+
+Final strings come from COPY.md 4.26 (`a11y.w.*` keys, one per row below). This table fixes what each label must say. Values that change are read as part of the label.
+
+| Element | Label must say | Example |
+|---|---|---|
+| Tracker block | Counts and last drink, as one element | "3 drinks and 4 waters today. Last drink 1 hour 42 minutes ago." |
+| +1 Drink | Action | "Log a drink" |
+| Picker drink button | Action + drink | "Log Flat White" / "Log water" |
+| Picker close | Action | "Close" |
+| Camera | Action | "Take a drink snap" |
+| Snap tile | Whose, when, what it opens | "Leo's snap, 38 minutes ago. Opens snaps." |
+| Who joins? | Action + drink category + audience + timing | "Send a coffee flare to Work, now" |
+| Invite (no friends) | Action | "Invite friends" |
+| Your live flare | Category, place, time left, replies | "Your coffee flare at Kaffa Roastery. 14 minutes left. Leo is in, Sam asked for Cortado." |
+| Friend's flare | Who, what, where, when | "Maya wants matcha at Café Lumi in 10 minutes. 14 minutes left." |
+| More flares badge | Count | "1 more flare" |
+| I'm in | Action + whose flare | "Join Maya's matcha flare" |
+| Bring me one | Action + whose flare | "Ask Maya to bring you one" |
+| Bring me one drink button | Action + drink + whether notes go with it | "Ask Maya for your Cortado, with your saved notes" |
+| Replied status | State | "You're in" / "You asked for Cortado" |
+| Confirmation | Result | "Logged Flat White" |
+| Failed | State + action | "Couldn't send. Double-tap to retry." |
+| Signed out | Action | "Open Clink to sign in" |
+
+Rules:
+- Time is read in words at minute precision. Countdowns are never read every second.
+- Heroes and drink icons are hidden from screen readers when a name sits next to them.
+- On iOS, group each region with `accessibilityElement(children: .combine)` so a flare reads as one sentence plus its buttons. On Android, set `contentDescription` on the clickable Box and mark inner text as not important.
+
+---
+
+## 6. Live Activity, Dynamic Island, Android ongoing notification, flare notifications
+
+### 6.1 iOS Live Activity (your live flare)
+
+Runs from send until close or cancel (PRD 3.5 rule 14).
+
+**Lock screen and banner** (stay within the system height limit; check the current HIG):
+
+```
+┌──────────────────────────────────────────────┐
+│▀▀▀▀▀▀▀▀▀▀▀▀▀▀ rim band: category tint ▀▀▀▀▀▀▀▀│  background: category solid
+│ ┌──────┐ Coffee · Kaffa Roastery       14:32 │  numeral 28, tabular
+│ │ hero │ Meet 10:45 · to Work                │
+│ │  52  │ Leo in · Sam: Cortado ▭ · +1        │
+│ └──────┘                                     │
+└──────────────────────────────────────────────┘
+```
+- `.activityBackgroundTint` = the light-mode category solid in both appearances; text `#FFFFFF`. Contrast 5.2:1 or more for every category.
+- `.activitySystemActionForegroundColor` white.
+- Title 15 SemiBold, lines 13. Countdown counts to close time.
+
+**Dynamic Island:**
+| Presentation | Content |
+|---|---|
+| Compact leading | Category glyph 18 pt in the dark-mode category solid (10:1 or more on black) |
+| Compact trailing | Countdown, tabular, same colour |
+| Minimal | Category glyph. Once there's at least one reply, the reply count inside a thin ring (the rim) instead. |
+| Expanded | Leading: hero 44. Centre: "Coffee · Kaffa Roastery" 15 SemiBold white, "Meet 10:45" 13. Trailing: countdown at 22 pt. Bottom: up to 3 reply chips, then "+N". `keylineTint` = the dark-mode category solid. |
+
+- No buttons. Tap opens 4.7. Reason: wrapping up and cancelling belong next to the run list, and a pocket tap shouldn't cancel a flare.
+- End states:
+  - Done: final content "You're going · 2 in · 1 order" until close time or 15 minutes after We're going, whichever is later (ARCHITECTURE.md 3.4).
+  - Cancelled, replaced, or closed with no replies: dismiss at once, with no final text. "Nobody was free" only ever shows in the app (PRD 3.5 rule 13).
+- Reduced motion: no custom animation (the system handles transitions).
+- Screen reader: same sentence as the widget's "Your live flare" label.
+
+### 6.2 Android ongoing notification
+
+- Standard notification template; no custom RemoteViews. Reason: system templates follow the user's theme, text size and accessibility settings; custom ones get clipped.
+- Small icon: the mark silhouette. `setColor` = the light-mode category solid.
+- Large icon: the hero on its tint disc, 64 dp.
+- Title: "Coffee · Kaffa Roastery". Text: "2 in · Sam: Cortado", or "Sent to Work" with no replies.
+- Chronometer counting down to close time (`setUsesChronometer`, `setChronometerCountDown`).
+- No actions in v1 (same reason as iOS). Tap opens 4.7.
+- Updated in place on each reply. Cancelled at end, with nothing left behind for no-reply flares.
+- If Android 16 "Live Update" promotion is adopted (ARCHITECTURE.md 3.4), the content stays the same. Design reviews the promoted chip before it ships.
+
+### 6.3 Flare notifications (to friends)
+
+- iOS: title "Maya wants matcha", body "Café Lumi · in 10m" (COPY.md). The attachment is the flare photo if there is one, else the category hero (bundled, attached by the Notification Service Extension). Actions: I'm in, Bring me one.
+- Android: same text. Large icon = sender avatar. `BigPictureStyle` when a photo is attached. `setColor` = category solid. Actions: I'm in, Bring me one. On a secure lock screen the notification shows its public version only, "{name} sent a flare", with no place and no picture (S-15).
+- Friend request notifications: one action, Accept (PRD 3.16 rule 2).
+- Reply notifications to the sender use no picture. Text only, per COPY.md.
+
+---
+
+## 7. Accessibility
+
+Target: WCAG 2.2 AA on every app screen and widget state, plus the platform rules below.
+
+**Contrast.**
+- All text is 4.5:1 or more, including text on tints, solids and scrims (2.1, 2.2, 3.6).
+- Non-text UI (control borders, selected states, focus rings, progress bars) is 3:1 or more.
+- Rim bands and illustrations are decorative and always sit next to a label.
+- Show to barista is 21:1.
+- **iOS Increase Contrast, Android high-contrast text:** `ink.secondary` becomes `ink.primary`, `line.control` becomes `ink.secondary`, and photo scrims go to 72%.
+
+**Targets.**
+- 44 × 44 pt (iOS) and 48 × 48 dp (Android) minimum, with 8 pt between adjacent targets.
+- Widget buttons meet the same minimums. On short Android 2x2 widgets the picker header is removed so the cells keep 48 dp (5.3).
+
+**Screen readers (VoiceOver, TalkBack).**
+- Every control's label says the action and its object ("Join Maya's matcha flare").
+- States are values: "selected", "on", "3 of 3".
+- Reading order follows the visual order given for each screen in section 4.
+- Countdowns read at minute precision and aren't announced live. Replies arriving on 4.7 are announced politely ("Leo is in").
+- Snackbars are announced; their Undo is reachable before they time out (VoiceOver gets 10 s instead of 5).
+- Heroes and drink icons are hidden when a name is next to them. Snaps read as "Photo from Leo, 38 minutes ago, Office kitchen".
+- Custom actions replace gestures: reorder in the usual 3 (Move up, Move down), next and previous order in barista mode, newer and older snap.
+- Widget labels: 5.6.
+
+**Text size.** Section 2.4. Test the app at the largest accessibility size on both platforms. Nothing may be clipped or overlap.
+
+**Motion and transparency.**
+- Reduced motion: 2.9.
+- Reduce Transparency (iOS): the translucent discs behind camera controls become solid `#0E141B` at 80%. Scrims stay, because they're needed for contrast.
+- Haptics are never the only signal for anything.
+
+**Colour-blind safe coding. Never colour alone:**
+| Meaning | Colour | Also shown by |
+|---|---|---|
+| Drink category | Category colours | Glyph silhouette (3.1) + name, everywhere |
+| Selected chip or row | Fill or tint | Check glyph or radio dot + screen reader value |
+| Your flare vs a friend's | Solid vs tint | "Your coffee flare" vs the friend's name and photo |
+| Destructive | Danger red | The word itself ("Delete account") |
+| Errors | Danger red | Error text, and a 2 pt rim on the field |
+| Water count | Water ink | Water glyph + the word |
+
+Check every screen with deuteranopia, protanopia and tritanopia filters (Xcode Accessibility Inspector, Android "Simulate color space") before each release.
+
+**Focus.** External keyboards and Switch Control get a visible 2 pt cobalt focus ring with a 2 pt offset. Focus never lands on hidden or decorative elements.
+
+---
+
+## 8. UX rules
+
+1. **Core tasks in 3 taps or fewer**, measured from the home screen (PRD 3.0 budget). Any new feature states its tap count before it's built.
+2. **One primary action per screen.** The camera screen has two zones with one primary each, styled differently.
+3. **Undo instead of confirm.** Remove a friend, remove an entry, cancel a flare, replace a drink, delete a group: act at once, offer undo. Confirm only where an undo can't reverse the action or the PRD requires it: replace a live flare, block, delete account.
+4. **Defaults over questions.** Every composer field starts filled in. Who joins? works without touching anything.
+5. **Nobody is shown declining, missing or not seeing.** No "seen", no viewer counts, no grey "didn't reply" rows, no "nobody came" anywhere but the sender's own app screen.
+6. **The widget does it without the app.** The app is for typing, the camera and the order ticket.
+7. **No dead ends.** A disabled button always has the reason next to it, with the way out.
+8. **Closing saves.** Editors save on close. No "discard changes?" dialogs.
+9. **Thumb zone.** Primary actions sit in the bottom third. Text is left-aligned. Titles go at the top, actions at the bottom.
+10. **Private things say so, in place.** "Only you see this" sits on the tracker, the level and the groups editor.
+11. **We don't interrupt.** No pop-ups for levels, ratings or tips. No prompts while a flare is live. The only system prompts are permissions, each after our own explainer.
+12. **Every state is designed:** empty, loading, offline, error and denied permission (4.21, 5.2), before a screen counts as done.
+13. **Platform for plumbing, brand for content.** Sheets, alerts, share sheets, sign-in buttons, pickers and UI glyphs are native. Colour, rims, type and drink art are ours.
+14. **Words come from COPY.md.** No placeholder text ships.
+
+---
+
+## 9. Handoff notes
+
+**For COPY.md (Words):**
+- Every label named in this file, including the screen reader labels in 5.6 and the confirmation lines in 5.2.
+- Level names, the caffeine note, the "Nobody was free" line, and the invite message.
+- The final drink list mapped to the ids in 3.4. Design draws any drink that differs.
+
+**For ARCHITECTURE.md (Tech), to confirm or align:**
+1. Picker auto-close: resolved, 30 s everywhere (ARCHITECTURE.md 3.2).
+2. Countdown target: resolved, every countdown counts to close time (ARCHITECTURE.md 3.4, `setWhen(expiresAt)`).
+3. Drink assets: SVG masters and export rules in 3.5. Heroes ship as WebP; icons as SVG or WebP (CTO's call).
+4. Archivo is bundled in the iOS widget extension; Android widgets use the system font.
+5. Undo instead of confirm (8 rule 3): for Cancel flare (4.7), Remove friend (4.12) and Delete group (4.13) the client holds the server call for 5 s, or sends it when the app goes to the background. `COPY.md` dropped the matching confirm dialogs.
+6. Show to barista: keep-awake, plus optional max brightness restored on close.
+7. Haptics in `clink-native` (2.10).
+
+**For PRD.md (Product), design calls that touch behaviour:**
+1. Android 2x2 picker under 150 dp high has no Cancel button; the timeout closes it (5.3).
+2. Widget idle with no usual 3: Who joins? opens the camera screen, because there's no drink to send (5.2).
+3. Friend flare photos show as a tile on the widget, never full bleed (5.2).
+4. Live Activity and the ongoing notification have no buttons in v1 (6.1, 6.2).
+
+**Open CEO question (cost and brand, `PRD.md` 8 question 8):** who draws the drink set and the logo. The production list is 5 heroes, 84 icon drawings (42 drinks × 2 sizes), 5 glyphs, the mark, the wordmark and the app icon variants. Recommendation: commission one freelance illustrator to draw all of it from this brief, so the set is consistent and the rights are clearly ours. Get quotes first; we can't estimate the price reliably, so verify before purchase. The alternative is drawing in-house and using image generation only for reference sketches (3.3). It's slower and the result is less even.
+
+**Rights (S-22).** The illustrator's contract assigns copyright in every deliverable (drinks, glyphs, mark, wordmark, app icon) to the company, with a waiver of moral rights where the law allows, and it is signed before work starts. Generated images stay reference only and never ship. Archivo's OFL text goes in the licences screen.

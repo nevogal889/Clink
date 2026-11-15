@@ -4,9 +4,14 @@ Owner: Head of Product, with the Business Analyst. Audience: engineering and QA.
 Status: v1 build spec. `DECISIONS.md` wins over this file if they ever disagree. If you find a conflict, flag it to the Head of Product and follow `DECISIONS.md` until it is fixed.
 
 Related files (other units own them; this file does not repeat them):
-- `docs/ARCHITECTURE.md` (Tech): stack, data model, widget refresh, push, deep links, auth providers, analytics tool.
+- `docs/ARCHITECTURE.md` (Tech): stack, data model, widget refresh, push, deep links, auth providers, analytics, retention jobs.
 - `docs/DESIGN.md` (Design): visual system, drink pictures, layouts, motion, accessibility details.
-- `docs/COPY.md` (Words): every user-facing string, the drink catalog (top 10 per category), notification text, level names.
+- `docs/COPY.md` (Words): every user-facing string, the drink catalog (top 10 per category), option sets, notification text, level names.
+- `docs/RISK_REVIEW.md` (Risk): security and legal findings, and the resolution log of what changed in v1 because of them.
+- `docs/QA_PLAN.md` (QA): test cases mapped to the acceptance criteria below.
+- `docs/MODERATION.md` and `docs/legal/` (Legal, written before beta): moderation runbook, vendor register, records of processing.
+
+Revised 2026-11-15 after the Risk and QA reviews. Finding ids in brackets (M-04, QF-S16) point to the resolution log in `RISK_REVIEW.md`.
 
 Strings quoted in this file show meaning only. The shipped wording comes from `COPY.md`.
 
@@ -35,7 +40,8 @@ Every spec decision below follows these. When a case is not covered, pick the op
 |---|---|---|
 | iOS app + widget (small, medium) | In | Core platform. |
 | Android app + widget (small, medium) | In | CEO guideline 10. |
-| Sign in: Apple + phone (iOS), Google + phone (Android) | In | Store rules and contact matching. |
+| Sign in: Apple + phone (iOS), Google + phone (Android), the other platform's provider one tap away | In | Store rules, contact matching, switching phones. |
+| Age check at sign-up (no birth date stored) | In | COPPA, GDPR Art. 8, store age ratings (M-05). |
 | 6-step onboarding | In | `DECISIONS.md`. |
 | Drink snaps to all friends, 24h, reactions | In | Core loop 1. |
 | Flares: 4 categories, timing pills, To: picker | In | Core loop 2. |
@@ -52,6 +58,8 @@ Every spec decision below follows these. When a case is not covered, pick the op
 | Deferred deep link invites | In | New users must arrive already friends. |
 | Live Activity (iOS) / ongoing notification (Android) | In | Live flare countdown outside the app. |
 | Report, block, in-app account deletion, privacy policy | In | Store rules. |
+| Text blocklist, suspension, moderation notices, web report form | In | App Store 1.2, Play UGC policy, EU DSA (M-06, S-17). |
+| Automated image check on snaps and flare photos | In before public App Store release | App Store 1.2 filter rule. Vendor and cost: CEO question 2. |
 | Quiet hours | Not in v1, and not planned | CEO guideline 5. Removed completely. |
 | Visible invite link, "Invite link" label, Copy link button | Not in v1 | CEO guideline 6. |
 | Large widget, lock-screen widgets, StandBy layouts | Not in v1 | Two sizes cover the loops; fewer layouts to build and test. |
@@ -92,7 +100,11 @@ Every spec decision below follows these. When a case is not covered, pick the op
 
 **Copy.** No string is hard-coded outside the string table built from `COPY.md`.
 
-**Analytics.** Event names are listed in section 6. No event ever carries photo data, notes, Plan B, place text, phone numbers or contact data.
+**Analytics.** Event names are listed in section 6. No event ever carries photo data, notes, Plan B, place text, phone numbers or contact data. Settings > Privacy > "Share usage stats" turns them off for that user.
+
+**Text other people see.** Display name, place, custom drink name, Note, Plan B, one-time note and report notes are checked on the server against a blocklist and against the limits in this file (`ARCHITECTURE.md` 4.4, 8.4). A blocked word is refused with a plain message from `COPY.md`.
+
+**Suspended accounts.** A suspended account can't do anything in the app, and everyone else stops seeing its content at once (3.18).
 
 ---
 
@@ -101,8 +113,8 @@ Every spec decision below follows these. When a case is not covered, pick the op
 **Purpose.** Get people into an account in under a minute with the fewest steps, and meet store rules.
 
 **Behaviour rules.**
-1. iOS shows two options: Sign in with Apple, and Continue with phone.
-2. Android shows two options: Sign in with Google, and Continue with phone. Exact SDKs are in `ARCHITECTURE.md`.
+1. iOS shows two primary options, Sign in with Apple and Continue with phone, plus one "Other ways to sign in" text button that reveals Continue with Google.
+2. Android shows two primary options, Continue with Google and Continue with phone, plus one "Other ways to sign in" text button that reveals Continue with Apple. Reason: someone who switches phones can still reach their account. Exact SDKs are in `ARCHITECTURE.md` 5.
 3. Phone flow: country picker defaulting to the device region, number entry, 6-digit SMS code. The code auto-fills where the OS supports it.
 4. A code is valid for 10 minutes. Resend is available after 30 seconds. After 5 wrong codes, the number is locked for 15 minutes.
 5. Phone numbers are used only for contact matching and sign-in. They are never shown to any other user.
@@ -110,21 +122,27 @@ Every spec decision below follows these. When a case is not covered, pick the op
 7. If an account already exists for the identity, the user is signed into it and skips onboarding (F3).
 8. Clink never needs an email. Apple "Hide my email" works with no extra prompt.
 9. Sessions stay signed in until the user signs out or deletes the account.
+10. **Age check (M-05).** After the sign-in method succeeds for a new identity, and before the account is created, a neutral screen asks for birth month and year. It has no default value and no hint of the cut-off. Under the minimum age (CEO question 1; build and test with 16): no account is created, the sign-in identity is deleted, the Apple token is revoked, and the device keeps the refused screen for 24 hours. Only the fact and time of the check are stored, never the birth date. Returning users never see it again. An account we later learn is under the minimum is suspended and deleted within 7 days.
+11. **New-device sign-in (S-04).** Signing in on a new device sends the account's other devices one notification with a "Not me" action, which signs out every session.
 
 **Edge cases.**
-- User switches from iPhone (Apple sign-in only, no phone added) to Android: they cannot reach the old account with Google. Settings shows a card asking Apple and Google users with no phone to add one. If `ARCHITECTURE.md` confirms Apple sign-in on Android, it is offered there as a third, less prominent option.
+- User switches from iPhone (Apple sign-in only, no phone added) to Android: they use Other ways to sign in > Continue with Apple. Settings also shows a card asking Apple and Google users with no phone to add one.
+- User quits the app on the age screen: no account exists. The abandoned sign-in identity is deleted after 24 hours.
 - Same phone number used on two devices at once: both stay signed in to the same account.
 - SMS never arrives: after 30 seconds, show resend and "check the number". No voice call fallback in v1.
 - Invite link was opened before sign-in: the invite is kept and applied after sign-in (3.15).
 
 **Acceptance criteria.**
-1. On iOS, the sign-in screen shows exactly Apple and phone options. On Android, exactly Google and phone.
+1. On iOS, the sign-in screen shows Sign in with Apple and Continue with phone as primary options and one "Other ways to sign in" text button, which reveals Continue with Google and nothing else. On Android: Continue with Google and Continue with phone, and Other ways reveals Continue with Apple.
 2. A new user completes Apple, Google or phone sign-in and reaches onboarding step 2.
 3. An existing user signing in on a new device skips onboarding and lands on the camera screen with their usual 3, groups, friends, XP and today's tracker restored.
 4. A wrong code shows an inline error. A 6th attempt within 15 minutes is refused with a wait message.
 5. Resend is disabled for 30 seconds after each send.
 6. No screen visible to another user ever shows the phone number (check friend list, flare, snap viewer, order card, friend request).
 7. Sign in with Apple users with "Hide my email" complete sign-in with no email prompt.
+8. An age under the minimum creates no account and leaves no sign-in identity on the server, and the age screen stays refused on that device for 24 hours.
+9. No database table or log holds a birth date.
+10. Signing in on a second phone sends the first phone one "new sign-in" notification; "Not me" signs out both.
 
 ---
 
@@ -134,7 +152,7 @@ Every spec decision below follows these. When a case is not covered, pick the op
 
 | Step | Screen | Required? |
 |---|---|---|
-| 1 | Sign in (3.1) | Yes |
+| 1 | Sign in (3.1), including the age check and, on iOS, the invite check | Yes |
 | 2 | Name and photo | Name yes, photo no |
 | 3 | Usual 3 | At least 1 drink; details optional |
 | 4 | Invite friends | No ("Later") |
@@ -145,11 +163,12 @@ Every spec decision below follows these. When a case is not covered, pick the op
 1. Step 2: name is 1 to 30 characters. Apple/Google name pre-fills if given. Photo from camera or gallery; initials are the fallback.
 2. Step 3: user picks up to 3 drinks from the catalog (`COPY.md`) or a preset, or adds their own. #1 is the widget default and the quick-flare drink. Each slot has a "Make it yours" button for order details (3.7). Continue needs at least 1 drink.
 3. Step 4: share buttons (WhatsApp, Messages, More) and a list of contacts already on Clink with an Add button. A progress meter shows "0 of 2". Details in 3.15. Apple and Google users also see an optional phone-number field here.
-4. Step 5: our own explainer screen first, then the system permission dialog only if the user taps the positive button. Reason: the system dialog can be shown once.
+4. Step 5: our own explainer screen first, then the system permission dialog only if the user taps the positive button. Reason: the system dialog can be shown once. The positive button never says "Allow" (App Review 5.1.1(iv)); wording in `COPY.md`.
 5. Step 6: a short illustrated guide per platform. "I added it" checks for an installed widget. "Remind me later" moves on.
-6. If the user arrived from an invite, step 1 shows who invited them, and they are already friends with the inviter after sign-in.
+6. If the user arrived from an invite, step 1 shows who invited them (first name and initials; no photo before sign-in), and they are already friends with the inviter after sign-in. The welcome banner has a "Not someone you know?" button that removes and blocks the inviter in one tap (M-04).
 7. Onboarding state is saved per step. Killing the app resumes at the last unfinished step.
 8. Back navigation works on every step after sign-in.
+9. **iOS invite check (QF-M5).** On iOS first launch, before the sign-in screen, the app checks the clipboard for a probable web URL with the system pattern check, which doesn't show the paste prompt. It shows "Got an invite?" with the system Paste button, "Type the code instead" and Skip only when there is a match. It counts as part of step 1. After Paste, step 1 shows "Maya invited you". With no match the screen never appears. The landing page copies the full invite URL so the check can find it (`ARCHITECTURE.md` 6).
 
 **Edge cases.**
 - Notifications denied at system level: onboarding continues. Settings shows a card explaining what they'll miss, with a link to system settings.
@@ -159,7 +178,7 @@ Every spec decision below follows these. When a case is not covered, pick the op
 - The user picks a 4th drink in step 3: it replaces #3.
 
 **Acceptance criteria.**
-1. A new user sees the 6 steps in the table order and no others.
+1. A new user sees the 6 steps in the table order and no others. The age check, and on iOS the invite check, are part of step 1.
 2. Step 3 Continue is disabled until at least one drink is picked.
 3. Steps 4, 5 and 6 can each be skipped, and the user ends on the camera screen.
 4. The system notification dialog never appears before the user taps the positive button on our explainer.
@@ -185,7 +204,7 @@ Every spec decision below follows these. When a case is not covered, pick the op
 | Idle, no friends | Same as idle, snap slot replaced by invite prompt | +1 Drink, Camera, Invite (opens app on share buttons) |
 | Idle, no usual 3 | Same as idle | +1 Drink opens app on the usual 3 editor |
 | +1 picker | Usual 3 + Water | Pick one (logs it), Cancel |
-| Your live flare | Category picture, "Coffee, in 15m", place, countdown, reply chips (name + "In" or drink name with note marker) | Tap opens your live flare in app |
+| Your live flare | Category picture, "Coffee, in 15m", place, countdown to close, reply chips (name + "In" or drink name with note marker) | Tap opens your live flare in app |
 | Friend's flare | Friend name and photo, category picture or attached photo, "Maya wants matcha", place, timing, countdown, "+N" if more flares | I'm in, Bring me one, tap elsewhere opens flare in app |
 | Bring me one picker | Your usual 3 | Pick one (sends as saved), Cancel |
 | Friend's flare, replied | Same card with "You're in" or "Asked for Cortado" | Tap opens app (change or cancel reply there) |
@@ -201,12 +220,16 @@ Every spec decision below follows these. When a case is not covered, pick the op
 
 Reason for the small layout: there is no room for snaps or a 3-drink Bring me one picker at that size, so small is the tracker plus one join button.
 
+"Not signed in" and "not set up" (signed in, onboarding unfinished) are two states with different text on both sizes.
+
+After your flare closes as done, your widget returns to idle. The run list is in the app (camera bar "Run list") for 2 hours (QF-S32).
+
 **Priority when several things are live.** Unreplied friend flare > your live flare > idle. When several friend flares are live, show the newest with "+N". After you reply to or dismiss the friend flare, the widget shows your live flare (if any), then idle.
 
 **Group configuration.**
 1. Each medium widget has one setting: which audience its Who joins? targets. Options: Automatic, each of the user's groups, Everyone. Default: Automatic.
-2. iOS: set through the system Edit Widget screen. Android: set on a configuration screen when the widget is added, and changeable later.
-3. Both platforms: Settings > Widgets lists the user's widgets with their audience and lets the user change it (fallback for launchers without a reconfigure option).
+2. iOS: set through the system Edit Widget screen (hold the widget, then Edit Widget). Android: set on a configuration screen when the widget is added, and changeable later.
+3. Settings > Widgets lists the user's widgets with their audience. Android: tapping one changes its audience (fallback for launchers without a reconfigure option). iOS: the list is read-only with the hint "hold the widget, then Edit Widget", because iOS doesn't let an app change a widget's configuration (QF-M13).
 4. The group label on the widget shows the audience the next quick flare will go to, including what Automatic resolves to right now.
 5. Users can add more than one widget, each with its own audience.
 6. Small widgets have no audience setting, because they have no Who joins? button.
@@ -219,9 +242,11 @@ Reason for the small layout: there is no room for snaps or a 3-drink Bring me on
 5. Countdowns run on the widget without a network refresh (platform timer text).
 6. If data is stale (no refresh for 30+ minutes because of OS limits or no network), the widget still shows the last state; time-based fields (countdown, "last drink") stay correct because they're computed from timestamps.
 7. A flare that ended must not keep its action buttons active: tapping I'm in on an ended flare opens the app with "This flare has ended".
+8. Who joins? on the widget never replaces a live flare. If you already have one (sent from the app or another device), the widget reloads and shows it. Only the app can replace a flare (3.5 rule 7).
+9. On iOS, snap photos, friend names and places are marked privacy-sensitive, so StandBy and a locked screen hide them (S-15).
 
 **Edge cases.**
-- Group used by a widget is deleted: the widget falls back to Automatic.
+- Group used by a widget is deleted: the widget falls back to Automatic (on iOS the stale group in its configuration is treated as Automatic).
 - Group used by a widget has no members left: Who joins? opens the app with a hint to pick another audience.
 - Friend removes you while their flare is on your widget: it disappears on the next refresh; tapping it shows "This flare has ended".
 - User signs out: every widget switches to the not-signed-in state.
@@ -232,14 +257,16 @@ Reason for the small layout: there is no room for snaps or a 3-drink Bring me on
 2. +1 Drink, then a drink, logs it without opening the app, and the count updates on the widget within 5 seconds.
 3. Who joins? on a medium widget sends a flare to that widget's configured audience without opening the app.
 4. Two medium widgets set to Work and Home friends send flares to those groups respectively.
-5. Changing the widget audience from Settings > Widgets changes where its next quick flare goes.
+5. Android: changing the widget audience from Settings > Widgets changes where its next quick flare goes.
+5b. iOS: Settings > Widgets lists every installed medium widget with its audience, read-only, with the Edit Widget hint.
 6. With a friend's unreplied flare and your own live flare both active, the widget shows the friend's flare; after tapping I'm in, it shows your live flare.
 7. With two friend flares live, the widget shows the newer one and "+1".
-8. On a test device with good network, a friend's new flare appears on the widget within 60 seconds in at least 9 of 10 tries. If `ARCHITECTURE.md` documents a platform limit that makes this impossible, the CTO sets the target and QA tests that number. The push notification (3.16) is the real-time path either way.
+8. On a test device with good network, notifications allowed and Friend flares on, a friend's new flare appears on the widget within 60 seconds in at least 9 of 10 tries. With flare notifications off, the target is best effort: within 15 minutes, sooner when the background push is delivered (`ARCHITECTURE.md` 3.3). The push notification (3.16) is the real-time path either way.
 9. I'm in on an ended flare does not register a reply and shows the ended message.
 10. The Bring me one widget picker sends the saved order with all saved details and no one-time note.
 11. Pickers close after 30 seconds of no input.
-12. After sign-out, every widget shows the not-signed-in state.
+12. After sign-out, every widget shows the not-signed-in state, and the phone receives no further notifications for that account.
+13. With a live flare sent from the app, Who joins? on the widget leaves exactly that one flare live and the widget shows it.
 
 ---
 
@@ -251,15 +278,16 @@ Reason for the small layout: there is no room for snaps or a 3-drink Bring me on
 1. The camera is the app's main screen. It opens live (front/back toggle, flash).
 2. After the shutter: preview, optional place text (max 40 characters), then two choices: Share snap, or Send as flare (3.5 with the photo attached).
 3. **Snaps go to all friends, always.** Never to a group.
-4. **A photo attached to a flare goes only to that flare's audience** and is not posted as a snap. Reason: the flare has its own audience; posting it to everyone would leak who the flare was for.
+4. **A photo attached to a flare goes only to that flare's audience** and is not posted as a snap. Reason: the flare has its own audience; posting it to everyone would leak who the flare was for. It is stored apart from snaps, readable only by the sender and recipients who are still friends, and deleted 2 hours after the flare ends (M-02).
 5. No notification for new snaps by default (setting in 3.16). Friends' widgets update.
-6. A snap lives 24 hours from upload. Then the snap and the photo file are deleted from storage.
+6. A snap lives 24 hours from upload. At 24 hours it leaves every viewer and widget and no link to it works; the file is deleted within 25 hours. A reported snap keeps a moderation copy (3.18).
 7. Viewer: full screen, swipe for newer/older snaps from the last 24 hours, sender name, time, place.
 8. Reactions: ☕ 🍵 🫖 ❤️ 😂. One reaction per viewer per snap; tapping another replaces it; tapping the same one removes it.
 9. Sender gets at most one notification per snap for reactions, sent silently (no sound). Later reactions update an in-app list only ("Leo and 2 others").
 10. Sender can delete their own snap at any time. It disappears from widgets on the next refresh.
 11. Photos are compressed before upload and all location metadata is stripped on device.
 12. Camera only, no gallery upload in v1.
+13. Before the public App Store release, every snap and flare photo passes an automated image check before it reaches friends (3.18, CEO question 2).
 
 **Edge cases.**
 - Camera permission denied: explainer with a link to system settings. Flares still work without photos.
@@ -271,7 +299,7 @@ Reason for the small layout: there is no room for snaps or a 3-drink Bring me on
 **Acceptance criteria.**
 1. Sharing a snap makes it visible on every friend's widget and viewer, regardless of groups.
 2. Send as flare with a photo shows the photo only to members of the chosen audience. A friend outside that group never receives the photo (check widget, viewer, API response).
-3. A snap is gone from viewers and widgets 24 hours after upload, and its file is no longer retrievable by URL.
+3. A snap is gone from viewers and widgets 24 hours after upload, no URL to it works after 24 hours, and its file is deleted within 25 hours. An upload that never became a snap (dropped offline, crash) is deleted within 25 hours too.
 4. Uploaded photos contain no GPS metadata.
 5. Reacting twice with different emoji leaves one reaction; the sender receives exactly one notification for that snap no matter how many friends react.
 6. Snap-shared notifications are off for a new account.
@@ -290,20 +318,22 @@ Reason for the small layout: there is no room for snaps or a 3-drink Bring me on
 **Behaviour rules.**
 1. Defaults: category of usual #1, last place used (empty if none), timing Now, audience from the automatic rule (3.10).
 2. Timing pills: Now, 5m, 15m, 30m, Other. Other offers 5 to 60 minutes in 5-minute steps. Nothing beyond 60.
-3. Meet time = send time + chosen timing. The flare stays open until the meet time, with a minimum of 15 minutes after sending. So Now and 5m stay open 15 minutes; 30m stays open 30 minutes.
+3. Meet time = send time + chosen timing, computed by the server when it receives the flare. The flare stays open until the meet time, with a minimum of 15 minutes after sending. So Now and 5m stay open 15 minutes; 30m stays open 30 minutes. Every countdown (widget, Live Activity, ongoing notification, app) counts to close time.
 4. Place is free text, max 40 characters, optional.
 5. To: chip opens the audience picker: Automatic (shows what it resolves to), each group, Everyone.
 6. Only the chosen audience receives the flare (notification, widget, Live Activity count). People outside it have no way to know it existed.
-7. **One live flare per sender.** Sending while one is live asks "Replace your live flare?". Replacing cancels the old one (rule 10).
+7. **One live flare per sender.** Sending from the app while one is live asks "Replace your live flare?". Replacing cancels the old one (rule 10). The widget never replaces (3.3 rule 8).
 8. Quick flare from widget: usual #1's category, last place, Now, the widget's audience. No confirm.
 9. Sender actions on a live flare: "We're going" (marks it done; shown once there is at least one reply) and Cancel.
 10. Cancel: flare disappears from all widgets. People who replied get one silent notification that it's off. Nobody else is told.
 11. Done ("We're going"): flare disappears from friends' widgets, replies are locked, the drink-run list stays available to the sender in the app for 2 hours.
 12. Expiry with replies: at close time, the flare closes as done (same as rule 11).
-13. Expiry with no replies: the flare disappears from every widget. The sender sees "Nobody was free this time" in the app only. No notification to anyone.
+13. Expiry with no replies: the flare disappears from every widget. The sender sees "Nobody was free this time" in the app only. No notification to anyone. The Live Activity and ongoing notification end at once with no final text, as they do on cancel.
 14. Live Activity (iOS) and an ongoing notification (Android) show the countdown and reply count from send until close.
 15. Notification rate guard: if one sender sends more than 3 flares in 60 minutes, later flares in that hour still reach widgets but their notifications are delivered silently. No user-facing message.
 16. Sender sees every reply by name (all repliers are their friends).
+17. Daily cap: 12 flares per sender per day. There is no minimum gap between flares, so a flare sent by accident can be cancelled and resent at once.
+18. Recipients can see a flare only while they are still the sender's friend, and only until 2 hours after it closes (M-03).
 
 **Edge cases.**
 - Audience resolves to zero friends: Who joins? is disabled with a hint ("Add people to Work or pick Everyone").
@@ -311,6 +341,8 @@ Reason for the small layout: there is no room for snaps or a 3-drink Bring me on
 - Sender deletes account while flare is live: flare is cancelled silently for everyone, including repliers.
 - Clock changes or time zone change during a flare: close time is absolute (UTC); display adapts.
 - Friend removed from the group after the flare was sent: they keep the flare they already received.
+- Friend removed or blocked while the flare is live: the flare leaves their widget and app at once, and their reply is deleted. Nobody is told.
+- Automatic is resolved at the moment of the tap, so a flare tapped at 17:59 under "Work" goes to Work (3.10).
 
 **Acceptance criteria.**
 1. The composer offers exactly the 4 categories; Water is not offered.
@@ -366,7 +398,7 @@ Reason for the small layout: there is no room for snaps or a 3-drink Bring me on
 
 **Purpose.** Save up to 3 go-to drinks once, with exactly how you like them, so the widget and Bring me one work with no typing.
 
-**Catalog.** 10 drinks in each of Coffee, Matcha, Tea, Smoothie & Juice, plus Water (still, sparkling). The list, names and herbal/caffeine flags are in `COPY.md`. Pictures are in `DESIGN.md`. Presets (for example "Hybrid mix") are also defined in `COPY.md`.
+**Catalog.** 10 drinks in each of Coffee, Matcha, Tea, Smoothie & Juice, plus Water (still, sparkling). The list, names and herbal/caffeine flags are in `COPY.md`. Pictures are in `DESIGN.md`. Presets (for example "A bit of everything") are also defined in `COPY.md`.
 
 **Behaviour rules.**
 1. Up to 3 drinks from any flare category, in order. #1 is the widget default and the quick-flare drink. Reorder by drag.
@@ -376,31 +408,40 @@ Reason for the small layout: there is no room for snaps or a 3-drink Bring me on
 5. Details are per drink and synced to the account.
 6. Friends can see your usual 3 with details (📝 in the friends list). Reason: surprise drinks and runs. One-time notes are seen only by that flare's sender.
 
-**Option sets per category.** Single-choice unless marked "any".
+**Option sets per category.** The values are in `COPY.md` 2.7, which this file adopts (QF-M15). Single choice unless marked "any". Which fields each category has (key in brackets, as stored):
 
 | Field | Coffee | Matcha | Tea | Smoothie & Juice |
 |---|---|---|---|---|
-| Size | Small, Regular, Large | Small, Regular, Large | Small, Regular, Large | Small, Regular, Large |
-| Temperature | Iced, Warm, Hot, Extra hot | Iced, Warm, Hot | Iced, Hot, Extra hot | (none) |
-| Milk / Add | No milk, Whole, Skim, Oat, Almond, Soy, Lactose-free | No milk, Whole, Skim, Oat, Almond, Soy, Lactose-free | Nothing, Splash of milk, Oat milk, Lemon | (none) |
-| Sweetness | No sugar, ½ sugar, 1 sugar, 2 sugars, Sweetener | Unsweetened, Lightly sweet, Sweet, Honey | No sugar, 1 sugar, Honey | No added sugar, Regular |
-| Shots / Strength | Single shot, Double shot, Decaf | Light, Regular, Strong | Light, Regular, Strong (bag left in) | (none) |
-| Ice | (via Temperature) | (via Temperature) | (via Temperature) | No ice, Light ice, Regular ice |
-| Extras (any) | Extra foam, No foam, Vanilla syrup, Caramel syrup, Cinnamon | Vanilla, Extra foam, Cold foam | (none) | Ginger shot, Protein, Chia seeds, No straw |
-| Note | Free text, max 120 | same | same | same |
-| Plan B | Free text, max 80 | same | same | same |
+| Size (`size`) | yes | yes | yes | yes |
+| Temperature (`temp`) | yes | yes | yes | no |
+| Ice (`ice`), shown only when Temperature is Iced or the drink is always iced | yes | yes | yes | yes |
+| Shots (`shots`) | yes | no | no | no |
+| Caffeine (`caf`): Full caffeine, Half-caf, Decaf | yes | no | no | no |
+| Milk (`milk`) | yes | yes | yes | no |
+| Base (`base`) | no | no | no | yes |
+| Sweetness (`sweet`) | yes | yes | yes | yes |
+| Strength (`strength`) | no | yes | yes | no |
+| Grade (`grade`) | no | yes | no | no |
+| Extras / Add-ins (`extras`, any) | yes | yes | yes | yes |
+| Note (`note`) | Free text, max 120 | same | same | same |
+| Plan B (`planB`) | Free text, max 80 | same | same | same |
 
-Option labels above are the agreed set from the prototype. Final wording comes from `COPY.md`. Option sets are per category, not per drink. Reason: one simple editor; every field is optional, so a field that doesn't fit a drink is just left empty.
+Rules:
+1. Each catalog drink lists its own Fields in `COPY.md` 2.2 to 2.5. The editor shows that drink's Fields first and the rest of the category's fields under a collapsed "More options". Reason: a Cortado doesn't need a Size row up front, and nothing is ever impossible to set.
+2. A custom drink shows every field of its category, with no fold.
+3. "Tapioca pearls" shows for Bubble Tea only.
+4. Every field is optional and can be cleared.
 
 **Edge cases.**
 - A usual drink is removed from the catalog in a later release: it stays in the user's usual 3 as a custom drink.
-- Coffee with Decaf selected does not count as caffeinated in the tracker.
+- Coffee with Caffeine = Decaf does not count as caffeinated in the tracker, including logs from the widget.
 - Editing details while a Bring me one with that drink is live: the live order keeps the details it was sent with.
 
 **Acceptance criteria.**
-1. Each of the 4 categories lists 10 drinks matching `COPY.md`, each with its picture.
+1. Each of the 4 categories lists the 10 drinks in `COPY.md` 2.2 to 2.5, with those ids, each with its picture from `DESIGN.md` 3.4.
 2. Water cannot be added to a usual 3 slot.
 3. Every field in the option table can be set, changed and cleared; multi-select fields accept several values.
+3b. A drink's own Fields show first; the category's other fields are under "More options", collapsed. A custom drink shows all fields.
 4. A custom drink uses the option set of the category the user picked.
 5. Saving details updates the widget and the next Bring me one immediately.
 6. A friend opening your 📝 sees all saved details, Note and Plan B; they never see a one-time note you sent to someone else.
@@ -439,11 +480,15 @@ Option labels above are the agreed set from the prototype. Final wording comes f
 4. Incoming requests: notification plus a list in the friends sheet. Accept or leave it. No decline button; a pending request expires quietly after 30 days. The requester is never told.
 5. Remove: silent. The removed person is not notified, is removed from all your groups, and stops seeing your snaps, flares and usual 3.
 6. The friends sheet shows: groups first, then friends ("5 of 20"), each with photo, name, 📝 for their usual, and "last drink 1h 42m ago" only if that friend opted in (3.11).
-7. Contact matching uses phone numbers only. Raw contact lists are not stored on the server; only matches are kept (method in `ARCHITECTURE.md`).
+7. Contact matching uses phone numbers only. The numbers are sent to the server encrypted in transit, used for the check and not kept; only matches are kept (method in `ARCHITECTURE.md` 8.1). Only users with a verified phone number can run it.
+8. "Contact matching" in Settings > Privacy: on means the app re-checks contacts at most once a day when opened; off means contacts are never sent.
+9. "People with my number can find me" in Settings > Privacy (on by default): off means nobody finds you through their contacts.
+10. Removing or blocking someone also clears your snaps, flares and photo from their widget at once (background push), not only on the next refresh.
 
 **Edge cases.**
 - At 20 and trying to accept: "Remove someone first" with a link to the list.
 - Invitee joins while the inviter is at 20: the account is created; the inviter gets a request instead of an automatic friendship.
+- An existing user at 20 opens an invite: no friendship; they see the "You're at 20 friends" message with the inviter's name; nothing is sent to the inviter (3.15).
 - Both send requests to each other: they become friends.
 - Re-adding someone you removed: allowed through a new request.
 
@@ -465,16 +510,18 @@ Option labels above are the agreed set from the prototype. Final wording comes f
 2. A group has a name (max 20 characters), an emoji, and members picked from friends. A friend can be in several groups. Max 10 groups per user.
 3. New users have only Everyone. Everyone is always all friends and can't be edited.
 4. When a user reaches 6 friends, the friends sheet shows a one-time suggestion to create Work and Home friends. Dismissing it removes it for good.
-5. **Automatic rule.** Weekdays (Monday to Friday) 08:00 to 17:59 local time → the user's "daytime group"; otherwise → the "other times group". If that group doesn't exist or has no members → Everyone.
-6. The daytime and other-times groups are set in Settings > Groups. The suggestion in rule 4 sets them to Work and Home friends. Reason: matching by group name breaks when people rename groups.
+5. **Automatic rule (QF-M2).** Monday to Friday, 08:00 to 17:59 local time: the daytime group, if it exists and has at least 1 current, unblocked friend; otherwise Everyone. All other times: the other-times group under the same condition; otherwise Everyone. v1 uses Monday to Friday in every locale; revisit once launch countries are chosen (CEO question 1).
+6. The daytime and other-times groups are set in two places: Settings > Groups, and a row in the group editor, "Automatic uses this for: Weekdays 8:00 to 18:00 / Other times / Neither". A new group named "Work" defaults to Weekdays and one named "Home friends" to Other times, when that slot is free. The suggestion in rule 4 sets them too. Reason: a user who makes a Work group by hand gets the behaviour `DECISIONS.md` describes, and renaming a group later doesn't break it (QF-S16).
 7. Snaps ignore groups (3.4 rule 3).
 8. Deleting a group removes nobody as a friend.
 9. Data model leaves room for a group to belong to a company later (`ARCHITECTURE.md`). No company features in v1.
+10. Automatic is resolved at the moment of the tap, not when the server receives it, so the flare goes where the label said (`ARCHITECTURE.md` 4.6).
 
 **Acceptance criteria.**
 1. No API response to a non-owner contains group names, membership or existence.
 2. At Tuesday 09:00 with a daytime group set and non-empty, Automatic resolves to it; at Tuesday 18:00 and Saturday 10:00, it resolves to the other-times group.
-3. With no daytime group set, Tuesday 09:00 resolves to Everyone.
+3. With no daytime group set, or a daytime group with nobody in it, Tuesday 09:00 resolves to Everyone. With no other-times group, Tuesday 20:00 resolves to Everyone.
+3b. A group created by hand and named Work is used by Automatic on weekdays, unless the user picks Neither.
 4. The 6-friend suggestion shows once at 6 friends and never after dismissal.
 5. A friend in two groups receives one flare sent to either group.
 6. Deleting a group leaves the friend list unchanged.
@@ -488,20 +535,21 @@ Option labels above are the agreed set from the prototype. Final wording comes f
 **Behaviour rules.**
 1. Two counts: drinks (all flare categories) and water. Logged from the widget +1 picker or the app.
 2. Reset at local midnight on the device's current time zone.
-3. The app's Today view lists today's entries with times. Undo last is one tap. Any single entry from today can also be removed. Reason: a mis-tap from an hour ago shouldn't need several undos.
+3. The app's Today view lists today's entries with times. Undo last is one tap. Any single entry from today can also be removed. Reason: a mis-tap from an hour ago shouldn't need several undos. Quick log has six buttons: usual 3, still water, sparkling water, and "Something else", which opens the catalog to log any drink without changing the usual 3 (QF-S34).
 4. Counts and water are private, always. They are never sent to friends.
-5. Caffeinated: coffee (unless Decaf is in its details), matcha, and tea not flagged herbal in `COPY.md`. Smoothie & Juice and water are not caffeinated.
+5. Caffeinated: the drink's caffeine flag in `COPY.md`, unless Caffeine = Decaf in its details. So coffee, matcha (including hojicha) and any tea not flagged herbal count as caffeinated. Smoothie & Juice and water do not.
 6. After 4 caffeinated drinks in a day, the widget subline and Today view show a neutral note (wording in `COPY.md`, for example "herbal tea is a nice switch tonight"). No health claims, no caffeine amounts, no maths.
-7. Opt-in last-drink sharing (Settings > Privacy, off by default): friends see the time since your last non-water drink. Never counts, never water. Hidden if the last drink was more than 24 hours ago.
+7. Opt-in last-drink sharing (Settings > Privacy, off by default): friends see the time since your last non-water drink. Never counts, never water. Hidden if the last drink was more than 24 hours ago. The server enforces all of it: turning sharing off deletes the shared time at once, and undoing or removing a drink recomputes it (QF-M17).
 8. Water from the widget logs still water. Sparkling is logged from the app.
-9. Tracker history syncs to the account. Only today is shown in v1.
+9. Tracker history syncs to the account and is kept for 90 days. Only today is shown in v1.
+10. No health or sleep claims anywhere: not in the app, the store listing, screenshots or keywords. The original PRD's "Safe for sleep" wording is out (S-16).
 
 **Acceptance criteria.**
 1. Logging a drink and a water from the widget shows "1 drink" and "1 water".
 2. Entries logged at 23:59 are gone from today's count at 00:00 local time.
 3. Undo last removes only the most recent entry.
 4. The 4th caffeinated drink shows the note; the 4th drink being a chamomile (herbal) after 3 coffees does not.
-5. With sharing off, a friend's API response contains no last-drink time. With it on, it contains the timestamp of the last non-water drink only.
+5. With sharing off, a friend's API response contains no last-drink time. With it on, it contains the timestamp of the last non-water drink only, and nothing if that was more than 24 hours ago. After undoing the latest drink, it shows the one before. Turning sharing off removes the time from the API at once.
 6. No screen or API response to another user contains counts or water.
 
 ---
@@ -529,16 +577,17 @@ Sections, in order:
 1. Profile: name, photo.
 2. My usual 3 (opens the editor, 3.7).
 3. Groups: list, create, edit, delete, daytime and other-times groups.
-4. Widgets: installed widgets and their audience; add-widget guide.
+4. Widgets: installed widgets and their audience (Android: change it; iOS: read-only with the Edit Widget hint); add-widget guide.
 5. Notifications (3.16).
-6. Privacy: "Friends see my last drink" (off), contact sync on/off, link to privacy policy, what friends can see (3.17).
-7. Account: phone number (add/change), sign out, delete account.
+6. Privacy: "Friends see my last drink" (off), "Contact matching" (on), "People with my number can find me" (on), "Share usage stats" (on), "Stop my old invites", what others can see (3.17), privacy policy.
+7. Account: phone number (add/change), ways to sign in, sign out, delete account.
 8. Blocked people (unblock).
-9. Help: report a problem, terms, privacy policy, open-source licences, app version.
+9. Help: Contact us (opens an email to support), report a problem, Community Guidelines, terms, privacy policy, open-source licenses, app version.
 
 **Acceptance criteria.**
 1. Settings contains no quiet hours control, no time window setting, and no "Do not disturb" option of our own.
 2. Every item above is reachable within 2 taps from the camera screen's settings entry.
+3. "Stop my old invites" shows no URL and no "link" label. After it, the user's earlier invite messages stop working and new ones work.
 
 ---
 
@@ -550,19 +599,23 @@ Sections, in order:
 1. **The UI never shows a URL or the words "Invite link".** It shows three share buttons: WhatsApp, Messages, More.
 2. WhatsApp opens WhatsApp with a pre-written message (`COPY.md`) that contains the invite URL. Messages opens the platform SMS/iMessage composer (Google Messages or the default SMS app on Android). More opens the system share sheet with the same message.
 3. If WhatsApp is not installed, its button is hidden. Messages and More always show.
-4. Each user has a personal invite token. The same token works for any number of people.
-5. **Deferred deep link.** Tapping the link without the app goes to the store; after install and sign-in, the new user is already friends with the inviter and sees "Maya invited you". With the app installed, the link opens the app directly. Mechanism in `ARCHITECTURE.md`.
-6. Fallback when attribution fails after install: after sign-in, show "Did someone invite you?" with contact matches already on Clink.
+4. Each user has one personal invite code. It works for up to 20 people and expires 30 days after it was made; the app renews it silently. "Stop my old invites" in Settings > Privacy renews it at once (M-04, S-24).
+5. **Deferred deep link.** Tapping the link without the app goes to the store; after install and sign-in, the new user is already friends with the inviter and sees "Maya invited you". With the app installed, the link opens the app directly. Mechanism in `ARCHITECTURE.md` 6. On iOS the new user taps Paste once (3.2 rule 9).
+6. Fallback when attribution fails after install: after sign-in, show "Did someone invite you?" with people in their contacts who are on Clink (contacts pre-prompt first if not granted).
 7. Link opened on a computer: a small web page with a QR code and store badges.
 8. **Progress meter.** Onboarding shows "0 of 2". It counts share-button taps and contact Adds in this session, max one per button. Reason: share apps don't reliably report a sent message, so the meter tracks what the user did. It is a nudge, never a gate. In the friends sheet the meter shows real friends ("3 of 20").
 9. Share buttons also appear in the friends sheet, on the no-friends widget state's landing screen, and on the "Who joins?" no-friends screen.
-10. Existing Clink users who open an invite get a friend request to the inviter accepted automatically on their side (both have now agreed).
+10. **Existing Clink users who open an invite see a confirm card: "Add Maya as a friend?" with Add and Not now.** Nothing is written before Add. Add creates the friendship, because both have now agreed. Reason: display names are free text, so a stranger could name themselves "Mom"; one tap on a link must not make them a friend (M-04).
+11. New users (arriving through the invite during onboarding) keep the automatic friendship (`DECISIONS.md`). The welcome banner offers "Not someone you know?", which removes and blocks the inviter in one tap.
+12. Any failing code (unknown, expired, used up, blocked, renewed) shows the same message. A new user then carries on with onboarding as a normal sign-up.
 
 **Edge cases.**
 - Inviter at 20 friends: account created, inviter gets a request (3.9).
 - Inviter deleted their account: invite opens as a plain install; no friendship.
 - Inviter blocked the invitee earlier: no friendship, no message to either.
-- The same person opens two different invites: friends with both inviters.
+- The same person opens two different invites: friends with both inviters (an existing user confirms each one).
+- Existing invitee already at 20 friends: no friendship; they see the "You're at 20 friends" message with the inviter's name; nothing is sent to the inviter (QF-S33).
+- The landing page and the pre-sign-in screens show the inviter's first name and initials only, never the photo.
 
 **Acceptance criteria.**
 1. No screen in either app shows a URL, the word "link" next to an invite, or a Copy link button.
@@ -572,6 +625,9 @@ Sections, in order:
 5. When attribution fails, the "Did someone invite you?" screen appears.
 6. The onboarding meter reaches "2 of 2" after two different share-button taps or contact Adds.
 7. The link opened on a desktop browser shows the QR page.
+8. An existing user who opens an invite gets no friendship until they tap Add on the confirm card; Not now leaves nothing behind.
+9. A code redeemed 20 times, or older than 30 days, is refused with the same message as an unknown code.
+10. "Not someone you know?" on the welcome banner leaves the two users unfriended and blocked, and the inviter is not told.
 
 ---
 
@@ -581,28 +637,34 @@ Sections, in order:
 
 | Notification | Default | Sound | Toggle |
 |---|---|---|---|
-| A friend's flare (to an audience you're in) | On | Yes | Friend flares |
+| A friend's flare (to an audience you're in) | On | Yes (silent for that sender's 4th+ flare in 60 min) | Friend flares |
+| A flare I joined: the sender tapped We're going | On | Yes | Friend flares |
+| A flare I joined was cancelled | On | No | Friend flares |
 | Reply to my flare (I'm in / Bring me one) | On | Yes | Replies to my flares |
 | Bring me one cancelled on my flare | On | No | Replies to my flares |
-| A flare I joined was cancelled | On | No | Friend flares |
 | A friend's snap | Off | No | Friend snaps |
 | Reactions to my snap (max 1 per snap) | On | No | Reactions |
 | Friend request / invite accepted | On | Yes | Friends |
+| New sign-in on another device | On | Yes | None (security notice, always on) |
 
 **Behaviour rules.**
 1. **No quiet hours.** There is no time-based suppression of any kind in the app or backend. OS-level Focus / Do Not Disturb still applies because the OS does it.
-2. Flare notifications have actions: I'm in (works without opening the app) and Bring me one (opens the picker).
-3. Android uses one notification channel per row of the table, so users can tune them in system settings.
+2. Flare notifications have actions on both platforms: I'm in (works without opening the app) and Bring me one (opens the picker). Friend request notifications have Accept, which works without opening the app (QF-S31). If the M4 spike shows iOS can't run I'm in without opening the app, Product amends AC 3 for iOS before M4 closes.
+3. Android has one notification channel per toggle, plus "Your live flare" (ongoing) and "Account" (new sign-in). Silent rows post on their toggle's channel without sound.
 4. Flare notifications are withdrawn from the notification centre when the flare closes or is cancelled, where the platform allows.
 5. No notifications for XP, levels, expired flares, or "you haven't opened Clink".
 6. Permission denied: Settings card with link to system settings. Asked again after the first flare received in-app (once).
+7. On a locked Android phone, flare notifications show only "{name} sent a flare" until unlocked; the place stays hidden (S-15).
+8. Rows not in this table are never sent. In particular there is no "Time to go" to the sender and no drink-run reminder: the sender already has the Live Activity or ongoing notification and the run list (QF-S23).
 
 **Acceptance criteria.**
 1. A friend's flare sent at 23:30 is delivered with sound when Friend flares is on.
 2. The notifications settings screen lists exactly the toggles above and nothing time-based.
 3. I'm in from the notification registers a reply without launching the app UI.
-4. Turning off Friend flares stops flare notifications but flares still appear on the widget.
+4. Turning off Friend flares stops flare notifications but flares still appear on the widget (best effort timing, 3.3 AC 8).
 5. No notification is ever sent for XP or levels.
+6. Accept on a friend request notification creates the friendship without opening the app UI.
+7. When the sender taps We're going, each person whose reply stands gets exactly one "heading out" notification; people who didn't reply get nothing.
 
 ---
 
@@ -611,6 +673,9 @@ Sections, in order:
 | Data | Who sees it |
 |---|---|
 | Name, photo | Friends; also people in a shared flare as a count only when not friends |
+| Name, photo (in suggestions) | People who have your number in their contacts, only if "People with my number can find me" is on |
+| First name | Anyone holding your invite message (landing page, "invited you") |
+| Name, photo | People with a pending friend request to or from you, until it is accepted or expires |
 | Snaps (24h) | All friends |
 | Flares and attached photos | Only the chosen audience |
 | Replies | The flare sender; other repliers who are your friends |
@@ -618,26 +683,36 @@ Sections, in order:
 | One-time note | That flare's sender only |
 | Last drink time | Friends, only if opted in |
 | Phone number, counts, water, XP, level, groups, who you removed, ignored flares | Nobody but you |
+| Reported content, report reasons | The moderator reviewing it |
 
-Analytics and logs follow the same rules: no free text, no photos, no phone numbers. Privacy policy, App Store privacy labels and the Play Data safety form must match this table and `ARCHITECTURE.md` (Legal owns the text).
+Analytics and logs follow the same rules: no free text, no photos, no phone numbers. Privacy policy, App Store privacy labels and the Play Data safety form must match this table, section 7 and `ARCHITECTURE.md` (Legal owns the text).
+
+**Retention.** Every kind of data has a stated period, enforced by a daily job (`ARCHITECTURE.md` 4.8): snaps 24 hours, flare photos until 2 hours after the flare ends, a flare's place and orders 24 hours after it ends, flares 90 days, tracker logs 90 days, friend requests 30 days, report records 1 year after closing. The privacy policy copies that table.
+
+**Access and export.** A user can ask for a copy of their data by writing to privacy@ from Settings > Help > Contact us (signed in), or after signing in on the web. They get it within 30 days (`ARCHITECTURE.md` 4.9).
 
 ---
 
 ### 3.18 Report and block
 
 **Behaviour rules.**
-1. Report is available on any snap (viewer ⋯ menu), any flare photo, and any person (friends list). Reasons: nudity or sexual content, harassment or bullying, spam, something else (optional free text, max 200).
-2. A reported item is hidden from the reporter at once.
-3. Reports go to a review queue. Target: reviewed within 24 hours. Who staffs it is an open CEO question (section 8).
-4. Block: removes the friendship, hides all content both ways, removes them from your groups, and prevents them finding you through contacts or your invite. They are not told.
+1. Report is available on any snap (viewer ⋯ menu), any flare photo, and any person (friends list). Reasons: nudity or sexual content, harassment or bullying, spam, "I'm in it and didn't agree" (handled first), something else (optional free text, max 200). Up to 20 reports a day per user.
+2. A reported item is hidden from the reporter at once. At 3 reports from different people it is hidden for everyone until reviewed.
+3. Reports go to a review queue. Target: reviewed within 24 hours by a named moderator (CEO question 2). People without the app report through a web form.
+4. Block: removes the friendship, hides all content both ways (including a live flare and its photo), clears their cached content from your widget and yours from theirs, removes them from your groups, and prevents them finding you through contacts or your invite. They are not told.
 5. Unblock from Settings > Blocked people. Unblocking does not restore the friendship.
-6. Content removed by review is deleted for everyone; repeat offenders can be suspended by an admin tool (`ARCHITECTURE.md`).
+6. Content removed by review is deleted for everyone. Accounts that break the Community Guidelines are suspended: they can't use the app, and nobody sees their content. The person whose content was removed, or whose account was suspended, sees in the app what was removed, which rule it broke, and how to appeal (email support) (S-17).
+7. Filters: a server blocklist on all text other people see (3.0), and before the public App Store release an automated image check on every snap and flare photo (CEO question 2).
+8. The terms say there is zero tolerance for objectionable content and abusive users. The Community Guidelines include "don't post photos of people who haven't agreed". No face recognition is used anywhere.
+9. Child sexual abuse material follows the procedure in `docs/MODERATION.md` (Legal, before beta): preserve, hide for everyone, suspend, report to the authority the law requires.
 
 **Acceptance criteria.**
 1. Report is reachable in at most 2 taps from a snap.
 2. After reporting, the snap is not visible to the reporter on widget or viewer.
 3. After blocking, neither user sees the other's snaps, flares, usual 3 or profile, and the blocked user can't find the blocker through contact matching or invite.
 4. The blocked user receives no notification and no visible change except the person being gone.
+5. A suspended user's snaps, flares, profile and usual 3 disappear for every friend at once, and the suspended user's app shows the suspension notice.
+6. Text containing a blocklisted word is refused with the `COPY.md` message in every field others can see.
 
 ---
 
@@ -645,16 +720,17 @@ Analytics and logs follow the same rules: no free text, no photos, no phone numb
 
 **Behaviour rules.**
 1. Settings > Account > Delete account. One explanation screen, then a confirm.
-2. On confirm: the user is signed out, disappears from all friends at once, live flares are cancelled silently, and all personal data (profile, photos, snaps, flares, replies, usual 3, tracker, groups, XP) is deleted within 30 days.
-3. Sign in with Apple users: the app revokes the Apple token on deletion (Apple requirement; `ARCHITECTURE.md`).
-4. Google Play also requires a web page where people can ask for deletion without the app. IT and Legal own it.
+2. On confirm: the user is signed out, disappears from all friends at once (their cached photo and snaps leave friends' widgets too), live flares are cancelled silently, and all personal data (profile, photos, snaps, flares, replies, usual 3, tracker, groups, XP) is deleted at once. Backups roll off within 30 days. Report records are kept for the moderation period (3.17).
+3. Sign in with Apple users: the Apple token is revoked on deletion (Apple requirement; `ARCHITECTURE.md` 4.7).
+4. Google Play also requires a web page for deletion without the app. The person signs in on that page (phone code, Apple or Google), sees the same explanation, and confirms; deletion runs at once. There is no email field. If anything fails, support finishes it within 30 days (M-10).
 5. XP the deleted user gave others through an invite in the last 7 days is reversed (section 4).
 
 **Acceptance criteria.**
-1. Deletion is reachable in the app in at most 3 taps from Settings.
+1. Deletion is reachable in the app in at most 3 taps in Clink's UI from Settings, plus the system re-authentication sheet where required (QF-S27).
 2. Right after confirming, friends no longer see the user anywhere on next refresh.
 3. Signing in again with the same identity creates a new, empty account.
-4. The web deletion page exists and is linked in the Play listing.
+4. The web deletion page exists, requires sign-in, deletes the signed-in account only, and is linked in the Play listing and the Data safety form.
+5. After deletion, an automated test finds no row in any table and no file in any bucket for that user, except report records.
 
 ---
 
@@ -714,9 +790,10 @@ Theoretical max per day without invites: 50 + 30 + 30 + 60 + 5 = 175. Typical en
 5. Cancelled flares award nothing to anyone. Replies cancelled before close award nothing.
 6. A drink run counts only when the sender marks the flare done, or at close time with the order still attached. An order cancelled before that earns nothing.
 7. Logging XP is once per day however many drinks are logged. Undoing the only log of the day reverses it.
-8. Device and account abuse checks (several accounts from one device, disposable numbers) are the CTO's call (`ARCHITECTURE.md`). Accounts flagged by those checks do not trigger invite XP.
+8. Abuse rule for invite XP, the whole v1 rule: no invite XP when the invitee's device belonged to another Clink account in the last 30 days, or when the invitee has no verified phone, Apple or Google identity (`ARCHITECTURE.md` 4.5).
 9. Every XP change is an append-only ledger entry with an idempotency key, so retries never double-award.
-10. Caps reset at local midnight of the user receiving the XP.
+10. Caps reset at local midnight of the user receiving the XP, using the time zone the app reports on each launch. A time-zone change applies to caps at most once per 24 hours.
+11. Logging XP counts only logs made within the last 36 hours whose local date is today or yesterday, so backdated offline logs earn nothing.
 
 ### 4.4 Levels
 
@@ -757,13 +834,13 @@ Thresholds are server config so we can retune after beta without an app release.
 
 ---
 
-## 5. User flows F1 to F30
+## 5. User flows F1 to F31
 
 Updated from the prototype for these decisions: no quiet hours, Smoothie & Juice, share buttons only, Android in v1 (Google sign-in), 6-step onboarding, XP touchpoints. F31 is new.
 
-**F1 First sign in.** Trigger: first launch. Steps: splash → iOS: Apple or phone / Android: Google or phone → (phone) number → 6-digit code → name + optional photo (onboarding step 2) → F4. Edge: wrong code shows inline error, resend after 30 s; Apple "Hide my email" is fine; number with an existing account signs into it (F3).
+**F1 First sign in.** Trigger: first launch. Steps: splash → (iOS, only if an invite URL is on the clipboard) "Got an invite?" → iOS: Apple or phone / Android: Google or phone, other platform's provider under "Other ways to sign in" → (phone) number → 6-digit code → age check (month and year) → name + optional photo (onboarding step 2) → F4. Edge: wrong code shows inline error, resend after 30 s, 5 wrong codes lock 15 min; under the minimum age no account is made; Apple "Hide my email" is fine; number with an existing account signs into it (F3).
 
-**F2 Join from a friend's invite.** Trigger: taps the URL inside Maya's WhatsApp or Messages message. Steps: store (or app if installed) → install → sign in → "Maya invited you" → already friends → usual 3 → invite → notifications → widget. XP: Maya gets +50. Edge: invite must survive install (deferred deep link) or fallback "Did someone invite you?"; Maya at 20 friends gets a request instead; link on a computer shows the QR page.
+**F2 Join from a friend's invite.** Trigger: taps the URL inside Maya's WhatsApp or Messages message. Steps: store (or app if installed) → install → (iOS) Paste → sign in → "Maya invited you" → already friends, with "Not someone you know?" → usual 3 → invite → notifications → widget. XP: Maya gets +50. Edge: invite must survive install (deferred deep link) or fallback "Did someone invite you?"; Maya at 20 friends gets a request instead; an existing user sees "Add Maya as a friend?" and nothing happens before Add; expired or used-up codes fail quietly; link on a computer shows the QR page.
 
 **F3 Returning user or new phone.** Trigger: sign in with an existing account. Steps: sign in → account found → skip onboarding → widget reminder only if none detected → camera screen. Edge: tracker, usual 3, groups, friends and XP all restore from the account; iPhone to Android needs a linked phone number.
 
@@ -771,9 +848,9 @@ Updated from the prototype for these decisions: no quiet hours, Smoothie & Juice
 
 **F5 Invite friends.** Trigger: onboarding step 4. Steps: meter "0 of 2" → WhatsApp / Messages / More, or Add contacts already on Clink → meter fills → Continue, or Later. Edge: contacts denied, share buttons still work; Apple/Google users see the optional phone field; skipped → the widget's no-friends state keeps an Invite button. No URL or "Invite link" text anywhere.
 
-**F6 Accept a friend request.** Trigger: someone added you from contacts. Steps: notification → Accept → you see each other's snaps and flares. XP: +10 to both (once per pair). Edge: ignored requests stay pending and expire after 30 days, never "declined"; at 20, remove someone first.
+**F6 Accept a friend request.** Trigger: someone added you from contacts. Steps: notification → Accept (from the notification without opening the app, or in the friends sheet) → you see each other's snaps and flares. XP: +10 to both (once per pair). Edge: ignored requests stay pending and expire after 30 days, never "declined"; at 20, remove someone first.
 
-**F7 Turn on notifications.** Trigger: onboarding step 5. Steps: our explainer with example notifications → Turn on → system dialog → Allow / Don't allow → F8. Edge: denied → app works, Settings card links to system settings; Not now → asked again after the first flare received.
+**F7 Turn on notifications.** Trigger: onboarding step 5. Steps: our explainer with example notifications → Continue → system dialog → Allow / Don't allow → F8. Edge: denied → app works, Settings card links to system settings; Not now → asked again after the first flare received.
 
 **F8 Add the widget.** Trigger: onboarding step 6. Steps: platform-specific guide (iOS: hold home screen, +, Clink, Medium; Android: hold home screen, Widgets, Clink, Medium) → I added it → camera screen. Edge: Remind me later keeps a card on the camera screen until a widget is detected; small size also offered.
 
@@ -795,7 +872,7 @@ Updated from the prototype for these decisions: no quiet hours, Smoothie & Juice
 
 **F17 Your live flare.** Trigger: any flare you send. Steps: countdown to close (at least 15 min) → replies arrive (notification, haptic, Live Activity count) → "Leo is in", "Sam: Cortado 📝" → We're going, Cancel, or let it run out → summary with the run list (available 2 h). XP: +15 if it closes as done with a reply; +20 per completed drink run order. Edge: only positive replies shown, no "seen", no "declined"; cancelled flares award nothing.
 
-**F18 Get a friend's flare and join.** Trigger: Maya sends a flare to an audience you're in. Steps: notification "Maya wants matcha · Café Lumi · in 10m" → widget shows it → I'm in from widget, notification or app → Maya is told. XP: +10 when the flare closes as done. Edge: Can't make it anymore → Maya sees one fewer, no notification; doing nothing tells Maya nothing; non-friend joiners appear as a count.
+**F18 Get a friend's flare and join.** Trigger: Maya sends a flare to an audience you're in. Steps: notification "Maya wants matcha · Café Lumi · in 10 min" → widget shows it → I'm in from widget, notification or app → Maya is told. XP: +10 when the flare closes as done. Edge: Can't make it anymore → Maya sees one fewer, no notification; doing nothing tells Maya nothing; non-friend joiners appear as a count.
 
 **F19 Bring me one.** Trigger: you can't leave your desk. Steps: Bring me one → pick one of your usual 3 → widget: sent as saved / app: optional one-time note → Maya's run list shows "Dana: Iced Oat Flat White 📝". XP: +10 to you when it closes as done; +20 to Maya for the run. Edge: no details saved → sends plain name and nudges once; one-time notes are app only; cancelling sends Maya one silent notification; paying back is in person.
 
@@ -807,7 +884,7 @@ Updated from the prototype for these decisions: no quiet hours, Smoothie & Juice
 
 **F23 Notifications.** Trigger: Settings > Notifications. Steps: Friend flares (on), Replies to my flares (on), Friend snaps (off), Reactions (on), Friends (on). Edge: no quiet hours and nothing time-based; OS Focus modes still apply; Android also exposes each as a channel.
 
-**F24 Sign out or delete account.** Trigger: Settings > Account. Steps: Sign out → splash, widgets show signed-out state; or Delete account → explain → confirm → signed out, gone from friends at once, data deleted within 30 days. Edge: in-app deletion is required by store rules; Apple token revoked; Play web deletion page exists; recent invite XP the user gave is reversed.
+**F24 Sign out or delete account.** Trigger: Settings > Account. Steps: Sign out → splash, widgets show signed-out state, the phone stops getting that account's notifications; or Delete account → explain → confirm → re-authenticate if needed → signed out, gone from friends at once, data deleted at once (backups roll off within 30 days). Edge: in-app deletion is required by store rules; Apple token revoked; Play web deletion page signs the person in first; recent invite XP the user gave is reversed.
 
 **F25 Offline or send failed.** Trigger: no signal. Steps: action queued, "Sending…" → after 30 s "Couldn't send. Tap to retry." Edge: flares dropped after 2 min, snaps after 60 min, logs never dropped.
 
@@ -819,7 +896,7 @@ Updated from the prototype for these decisions: no quiet hours, Smoothie & Juice
 
 **F29 Choose who gets a flare.** Trigger: To: chip in the composer. Steps: Automatic (daytime group weekdays 08:00 to 17:59, other-times group otherwise, else Everyone), a specific group, or Everyone → Who joins? → only that audience is notified. Edge: no location used; non-friend joiners see "2 others are in"; snaps still go to everyone.
 
-**F30 One widget per group.** Trigger: edit the widget (iOS Edit Widget; Android configuration screen) or Settings > Widgets. Steps: pick Automatic, a group, or Everyone → that widget's Who joins? goes there. Edge: two widgets, two groups (Work on page 1, Home friends on page 2); deleted group → widget falls back to Automatic.
+**F30 One widget per group.** Trigger: edit the widget (iOS Edit Widget; Android configuration screen) or Settings > Widgets (Android only; iOS shows the list read-only with the Edit Widget hint). Steps: pick Automatic, a group, or Everyone → that widget's Who joins? goes there. Edge: two widgets, two groups (Work on page 1, Home friends on page 2); deleted group → widget falls back to Automatic.
 
 **F31 See your level (new).** Trigger: taps the profile button (dot shows after a level-up). Steps: profile → level name and number, progress bar, XP to next level, last 20 entries. Edge: nobody else can see any of it; no push for level-ups; no leaderboard.
 
@@ -848,30 +925,31 @@ Targets are first guesses for a new product. We revisit them after closed beta w
 
 ### Event list
 
-All events carry: pseudonymous `user_id`, `platform`, `app_version`, `ts`. None carry free text, photos, phone numbers, contact data or place names.
+All events carry: pseudonymous `user_id`, `platform`, `app_version`, `ts`. None carry free text, photos, phone numbers, contact data or place names. They go to our own `app_events` table only (no third-party analytics), kept 13 months. The names and props are a zod enum in `packages/shared/src/events.ts` (QF-M20). "Sent by" says where each is written: **client** (the app sends it) or **server** (an edge function or trigger writes it, so widget and notification actions count too). With "Share usage stats" off, neither kind is written for that user; KPIs undercount those users, which we accept.
 
-| Event | Properties |
-|---|---|
-| `auth_signed_up` / `auth_signed_in` | `method` (apple, google, phone) |
-| `onboarding_step_viewed` / `onboarding_step_completed` / `onboarding_step_skipped` | `step` (1 to 6) |
-| `invite_share_tapped` | `channel` (whatsapp, messages, more), `surface` |
-| `invite_opened` | `installed` (bool) |
-| `invite_accepted` | `attribution` (deeplink, fallback) |
-| `friend_added` / `friend_removed` | `source` (invite, contacts, request) |
-| `widget_added` / `widget_removed` | `size`, `audience_type` |
-| `flare_sent` | `source` (widget, app), `category`, `timing_min`, `audience_type` (auto, group, everyone), `has_photo` |
-| `flare_reply` / `flare_reply_cancelled` | `type` (in, bring), `source` (widget, notification, app), `has_oneoff_note` |
-| `flare_closed` | `outcome` (done, expired, cancelled, replaced), `replies`, `orders` |
-| `drink_run_completed` | `orders` |
-| `order_card_opened` / `barista_mode_opened` | `source` (run_list, friends) |
-| `snap_shared` / `snap_viewed` / `snap_reacted` | `reaction` (for reacted) |
-| `drink_logged` / `drink_log_removed` | `kind` (drink, water), `category`, `source` (widget, app) |
-| `usual_details_saved` | `category`, `fields_set` (count) |
-| `level_reached` | `level` |
-| `report_submitted` / `user_blocked` | `target` (snap, flare_photo, person) |
-| `notification_permission` | `result` (granted, denied, not_now) |
-| `account_deleted` | none |
-| `app_opened` | `entry` (icon, widget, notification, link) |
+| Event | Properties | Sent by |
+|---|---|---|
+| `auth_signed_up` / `auth_signed_in` | `method` (apple, google, phone) | server (`complete-signup`, `register-device`) |
+| `onboarding_step_viewed` / `onboarding_step_completed` / `onboarding_step_skipped` | `step` (1 to 6) | client |
+| `invite_share_tapped` | `channel` (whatsapp, messages, more), `surface` | client |
+| `invite_opened` | `installed` (bool) | client |
+| `invite_accepted` | `attribution` (deeplink, paste, fallback), `existing_user` (bool) | server (`redeem-invite`) |
+| `friend_added` / `friend_removed` | `source` (invite, contacts, request) | server (`friend-request`, `redeem-invite`) |
+| `widget_added` / `widget_removed` | `size`, `audience_type` | server for added (`widget-api`, once per instance); client for removed |
+| `flare_sent` | `source` (widget, app), `category`, `timing_min`, `audience_type` (auto, group, everyone), `has_photo` | server (`send-flare`) |
+| `flare_reply` / `flare_reply_cancelled` | `type` (in, bring), `source` (widget, notification, app), `has_oneoff_note` | server (`respond-flare`) |
+| `flare_closed` | `outcome` (done, expired, cancelled, replaced), `replies`, `orders` | server (`settle_flare`, `close-flare`) |
+| `drink_run_completed` | `orders` | server (`settle_flare`) |
+| `order_card_opened` / `barista_mode_opened` | `source` (run_list, friends) | client |
+| `snap_shared` / `snap_reacted` | `reaction` (for reacted) | server (`share-snap`, `react-snap`) |
+| `snap_viewed` | none | client |
+| `drink_logged` / `drink_log_removed` | `kind` (drink, water), `category`, `source` (widget, app) | server (trigger on `drink_logs`) |
+| `usual_details_saved` | `category`, `fields_set` (count) | client |
+| `level_reached` | `level` | server (`award_xp`) |
+| `report_submitted` / `user_blocked` | `target` (snap, flare_photo, person) | server (`report`, `friend-request`) |
+| `notification_permission` | `result` (granted, denied, not_now) | client |
+| `account_deleted` | none (written with no `user_id`) | server (`delete-account`) |
+| `app_opened` | `entry` (icon, widget, notification, link) | client |
 
 ---
 
@@ -885,10 +963,19 @@ Builds: EAS internal distribution.
 Exit criteria:
 1. Every acceptance criterion in sections 3 and 4 passes or has a logged, triaged bug.
 2. No open P0/P1 bugs (crash, data loss, privacy leak, wrong audience, wrong order sent).
-3. Privacy checks pass: groups, XP, counts, phone numbers and non-mutual names never appear in another user's API responses (QA + Security sign-off).
+3. Privacy checks pass: groups, XP, counts, phone numbers and non-mutual names never appear in another user's API responses (QA + Security sign-off). The pgTAP deny tests for every `private` function and the Supabase security advisor pass in CI.
 4. Deferred deep link passes 9 of 10 fresh installs on each platform.
 5. All strings come from `COPY.md` and the drink pictures from `DESIGN.md`; no placeholder visuals from the prototype remain.
-6. Account deletion and the Play web deletion page work end to end.
+6. Account deletion and the Play web deletion page work end to end, and the deletion integration test passes.
+
+**Entry criteria for stage 2** (nothing reaches external testers until all are true):
+1. Every MUST FIX in `RISK_REVIEW.md` is closed.
+2. Age check live with the CEO's minimum. App Store age rating and Play target audience set to match.
+3. Text blocklist, suspension, moderation notices, Settings > Help > Contact us, and the report flow work end to end. A named person reviews reports daily.
+4. `docs/MODERATION.md` and `docs/legal/` (vendor register with each DPA accepted, record of processing, contact-matching LIA, DPIA, breach runbook) written by Legal.
+5. Privacy policy, terms (with zero tolerance and the moderation section) and Community Guidelines published in `web/`.
+6. Store declarations below drafted and signed off by Legal.
+7. App Review access set up (`ARCHITECTURE.md` 5): review number, seeded friends, review notes.
 
 ### Stage 2: Closed beta
 
@@ -905,10 +992,27 @@ Exit criteria:
 5. No privacy incident. Any report reviewed within 24 hours throughout the beta.
 6. XP thresholds checked against real data and retuned in server config if needed.
 7. Store listings, privacy labels, Data safety form, privacy policy and terms approved by Legal.
+8. Automated image check live on snaps and flare photos (CEO question 2) before the public App Store submission.
+9. Privacy policy and terms reviewed by a lawyer in the largest launch market (CEO question 5).
 
 ### Stage 3: Public release
 
 Both stores, same day where review timing allows. Android uses a staged rollout (for example 10% → 50% → 100% over a week). iOS uses phased release.
+
+**Store declarations (M-14).** Declare exactly these; update them with any new SDK.
+
+- **Apple App Privacy.** Tracking: No. Data linked to the user, purpose App Functionality unless noted:
+  - Contact Info: Name, Phone Number
+  - Health & Fitness: Health (drink and water logs)
+  - User Content: Photos or Videos; Other User Content (place, notes, Plan B, reports)
+  - Contacts (matching is transient, but both stores should say the same thing)
+  - Identifiers: User ID; Device ID (push tokens)
+  - Usage Data: Product Interaction (`app_events`, purpose Analytics)
+  - Diagnostics: Crash Data, Performance Data (Sentry; not linked, because no Sentry user id is set)
+  - Not collected: Location, Email, Financial, Browsing, Search
+- **Google Play Data safety.** Encrypted in transit: yes. Deletion: yes, with the web deletion URL. Shared with third parties: no (processors aren't sharing under Play's definition). Collected: Name, Phone number; Photos; Contacts (processed ephemerally, not stored); Health info (drink and water logs); App interactions; Other user-generated content; Crash logs, Diagnostics; Device or other IDs.
+- **Play Health apps declaration:** complete it if the console shows it, as hydration or nutrition tracking, nothing medical (verify the current form).
+- **Age rating:** App Store questionnaire with user-generated content answered yes, at the rating that matches the minimum age; Play target audience at that age and up (CEO question 1).
 
 Exit criteria for "done with v1 launch":
 1. 100% rollout on both platforms with crash-free ≥ 99.5%.
@@ -920,10 +1024,13 @@ Exit criteria for "done with v1 launch":
 
 ## 8. Open questions for the CEO
 
-Only items that change scope, cost money, or carry legal or brand risk. Each has a recommendation so a yes is enough.
+The one merged list for every unit (Product, Tech, Design, Risk, QA). Only items that change scope, cost money, or carry legal or brand risk. Each has a recommendation so a yes is enough.
 
-1. **Minimum age and launch countries (legal).** The app has user photos and contact matching. Recommendation: 16+ worldwide at launch, English-speaking countries first. Legal confirms per country. Do you agree, or do you want 13+?
-2. **Who reviews reports within 24 hours (cost / legal).** Store rules need a working report flow. Options: you or a named person check the queue daily during beta and early launch (no cost), or we add a paid automated image-moderation service before public launch (cost, verify price before purchase). Recommendation: a named person for beta, decide on the service before public release.
-3. **Developer accounts: personal or company (legal / brand / cost).** A personal Apple or Google account shows your own name as the seller in the stores. A company account shows the company name but needs a registered company and a D-U-N-S number, and on Google it avoids the personal-account closed-testing requirement. Recommendation: company accounts if a company exists or can be set up before beta. Fees per `ARCHITECTURE.md`; verify before purchase.
-4. **SMS sign-in cost (cost).** Every phone sign-in sends a paid SMS. Recommendation: approve a monthly cap set by the CTO (provider and price in `ARCHITECTURE.md`; verify before purchase), with abuse limits from 3.1.
-5. **Name and domain (brand / legal / cost).** Invite messages need a short web domain, and "Clink" may already be used by other apps or trademarks. Recommendation: a trademark and store-name search by Legal before beta, and buy the domain the CTO proposes once that's clear.
+1. **Minimum age and launch countries (legal).** Recommendation: 16+ everywhere, English-speaking countries first. 13+ brings teen-specific EU and UK duties and per-country checks. The answer also sets the Supabase region, Twilio geo permissions, which US state app-store age laws apply, the store age rating, and whether Monday to Friday is the right work week for Automatic.
+2. **Moderation staffing and a paid image filter (cost, legal).** App Store rule 1.2 asks for a filter on user photos and timely action on reports. Recommendation: a named person reviews reports daily during beta (no cost), and an automated image-check API goes live before the public App Store submission. Cost depends on vendor and volume; verify before purchase.
+3. **Company: where it is, and whether we enroll as it (legal, brand, cost).** A company account shows the company as seller and needs a D-U-N-S number; on Google it also skips the personal-account closed-test rule. If the company is outside the EU or UK and we launch there, GDPR, UK GDPR and the EU DSA need paid local representatives (verify price). The answer also decides US child-safety reporting and the law that governs the terms. Recommendation: company accounts if a company exists or can be set up before beta.
+4. **Name, trademark and domain (brand, legal, cost).** "Clink" is a common drinks word. Recommendation: run the searches in `RISK_REVIEW.md` 8 now, then pay for a trademark attorney's clearance opinion and filings in classes 9, 42 and 45 in the launch markets before beta, or rename. Buy the domain once that's clear; it sets the permanent bundle id. Verify fees before purchase.
+5. **One local legal review (cost).** Recommendation: a lawyer in the largest launch market reviews the privacy policy and terms once before public release. Verify the quote first.
+6. **SMS sign-in cost cap (cost).** Every phone sign-in sends a paid SMS, the biggest variable cost. Recommendation: approve a monthly cap set by the CTO with a Twilio spend alert (price in `ARCHITECTURE.md` 11; verify before purchase).
+7. **Test devices and E2E cloud (cost).** Widgets, push and Live Activities need real phones. Recommendation: buy 5 core devices used or refurbished (iPhone SE kept on iOS 17, a current Pro iPhone, an Android 8 phone, a current Samsung, a Xiaomi), rent a device cloud only for the long tail during beta, and allow a paid E2E plan (Maestro Cloud or EAS Workflows) if the M2 trial needs one. Verify prices before purchase.
+8. **Who draws the drink set and logo (cost, brand).** 5 heroes, 84 icon drawings, glyphs, mark, wordmark and app icon. Recommendation: one freelance illustrator, with a contract that assigns copyright to the company before work starts (`DESIGN.md` 9). Get quotes first.
