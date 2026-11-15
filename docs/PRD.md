@@ -1026,6 +1026,8 @@ Exit criteria for "done with v1 launch":
 
 The one merged list for every unit (Product, Tech, Design, Risk, QA). Only items that change scope, cost money, or carry legal or brand risk. Each has a recommendation so a yes is enough.
 
+**Answered by the CEO:** items 1, 3 (partly), 4 and 8. See `DECISIONS.md`, "CEO answers after phase 1 review". Items 2, 3 (person or company), 5, 6 and 7 stay open until before beta.
+
 1. **Minimum age and launch countries (legal).** Recommendation: 16+ everywhere, English-speaking countries first. 13+ brings teen-specific EU and UK duties and per-country checks. The answer also sets the Supabase region, Twilio geo permissions, which US state app-store age laws apply, the store age rating, and whether Monday to Friday is the right work week for Automatic.
 2. **Moderation staffing and a paid image filter (cost, legal).** App Store rule 1.2 asks for a filter on user photos and timely action on reports. Recommendation: a named person reviews reports daily during beta (no cost), and an automated image-check API goes live before the public App Store submission. Cost depends on vendor and volume; verify before purchase.
 3. **Company: where it is, and whether we enroll as it (legal, brand, cost).** A company account shows the company as seller and needs a D-U-N-S number; on Google it also skips the personal-account closed-test rule. If the company is outside the EU or UK and we launch there, GDPR, UK GDPR and the EU DSA need paid local representatives (verify price). The answer also decides US child-safety reporting and the law that governs the terms. Recommendation: company accounts if a company exists or can be set up before beta.

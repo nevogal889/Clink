@@ -122,3 +122,10 @@ Every decision the CEO has approved so far. When this file and `original-prd.md`
 ## References
 - `original-prd.md`: the founder's first PRD. Its intent still holds where this log doesn't override it.
 - `../prototype.html`: a clickable prototype of the agreed flows (F1–F30) with their behaviour. **Its visuals are placeholders, not the final design.** Read its `GROUPS` flows data and `OPTS` drink-detail options for the agreed behaviour.
+
+## CEO answers after phase 1 review (PRD section 8)
+- **Age and markets:** minimum age 16+. Launch in English-speaking countries first (US, UK, Canada, Australia, Ireland, New Zealand). English UI only in v1.
+- **Company and developer accounts:** there is no company yet. The CEO will create the Apple Developer and Google Play accounts later. Until then, build and test without store accounts. Whether to enroll as a person or a company is still open; ask again before beta.
+- **Trademark:** check "Clink" before beta. The team prepares the free searches (RISK_REVIEW.md 8); the CEO pays an attorney for a clearance opinion. Buy the domain only after that.
+- **Drink art and logo:** the team draws the full set in code as SVG, following DESIGN.md (5 heroes, 42 icons in two sizes, 5 glyphs, logo, wordmark, app icon). No freelance illustrator. This overrides DESIGN.md 9 and PRD 8 item 8.
+- **Still open, ask before beta:** moderation staffing and a paid image filter (PRD 8 item 2), a lawyer's review of the privacy policy and terms (item 5), an SMS cost cap (item 6), test devices and an E2E cloud plan (item 7).
