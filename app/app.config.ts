@@ -118,6 +118,9 @@ function readProjects(): Record<string, { url?: string; publishableKey?: string 
   }
 }
 
+/** EAS project id of @clinknew/clink. Public; the env var EAS_PROJECT_ID overrides it. */
+export const EAS_PROJECT_ID = 'a4859a4a-0a92-48a5-ba02-ac0bc4dc7633';
+
 // Minimum OS (CLAUDE.md "Stack"): iOS 17.2, Android 8.0 (API 26).
 const IOS_DEPLOYMENT_TARGET = '17.2';
 const ANDROID_MIN_SDK = 26;
@@ -129,14 +132,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const supabase = publicSupabase(variant, process.env, readProjects());
   const api = apiChoice(process.env, supabase);
 
-  // Set once the Expo account exists (docs/ARCHITECTURE.md 12). Public by design.
-  const easProjectId = process.env.EAS_PROJECT_ID;
+  // EAS project @clinknew/clink (docs/ARCHITECTURE.md 12). Public by design.
+  const easProjectId = process.env.EAS_PROJECT_ID || EAS_PROJECT_ID;
 
   return {
     ...config,
     name: v.name,
-    // Expo account that owns the EAS project (the CEO's personal account for now).
-    owner: 'nevogal',
+    // Expo organization that owns the EAS project (docs/DECISIONS.md).
+    owner: 'clinknew',
     slug: 'clink',
     version: '0.1.0',
     orientation: 'portrait',

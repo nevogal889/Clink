@@ -17,6 +17,9 @@
       "channel": "development",
       "env": {
         "APP_VARIANT": "dev"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "preview": {
@@ -25,6 +28,9 @@
       "channel": "preview",
       "env": {
         "APP_VARIANT": "dev"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
