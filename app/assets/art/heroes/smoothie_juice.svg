@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Smoothie & Juice hero (DESIGN.md 3.3). V5 tall glass, berry smoothie at 85% with seed
+       dots, plain orange straw at 12 degrees, orange wheel on the rim, half orange, two raspberries. -->
+  <!-- Cast shadows -->
+  <ellipse cx="636" cy="862" rx="116" ry="34.8" fill="#17202A" fill-opacity="0.14"/>
+  <ellipse cx="296" cy="872" rx="96" ry="28.8" fill="#17202A" fill-opacity="0.14"/>
+  <ellipse cx="826" cy="880" rx="64" ry="19.2" fill="#17202A" fill-opacity="0.14"/>
+  <!-- Half orange, cut face up -->
+  <g id="contour-orange" fill="#17202A" stroke="#17202A" stroke-width="16" stroke-linejoin="round">
+    <path d="M168 820A112 75 0 0 0 392 820A112 33.6 0 0 0 168 820Z"/>
+  </g>
+  <path d="M168 820A112 75 0 0 0 392 820Z" fill="#F2992E"/>
+  <path d="M329 850.2A112 33.6 0 0 0 392 820A112 75 0 0 1 329 887.4Z" fill="#CD7A00"/>
+  <path d="M194 846C204 862 216 872 232 878" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="15" stroke-linecap="round"/>
+  <ellipse cx="280" cy="820" rx="112" ry="33.6" fill="#F2992E"/>
+  <ellipse cx="280" cy="820" rx="104" ry="31.2" fill="#FBE3B5"/>
+  <path fill="#F2992E" d="M290.4 821.3L373.7 822.2A94 28.2 0 0 1 351.5 838.3ZM284.3 823.1L341 841.4A94 28.2 0 0 1 287.4 848.1ZM275.7 823.1L272.6 848.1A94 28.2 0 0 1 219 841.4ZM269.6 821.3L208.5 838.3A94 28.2 0 0 1 186.3 822.2ZM269.6 818.7L186.3 817.8A94 28.2 0 0 1 208.5 801.7ZM275.7 816.9L219 798.6A94 28.2 0 0 1 272.6 791.9ZM284.3 816.9L287.4 791.9A94 28.2 0 0 1 341 798.6ZM290.4 818.7L351.5 801.7A94 28.2 0 0 1 373.7 817.8Z"/>
+  <!-- Tall glass: contour (offset outward, since glass is see-through) and body -->
+  <g id="contour-glass" fill="none" stroke="#17202A" stroke-width="8">
+    <ellipse cx="600" cy="260" rx="150" ry="45" stroke-width="30"/>
+    <path d="M446 260L497.6 850.5A102.4 33.5 0 0 0 702.4 850.5L754 260"/>
+    <path d="M674.7 236L701 112.2" stroke-width="42"/>
+  </g>
+  <path d="M450 260L501.6 850.5A98.4 29.5 0 0 0 698.4 850.5L750 260A150 45 0 0 0 450 260Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M450 260A150 45 0 0 1 750 260" fill="none" stroke="#9E2460" stroke-width="14"/>
+  <!-- Berry smoothie, shade, seeds -->
+  <path d="M467.4 344.3L509.2 822A90.8 27.2 0 0 0 690.8 822L732.6 344.3A132.6 39.8 0 0 0 467.4 344.3Z" fill="#B8325E"/>
+  <path d="M658.3 380A132.6 39.8 0 0 0 732.6 344.3L690.8 822A90.8 27.2 0 0 1 640 846.4Z" fill="#950042"/>
+  <g fill="#7E1F43">
+    <circle cx="558" cy="400" r="3.5"/>
+    <circle cx="623" cy="418" r="3.6"/>
+    <circle cx="599" cy="487" r="3.2"/>
+    <circle cx="581" cy="552" r="4.2"/>
+    <circle cx="576" cy="637" r="3.7"/>
+    <circle cx="515" cy="718" r="3.3"/>
+    <circle cx="574" cy="755" r="3.1"/>
+    <circle cx="627" cy="644" r="3.5"/>
+    <circle cx="602" cy="800" r="3.6"/>
+    <circle cx="626" cy="573" r="4.5"/>
+    <circle cx="496" cy="419" r="4.2"/>
+    <circle cx="613" cy="719" r="3.4"/>
+    <circle cx="567" cy="701" r="3.3"/>
+    <circle cx="531" cy="778" r="4.1"/>
+  </g>
+  <!-- Straw: plain orange, enters the right third, leans 12 degrees right -->
+  <path d="M650 352L699.3 120" fill="none" stroke="#F2992E" stroke-width="26"/>
+  <path d="M658.3 353.8L707.6 121.8" fill="none" stroke="#CD7A00" stroke-width="9"/>
+  <ellipse cx="699.3" cy="120" rx="13" ry="3.9" fill="#CD7A00" transform="rotate(12 699.3 120)"/>
+  <!-- Gleam, then the front half of the rim line -->
+  <path d="M520 450L534 690" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="21" stroke-linecap="round"/>
+  <path d="M450 260A150 45 0 0 0 750 260" fill="none" stroke="#9E2460" stroke-width="14"/>
+  <!-- Orange wheel on the rim, top right: rind, pith, 8 segments -->
+  <circle id="contour-wheel" cx="760" cy="236" r="64" fill="#17202A" stroke="#17202A" stroke-width="16"/>
+  <circle cx="760" cy="236" r="64" fill="#F2992E"/>
+  <circle cx="760" cy="236" r="56" fill="#FBE3B5"/>
+  <path fill="#F2992E" d="M765.1 239.2L808.4 248.5A50 50 0 0 1 791.8 274.6ZM761.3 241.9L785.4 279.1A50 50 0 0 1 755.2 285.8ZM756.8 241.1L747.5 284.4A50 50 0 0 1 721.4 267.8ZM754.1 237.3L716.9 261.4A50 50 0 0 1 710.2 231.2ZM754.9 232.8L711.6 223.5A50 50 0 0 1 728.2 197.4ZM758.7 230.1L734.6 192.9A50 50 0 0 1 764.8 186.2ZM763.2 230.9L772.5 187.6A50 50 0 0 1 798.6 204.2ZM765.9 234.7L803.1 210.6A50 50 0 0 1 809.8 240.8Z"/>
+  <!-- Two raspberries, front right -->
+  <g id="contour-berries" fill="#17202A" stroke="#17202A" stroke-width="16">
+    <circle cx="794" cy="834" r="12"/><circle cx="784" cy="848" r="12"/><circle cx="804" cy="848" r="12"/>
+    <circle cx="774" cy="864" r="12"/><circle cx="794" cy="864" r="12"/><circle cx="814" cy="864" r="12"/>
+    <circle cx="784" cy="880" r="12"/><circle cx="804" cy="880" r="12"/>
+    <circle cx="856" cy="820" r="12"/><circle cx="846" cy="834" r="12"/><circle cx="866" cy="834" r="12"/>
+    <circle cx="836" cy="850" r="12"/><circle cx="856" cy="850" r="12"/><circle cx="876" cy="850" r="12"/>
+    <circle cx="846" cy="866" r="12"/><circle cx="866" cy="866" r="12"/>
+  </g>
+  <g fill="#C2345F">
+    <circle cx="856" cy="820" r="12"/><circle cx="846" cy="834" r="12"/>
+    <circle cx="836" cy="850" r="12"/><circle cx="856" cy="850" r="12"/>
+    <circle cx="846" cy="866" r="12"/>
+  </g>
+  <g fill="#9E0043">
+    <circle cx="866" cy="834" r="12"/><circle cx="876" cy="850" r="12"/><circle cx="866" cy="866" r="12"/>
+  </g>
+  <g fill="#C2345F">
+    <circle cx="794" cy="834" r="12"/><circle cx="784" cy="848" r="12"/>
+    <circle cx="774" cy="864" r="12"/><circle cx="794" cy="864" r="12"/>
+    <circle cx="784" cy="880" r="12"/>
+  </g>
+  <g fill="#9E0043">
+    <circle cx="804" cy="848" r="12"/><circle cx="814" cy="864" r="12"/><circle cx="804" cy="880" r="12"/>
+  </g>
+  <circle cx="779" cy="859" r="4" fill="#FFFFFF" fill-opacity="0.85"/>
+</svg>

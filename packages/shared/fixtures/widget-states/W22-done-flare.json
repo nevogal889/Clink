@@ -1,0 +1,101 @@
+{
+  "id": "W22",
+  "title": "Your flare closed as done (after We're going): the sender's widget is idle",
+  "note": "Also covers ST4: today's counts are from yesterday's local date, so they show 0 with no network.",
+  "now": "2026-11-17T09:12:00Z",
+  "timeZone": "Europe/London",
+  "config": {
+    "audience": "auto"
+  },
+  "state": {
+    "v": 1,
+    "state": "ready",
+    "updatedAt": "2026-11-17T09:10:00Z",
+    "me": {
+      "initial": "D",
+      "friendsCount": 5
+    },
+    "usual": [
+      {
+        "slot": 1,
+        "drinkId": "coffee.flat_white",
+        "category": "coffee",
+        "name": "Flat White",
+        "drinkShort": "Flat White",
+        "summary": "Iced · Oat milk · Double shot",
+        "hasDetails": true
+      },
+      {
+        "slot": 2,
+        "drinkId": "matcha.ceremonial",
+        "category": "matcha",
+        "name": "Ceremonial Matcha",
+        "drinkShort": "Ceremonial",
+        "summary": "",
+        "hasDetails": false
+      },
+      {
+        "slot": 3,
+        "drinkId": "tea.jasmine",
+        "category": "tea",
+        "name": "Jasmine Tea",
+        "drinkShort": "Jasmine Tea",
+        "summary": "Less sweet",
+        "hasDetails": true
+      }
+    ],
+    "today": {
+      "localDate": "2026-11-16",
+      "drinks": 6,
+      "water": 2,
+      "caffeinated": 5,
+      "lastDrinkAt": "2026-11-16T21:00:00Z"
+    },
+    "groups": [
+      {
+        "id": "grp_work",
+        "name": "Work",
+        "emoji": "🏢",
+        "memberCount": 3,
+        "avatarFiles": ["a_leo.jpg", "a_sam.jpg", "a_ari.jpg"]
+      },
+      {
+        "id": "grp_home",
+        "name": "Home friends",
+        "emoji": "🏠",
+        "memberCount": 3,
+        "avatarFiles": ["a_maya.jpg", "a_noa.jpg", "a_leo.jpg"]
+      },
+      {
+        "id": "grp_empty",
+        "name": "Empty",
+        "emoji": null,
+        "memberCount": 0,
+        "avatarFiles": []
+      }
+    ],
+    "auto": {
+      "daytimeGroupId": "grp_work",
+      "otherGroupId": "grp_home"
+    },
+    "lastPlace": "Kaffa Roastery",
+    "myFlare": null,
+    "incoming": [],
+    "snaps": [],
+    "outbox": []
+  },
+  "local": null,
+  "expect": {
+    "small": {
+      "kind": "idle",
+      "drinks": 0,
+      "water": 0
+    },
+    "medium": {
+      "kind": "idle",
+      "drinks": 0,
+      "water": 0,
+      "caffeineNote": false
+    }
+  }
+}

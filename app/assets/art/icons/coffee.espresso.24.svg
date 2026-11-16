@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<!-- coffee.espresso 24 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M4.8 18.54A6 1.8 0 0 1 16.8 18.54L16.32 19.34A5.52 1.66 0 0 1 5.28 19.34Z" fill="#EEF0EE"/>
+  <path d="M4.8 18.54A6 1.8 0 0 1 16.8 18.54L16.32 19.34A5.52 1.66 0 0 1 5.28 19.34Z" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16.8 18.54A6 1.8 0 0 1 4.8 18.54" fill="none" stroke="#17202A" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8.74 18.04L8.74 18.54A2.06 0.62 0 0 0 12.86 18.54L12.86 18.04Z" fill="#EEF0EE" stroke="#17202A" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M14.27 14.92L15.39 14.92C16.77 14.92 16.77 16.78 14.27 16.87L13.87 16.87" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7 14.14C7 16.29 7.7 18.04 8.4 18.04A2.4 0.72 0 0 0 13.2 18.04C13.9 18.04 14.6 16.29 14.6 14.14A3.8 1.14 0 0 0 7 14.14Z" fill="#EEF0EE"/>
+  <path d="M7 14.14C7 16.29 7.7 18.04 8.4 18.04A2.4 0.72 0 0 0 13.2 18.04C13.9 18.04 14.6 16.29 14.6 14.14" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="10.8" cy="14.14" rx="3.8" ry="1.14" fill="#B77A45"/>
+  <ellipse cx="10.7" cy="14.22" rx="2.36" ry="0.71" fill="#3B2418"/>
+  <path d="M7 14.14A3.8 1.14 0 0 1 14.6 14.14" fill="none" stroke="#4B3527" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14.6 14.14A3.8 1.14 0 0 1 7 14.14" fill="none" stroke="#4B3527" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

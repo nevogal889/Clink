@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Clink mark, 64 px and up (DESIGN.md 1.3): a rim seen from above, ring stroke 17% of the
+       width, one chip at 1 to 2 o'clock (38 degrees) with two facets and a 2% steel sliver. -->
+  <path d="M94.94 28.08A50 50 0 1 1 71.92 5.06L66.22 11.8L64.98 20.6A33 33 0 1 0 79.4 35.02L88.2 33.78Z" fill="#2443A6"/>
+  <path d="M95.46 29.19L88.59 34.72L79.76 35.74M70.81 4.54L65.28 11.41L64.26 20.24" fill="none" stroke="#17202A" stroke-width="2" stroke-linejoin="round"/>
+</svg>

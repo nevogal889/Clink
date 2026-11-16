@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- tea.peppermint 64 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M38.64 36.91L42.48 36.91C47.17 36.91 47.17 46.37 39.25 46.87L37.91 46.87" fill="none" stroke="#17202A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M15.73 32.93C16.22 39.57 16.71 46.2 17.2 52.84A10.53 3.16 0 0 0 38.27 52.84C38.76 46.2 39.24 39.57 39.73 32.93A12 3.6 0 0 0 15.73 32.93Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M17.1 37.02L18.07 50.17A9.66 2.9 0 0 0 37.4 50.17L38.37 37.02A10.63 3.19 0 0 0 17.1 37.02Z" fill="#A8C77A"/>
+  <path d="M32.41 39.89L31.99 52.78A9.66 2.9 0 0 0 37.4 50.17L38.37 37.02A10.63 3.19 0 0 1 32.41 39.89Z" fill="#88A65B"/>
+  <path d="M21.14 41.75L21.23 43.71L21.31 45.66L21.39 47.62L21.48 49.57" fill="none" stroke="#FFFFFF" stroke-width="1.68" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85"/>
+  <path d="M15.73 32.93A12 3.6 0 0 1 39.73 32.93" fill="none" stroke="#6B5306" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M15.73 32.93C16.22 39.57 16.71 46.2 17.2 52.84A10.53 3.16 0 0 0 38.27 52.84C38.76 46.2 39.24 39.57 39.73 32.93" fill="none" stroke="#17202A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M39.73 32.93A12 3.6 0 0 1 15.73 32.93" fill="none" stroke="#6B5306" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M37.07 32.4C34.78 28.16 37.1 23.9 40.71 22.38C42.51 25.87 41.54 30.62 37.07 32.4Z" fill="#5E9E4F" stroke="#17202A" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M37.07 32.4L39.91 24.58" fill="none" stroke="#9CC23F" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M37.6 32.67C39.22 28.13 43.94 27 47.49 28.67C46.1 32.34 41.92 34.81 37.6 32.67Z" fill="#5E9E4F" stroke="#17202A" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M37.6 32.67L45.31 29.55" fill="none" stroke="#9CC23F" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

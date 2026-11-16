@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- matcha.tonic 64 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M17.6 16.53C18.67 28.94 19.73 41.35 20.8 53.76A7.47 2.24 0 0 0 35.73 53.76C36.8 41.35 37.87 28.94 38.93 16.53A10.67 3.2 0 0 0 17.6 16.53Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M19.14 22.06L21.64 51.09A6.63 1.99 0 0 0 34.9 51.09L37.39 22.06A9.12 2.74 0 0 0 19.14 22.06Z" fill="#7BA23F"/>
+  <path d="M32.28 24.52L31.18 52.88A6.63 1.99 0 0 0 34.9 51.09L37.39 22.06A9.12 2.74 0 0 1 32.28 24.52Z" fill="#5B8220"/>
+  <path d="M19.9 30.84L21.64 51.09A6.63 1.99 0 0 0 34.9 51.09L36.64 30.84A8.37 2.51 0 0 1 19.9 30.84Z" fill="#CFE8F1"/>
+  <path d="M31.95 33.09L31.18 52.88A6.63 1.99 0 0 0 34.9 51.09L36.64 30.84A8.37 2.51 0 0 1 31.95 33.09Z" fill="#AEC6CF"/>
+  <path d="M22.73 30.09L22.92 33.74L23.1 37.38L23.28 41.03L23.46 44.67" fill="none" stroke="#FFFFFF" stroke-width="1.49" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85"/>
+  <path d="M17.6 16.53A10.67 3.2 0 0 1 38.93 16.53" fill="none" stroke="#36591A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M17.6 16.53C18.67 28.94 19.73 41.35 20.8 53.76A7.47 2.24 0 0 0 35.73 53.76C36.8 41.35 37.87 28.94 38.93 16.53" fill="none" stroke="#17202A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="25.87" cy="47.36" r="2" fill="#FFFFFF" fill-opacity="0.6" stroke="#0B7391" stroke-opacity="0.6" stroke-width="1.8"/>
+  <circle cx="29.87" cy="40.96" r="1.6" fill="#FFFFFF" fill-opacity="0.6" stroke="#0B7391" stroke-opacity="0.6" stroke-width="1.8"/>
+  <circle cx="27.2" cy="35.63" r="1.2" fill="#FFFFFF" fill-opacity="0.6" stroke="#0B7391" stroke-opacity="0.6" stroke-width="1.8"/>
+  <path d="M38.93 16.53A10.67 3.2 0 0 1 17.6 16.53" fill="none" stroke="#36591A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="39.2" cy="12.27" r="6.67" fill="#5E9E4F" stroke="#17202A" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="39.2" cy="12.27" r="5.2" fill="#EEF0EE"/>
+  <circle cx="39.2" cy="12.27" r="4.13" fill="#9CC23F"/>
+  <path d="M35.38 10.68L43.02 13.85M36.28 9.34L42.12 15.19M37.62 8.45L40.78 16.09M39.2 8.13L39.2 16.4M40.78 8.45L37.62 16.09M42.12 9.34L36.28 15.19M43.02 10.68L35.38 13.85M43.33 12.27L35.07 12.27" fill="none" stroke="#EEF0EE" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="39.2" cy="12.27" r="1.2" fill="#EEF0EE"/>
+</svg>

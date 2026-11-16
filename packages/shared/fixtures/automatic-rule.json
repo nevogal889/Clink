@@ -1,0 +1,644 @@
+{
+  "$comment": "Automatic audience rule cases (QA_PLAN.md 6.3 T22 to T33, plus A1 to A8 edges). Read by the TS, Swift and Kotlin ports. \"local\" is the sender's local time at \"at\" in \"timeZone\"; ports may use either. \"expected\" is a group id or \"everyone\". Weekday is ISO: 1 = Monday.",
+  "version": 1,
+  "cases": [
+    {
+      "id": "T22",
+      "title": "Mon 07:59, both set",
+      "at": "2026-11-16T07:59:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 1,
+        "hour": 7,
+        "minute": 59
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_home"
+    },
+    {
+      "id": "T23",
+      "title": "Mon 08:00, both set",
+      "at": "2026-11-16T08:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 1,
+        "hour": 8,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_work"
+    },
+    {
+      "id": "T24",
+      "title": "Fri 17:59, both set",
+      "at": "2026-11-20T17:59:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 5,
+        "hour": 17,
+        "minute": 59
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_work"
+    },
+    {
+      "id": "T25",
+      "title": "Fri 18:00, both set",
+      "at": "2026-11-20T18:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 5,
+        "hour": 18,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_home"
+    },
+    {
+      "id": "T26",
+      "title": "Sat 10:00, both set",
+      "at": "2026-11-21T10:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 6,
+        "hour": 10,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_home"
+    },
+    {
+      "id": "T27",
+      "title": "Tue 09:00, no daytime group",
+      "at": "2026-11-17T09:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 2,
+        "hour": 9,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": null,
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "everyone"
+    },
+    {
+      "id": "T28",
+      "title": "Tue 09:00, daytime group empty",
+      "at": "2026-11-17T09:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 2,
+        "hour": 9,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_empty",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "everyone"
+    },
+    {
+      "id": "T29",
+      "title": "Tue 20:00, no other-times group",
+      "at": "2026-11-17T20:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 2,
+        "hour": 20,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": null
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "everyone"
+    },
+    {
+      "id": "T30",
+      "title": "Composer tapped 17:59:50, sent 18:00:05: the tap time decides",
+      "at": "2026-11-17T17:59:50Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 2,
+        "hour": 17,
+        "minute": 59
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_work",
+      "sentAt": "2026-11-17T18:00:05Z"
+    },
+    {
+      "id": "T31",
+      "title": "Widget quick flare queued offline at 17:59, sent 18:01: the tap time decides",
+      "at": "2026-11-17T17:59:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 2,
+        "hour": 17,
+        "minute": 59
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_work",
+      "sentAt": "2026-11-17T18:01:00Z"
+    },
+    {
+      "id": "T32",
+      "title": "Sender in New York at 17:30 Tue, recipients in London at 22:30: the sender's zone decides",
+      "at": "2026-11-17T22:30:00Z",
+      "timeZone": "America/New_York",
+      "local": {
+        "weekday": 2,
+        "hour": 17,
+        "minute": 30
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_work",
+      "recipientTimeZone": "Europe/London"
+    },
+    {
+      "id": "T33",
+      "title": "Group created by hand and named Work, no Settings choice: it takes the weekday role (PRD 3.10 rule 6)",
+      "at": "2026-11-17T09:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 2,
+        "hour": 9,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": null
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        }
+      ],
+      "expected": "grp_work",
+      "settingsFrom": "defaultAutoRole"
+    },
+    {
+      "id": "A1",
+      "title": "Daytime group id points at a deleted group",
+      "at": "2026-11-17T09:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 2,
+        "hour": 9,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_deleted",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "everyone"
+    },
+    {
+      "id": "A2",
+      "title": "No groups at all",
+      "at": "2026-11-17T09:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 2,
+        "hour": 9,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": null,
+        "otherGroupId": null
+      },
+      "groups": [],
+      "expected": "everyone"
+    },
+    {
+      "id": "A3",
+      "title": "Sun 12:00, both set",
+      "at": "2026-11-22T12:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 7,
+        "hour": 12,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_home"
+    },
+    {
+      "id": "A4",
+      "title": "Mon 00:00, both set",
+      "at": "2026-11-16T00:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 1,
+        "hour": 0,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_home"
+    },
+    {
+      "id": "A5",
+      "title": "Thu 12:00, other-times group empty does not matter in daytime",
+      "at": "2026-11-19T12:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 4,
+        "hour": 12,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_empty"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_work"
+    },
+    {
+      "id": "A6",
+      "title": "Wed 19:00, other-times group empty",
+      "at": "2026-11-18T19:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 3,
+        "hour": 19,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_empty"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "everyone"
+    },
+    {
+      "id": "A7",
+      "title": "Tokyo Mon 08:00 local is Sun 23:00 UTC",
+      "at": "2026-11-15T23:00:00Z",
+      "timeZone": "Asia/Tokyo",
+      "local": {
+        "weekday": 1,
+        "hour": 8,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_home"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_work"
+    },
+    {
+      "id": "A8",
+      "title": "Same group set for both slots, Sat 15:00",
+      "at": "2026-11-21T15:00:00Z",
+      "timeZone": "Europe/London",
+      "local": {
+        "weekday": 6,
+        "hour": 15,
+        "minute": 0
+      },
+      "settings": {
+        "daytimeGroupId": "grp_work",
+        "otherGroupId": "grp_work"
+      },
+      "groups": [
+        {
+          "id": "grp_work",
+          "name": "Work",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_home",
+          "name": "Home friends",
+          "memberCount": 3
+        },
+        {
+          "id": "grp_empty",
+          "name": "Empty",
+          "memberCount": 0
+        }
+      ],
+      "expected": "grp_work"
+    }
+  ]
+}

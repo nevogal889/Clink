@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<!-- matcha.ceremonial 24 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M2.9 14.9C1.8 16.2 1.8 19.8 2.8 20.4A1.1 0.33 0 0 0 5 20.4C6 19.8 6 16.2 4.9 14.9Z" fill="#C9A86A" stroke="#17202A" stroke-width="1.35" stroke-linejoin="round"/>
+  <path d="M3.2 9.2L3.2 15.2L4.6 15.2L4.6 9.2Z" fill="#C9A86A" stroke="#17202A" stroke-width="1.35" stroke-linejoin="round"/>
+  <ellipse cx="3.9" cy="9.2" rx="0.7" ry="0.21" fill="#C9A86A" stroke="#17202A" stroke-width="0.8" stroke-linejoin="round"/>
+  <path d="M10.82 19.2L10.82 20.1A2.58 0.77 0 0 0 15.98 20.1L15.98 19.2Z" fill="#CDBFA6" stroke="#17202A" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M7.5 15.27C7.5 17.43 8.95 19.2 10.4 19.2A3 0.9 0 0 0 16.4 19.2C17.85 19.2 19.3 17.43 19.3 15.27A5.9 1.77 0 0 0 7.5 15.27Z" fill="#2E3A2C"/>
+  <path d="M7.5 15.27A5.9 1.77 0 0 0 19.3 15.27L19.24 15.27L18.75 16.34L18.27 16.75L17.78 17.16L17.29 17.9L16.81 18.43L16.32 18.05L15.83 17.77L15.35 17.79L14.86 17.9L14.37 18.3L13.89 19.07L13.4 18.95L12.91 18.21L12.43 17.93L11.94 17.86L11.45 17.81L10.97 17.96L10.48 18.46L9.99 18.36L9.51 17.56L9.02 17.07L8.53 16.75L8.05 16.34L7.56 15.27Z" fill="#4C5E45"/>
+  <path d="M7.5 15.27C7.5 17.43 8.95 19.2 10.4 19.2A3 0.9 0 0 0 16.4 19.2C17.85 19.2 19.3 17.43 19.3 15.27" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="13.4" cy="15.27" rx="5.9" ry="1.77" fill="#8CB24A"/>
+  <circle cx="11.9" cy="15.02" r="0.53" fill="#A9C96A"/>
+  <circle cx="13.6" cy="14.82" r="0.43" fill="#A9C96A"/>
+  <circle cx="15.1" cy="15.07" r="0.35" fill="#A9C96A"/>
+  <path d="M7.5 15.27A5.9 1.77 0 0 1 19.3 15.27" fill="none" stroke="#B7D69A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M19.3 15.27A5.9 1.77 0 0 1 7.5 15.27" fill="none" stroke="#B7D69A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

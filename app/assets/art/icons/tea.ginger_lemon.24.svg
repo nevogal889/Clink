@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<!-- tea.ginger_lemon 24 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M14.49 13.84L15.93 13.84C17.69 13.84 17.69 17.39 14.72 17.58L14.21 17.58" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M5.9 12.35C6.08 14.84 6.27 17.33 6.45 19.82A3.95 1.19 0 0 0 14.35 19.82C14.53 17.33 14.72 14.84 14.9 12.35A4.5 1.35 0 0 0 5.9 12.35Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M6.41 13.88L6.78 18.82A3.62 1.09 0 0 0 14.02 18.82L14.39 13.88A3.99 1.2 0 0 0 6.41 13.88Z" fill="#E7CF7A"/>
+  <path d="M5.9 12.35A4.5 1.35 0 0 1 14.9 12.35" fill="none" stroke="#6B5306" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M5.9 12.35C6.08 14.84 6.27 17.33 6.45 19.82A3.95 1.19 0 0 0 14.35 19.82C14.53 17.33 14.72 14.84 14.9 12.35" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14.9 12.35A4.5 1.35 0 0 1 5.9 12.35" fill="none" stroke="#6B5306" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="15" cy="10.75" r="2.5" fill="#F2D64B" stroke="#17202A" stroke-width="1" stroke-linejoin="round"/>
+  <circle cx="15" cy="10.75" r="1.95" fill="#FBE3B5"/>
+  <circle cx="15" cy="10.75" r="1.55" fill="#F3E38C"/>
+  <path d="M13.57 10.16L16.43 11.34M14.41 9.32L15.59 12.18M15.59 9.32L14.41 12.18M16.43 10.16L13.57 11.34" fill="none" stroke="#FBE3B5" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="15" cy="10.75" r="0.45" fill="#FBE3B5"/>
+</svg>

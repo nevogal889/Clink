@@ -1,0 +1,80 @@
+{
+  "title": "State JSON from a newer app build (v 2)",
+  "state": {
+    "v": 2,
+    "state": "ready",
+    "updatedAt": "2026-11-17T09:10:00Z",
+    "me": {
+      "initial": "D",
+      "friendsCount": 5
+    },
+    "usual": [
+      {
+        "slot": 1,
+        "drinkId": "coffee.flat_white",
+        "category": "coffee",
+        "name": "Flat White",
+        "drinkShort": "Flat White",
+        "summary": "Iced · Oat milk · Double shot",
+        "hasDetails": true
+      },
+      {
+        "slot": 2,
+        "drinkId": "matcha.ceremonial",
+        "category": "matcha",
+        "name": "Ceremonial Matcha",
+        "drinkShort": "Ceremonial",
+        "summary": "",
+        "hasDetails": false
+      },
+      {
+        "slot": 3,
+        "drinkId": "tea.jasmine",
+        "category": "tea",
+        "name": "Jasmine Tea",
+        "drinkShort": "Jasmine Tea",
+        "summary": "Less sweet",
+        "hasDetails": true
+      }
+    ],
+    "today": {
+      "localDate": "2026-11-17",
+      "drinks": 3,
+      "water": 4,
+      "caffeinated": 2,
+      "lastDrinkAt": "2026-11-17T07:30:00Z"
+    },
+    "groups": [
+      {
+        "id": "grp_work",
+        "name": "Work",
+        "emoji": "🏢",
+        "memberCount": 3,
+        "avatarFiles": ["a_leo.jpg", "a_sam.jpg", "a_ari.jpg"]
+      },
+      {
+        "id": "grp_home",
+        "name": "Home friends",
+        "emoji": "🏠",
+        "memberCount": 3,
+        "avatarFiles": ["a_maya.jpg", "a_noa.jpg", "a_leo.jpg"]
+      },
+      {
+        "id": "grp_empty",
+        "name": "Empty",
+        "emoji": null,
+        "memberCount": 0,
+        "avatarFiles": []
+      }
+    ],
+    "auto": {
+      "daytimeGroupId": "grp_work",
+      "otherGroupId": "grp_home"
+    },
+    "lastPlace": "Kaffa Roastery",
+    "myFlare": null,
+    "incoming": [],
+    "snaps": [],
+    "outbox": []
+  }
+}

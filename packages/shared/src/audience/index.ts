@@ -1,0 +1,132 @@
+// The "Automatic" audience rule (PRD 3.10 rule 5, ARCHITECTURE.md 4.6):
+//   Monday to Friday, 08:00 to 17:59 local: the daytime group, if it exists and has at least one
+//   current friend; otherwise Everyone. Every other time: the other-times group under the same
+//   condition; otherwise Everyone.
+// Ported to Swift and Kotlin for the widget label; all ports run fixtures/automatic-rule.json.
+// The server's private.resolve_audience() decides real recipients.
+import { STRINGS } from '../strings';
+
+export const EVERYONE = 'everyone' as const;
+export type AudienceResult = string | typeof EVERYONE;
+
+/** Weekday hours the daytime group covers: [start, end) in minutes after local midnight. */
+export const DAYTIME_START_MIN = 8 * 60;
+export const DAYTIME_END_MIN = 18 * 60;
+/** ISO weekdays (1 = Monday ... 7 = Sunday) the daytime group covers. v1 uses Mon to Fri everywhere. */
+export const DAYTIME_WEEKDAYS = [1, 2, 3, 4, 5] as const;
+
+export interface LocalTime {
+  /** ISO weekday: 1 = Monday ... 7 = Sunday. */
+  weekday: number;
+  hour: number;
+  minute: number;
+}
+
+/** Same shape as the widget state's `auto` (ARCHITECTURE.md 3.1). */
+export interface AutoSettings {
+  daytimeGroupId: string | null;
+  otherGroupId: string | null;
+}
+
+export interface AudienceGroup {
+  id: string;
+  /** Current, unblocked, unsuspended friends in the group. */
+  memberCount: number;
+}
+
+export function isDaytime(t: LocalTime): boolean {
+  const minutes = t.hour * 60 + t.minute;
+  return (
+    (DAYTIME_WEEKDAYS as readonly number[]).includes(t.weekday) &&
+    minutes >= DAYTIME_START_MIN &&
+    minutes < DAYTIME_END_MIN
+  );
+}
+
+/**
+ * Resolves Automatic to a group id or "everyone". A group id that isn't in `groups` (deleted)
+ * or whose group has nobody in it falls back to Everyone.
+ */
+export function resolveAutomatic(
+  t: LocalTime,
+  settings: AutoSettings,
+  groups: readonly AudienceGroup[],
+): AudienceResult {
+  const id = isDaytime(t) ? settings.daytimeGroupId : settings.otherGroupId;
+  if (!id) return EVERYONE;
+  const group = groups.find((g) => g.id === id);
+  return group && group.memberCount >= 1 ? group.id : EVERYONE;
+}
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+  Sun: 7,
+};
+
+/** Local weekday, hour and minute of an instant in an IANA time zone. */
+export function localTimeAt(at: Date, timeZone: string): LocalTime {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(at);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  const weekday = WEEKDAY_INDEX[get('weekday')];
+  if (!weekday) throw new Error(`Could not read the weekday in ${timeZone}`);
+  return { weekday, hour: Number(get('hour')) % 24, minute: Number(get('minute')) };
+}
+
+/**
+ * Automatic at the moment of the tap (PRD 3.10 rule 10), in the sender's zone. Use the tap time,
+ * not the send time, so a flare tapped at 17:59 goes where the label said.
+ */
+export function resolveAutomaticAt(
+  tappedAt: Date,
+  timeZone: string,
+  settings: AutoSettings,
+  groups: readonly AudienceGroup[],
+): AudienceResult {
+  return resolveAutomatic(localTimeAt(tappedAt, timeZone), settings, groups);
+}
+
+export type AutoRole = 'work' | 'home';
+
+/**
+ * PRD 3.10 rule 6: a new group named "Work" takes the weekday role and one named "Home friends"
+ * the other-times role, when that role is free. Names come from COPY.md (`suggest.name.*`).
+ */
+export function defaultAutoRole(
+  groupName: string,
+  takenRoles: readonly AutoRole[],
+): AutoRole | null {
+  const name = groupName.trim().toLocaleLowerCase('en-US');
+  const role: AutoRole | null =
+    name === STRINGS['suggest.name.work'].toLocaleLowerCase('en-US')
+      ? 'work'
+      : name === STRINGS['suggest.name.home'].toLocaleLowerCase('en-US')
+        ? 'home'
+        : null;
+  return role && !takenRoles.includes(role) ? role : null;
+}
+
+/** When the Automatic label next changes: the next 08:00 or 18:00 boundary that matters. */
+export function nextBoundaryMinutes(t: LocalTime): number {
+  // Minutes from now until the next weekday 08:00 or 18:00.
+  const now = (t.weekday - 1) * 1440 + t.hour * 60 + t.minute;
+  let best = Infinity;
+  for (const wd of DAYTIME_WEEKDAYS) {
+    for (const m of [DAYTIME_START_MIN, DAYTIME_END_MIN]) {
+      let at = (wd - 1) * 1440 + m;
+      if (at <= now) at += 7 * 1440;
+      best = Math.min(best, at - now);
+    }
+  }
+  return best;
+}

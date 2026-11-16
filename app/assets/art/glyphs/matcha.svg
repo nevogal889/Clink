@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Matcha glyph: V6 chawan with the whisk standing at its left (DESIGN.md 3.1). -->
+  <g fill="none" stroke="#17202A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="15" cy="11" rx="6" ry="1.8"/>
+    <path d="M9 11C9 15.2 11 18.4 13.2 19.1V20.9H16.8V19.1C19 18.4 21 15.2 21 11"/>
+    <path d="M4.5 15C2 13.6 1.8 9.4 3.3 7.2M4.5 15C7 13.6 7.2 9.4 5.7 7.2M4.5 15V8.2"/>
+    <path d="M4.5 15V20.9"/>
+  </g>
+</svg>

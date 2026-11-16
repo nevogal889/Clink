@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  EXPO_NO_TELEMETRY: '1'
+
+jobs:
+  js:
+    name: Typecheck, lint, Jest, web export
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test -- --ci
+      - name: Expo web export (screens reviewable in a browser)
+        run: npm run export:web
+
+  pgtap:
+    name: pgTAP (Postgres 16)
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pgTAP into the Postgres service
+        run: >-
+          docker exec ${{ job.services.postgres.id }} bash -c
+          "apt-get update -qq && apt-get install -y -qq --no-install-recommends postgresql-16-pgtap"
+      - name: Install psql and pg_prove on the runner
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends postgresql-client libtap-parser-sourcehandler-pgtap-perl
+      - name: Run supabase/tests
+        run: bash scripts/run-pgtap.sh

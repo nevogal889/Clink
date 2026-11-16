@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Coffee hero (DESIGN.md 3.3). V2 cappuccino cup on saucer, tulip, spoon, two beans.
+       Ellipses at 0.30. Light from top left. Ground line y 880. -->
+  <!-- Cast shadows -->
+  <ellipse cx="624" cy="812" rx="292" ry="87.6" fill="#17202A" fill-opacity="0.14"/>
+  <ellipse cx="250" cy="878" rx="50" ry="15" fill="#17202A" fill-opacity="0.14"/>
+  <ellipse cx="338" cy="888" rx="44" ry="13.2" fill="#17202A" fill-opacity="0.14"/>
+  <!-- Steel contour: outer silhouette only (drawn under the fills) -->
+  <g id="contour" fill="#17202A" stroke="#17202A" stroke-width="16" stroke-linejoin="round">
+    <ellipse cx="600" cy="802" rx="260" ry="78"/>
+    <ellipse cx="600" cy="770" rx="300" ry="90"/>
+    <path fill-rule="evenodd" d="M788 556H866C918 556 928 624 892 664C866 694 816 710 728 712L780 600Z M792 588H860C890 588 892 630 866 654C846 672 808 680 750 682C770 650 786 620 792 588Z"/>
+    <path d="M400 520C400 630 456 716 528 736L532 740V752A68 20.4 0 0 0 668 752V740L672 736C744 716 800 630 800 520A200 60 0 0 0 400 520Z"/>
+    <path d="M196 868A44 28 0 1 0 284 868A44 28 0 1 0 196 868Z" transform="rotate(-24 240 868)"/>
+    <path d="M288 874A40 26 0 1 0 368 874A40 26 0 1 0 288 874Z" transform="rotate(14 328 874)"/>
+  </g>
+  <!-- Saucer -->
+  <ellipse cx="600" cy="802" rx="260" ry="78" fill="#EEF0EE"/>
+  <path d="M714 872.1A260 78 0 0 0 860 802V760H714Z" fill="#CCCECC"/>
+  <ellipse cx="600" cy="770" rx="300" ry="90" fill="#EEF0EE"/>
+  <ellipse cx="676" cy="780" rx="96" ry="28.8" fill="#17202A" fill-opacity="0.14"/>
+  <!-- Teaspoon, bowl toward the viewer -->
+  <path d="M794 806L868 754" fill="none" stroke="#8E9AA6" stroke-width="13" stroke-linecap="round"/>
+  <path d="M736 822A34 20 0 1 0 804 822A34 20 0 1 0 736 822Z" fill="#8E9AA6" transform="rotate(-30 770 822)"/>
+  <path d="M752 820C756 812 764 808 772 807" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="6" stroke-linecap="round"/>
+  <!-- Handle -->
+  <path fill-rule="evenodd" fill="#EEF0EE" d="M788 556H866C918 556 928 624 892 664C866 694 816 710 728 712L780 600Z M792 588H860C890 588 892 630 866 654C846 672 808 680 750 682C770 650 786 620 792 588Z"/>
+  <!-- Cup body, shade, gleam -->
+  <path d="M400 520C400 630 456 716 528 736L532 740V752A68 20.4 0 0 0 668 752V740L672 736C744 716 800 630 800 520A200 60 0 0 1 400 520Z" fill="#EEF0EE"/>
+  <path d="M688 573.9A200 60 0 0 0 800 520C800 630 744 716 672 736L668 740V752A68 20.4 0 0 1 630 770.3C662 710 688 640 688 573.9Z" fill="#CCCECC"/>
+  <path d="M484 606C488 640 504 668 528 688" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="28" stroke-linecap="round"/>
+  <!-- Crema ring, microfoam, three-stack tulip -->
+  <ellipse cx="600" cy="520" rx="193" ry="57.9" fill="#B77A45"/>
+  <ellipse cx="600" cy="522" rx="176" ry="52.8" fill="#F2EFEA"/>
+  <g fill="#B88A64">
+    <path d="M516 550 C516 574 684 574 684 550 C684 536 648 530 600 542 C552 530 516 536 516 550 Z"/>
+    <path d="M536 524 C544 540 656 540 664 524 C652 514 624 512 600 520 C576 512 548 514 536 524 Z"/>
+    <path d="M556 501 C564 514 636 514 644 501 C634 493 616 492 600 498 C584 492 566 493 556 501 Z"/>
+  </g>
+  <path d="M600 490 V566" fill="none" stroke="#F2EFEA" stroke-width="5" stroke-linecap="round"/>
+  <!-- Rim line in coffee ink -->
+  <ellipse cx="600" cy="520" rx="200" ry="60" fill="none" stroke="#4B3527" stroke-width="14"/>
+  <!-- Beans, one crease each -->
+  <g transform="rotate(-24 240 868)">
+    <path d="M196 868A44 28 0 1 0 284 868A44 28 0 1 0 196 868Z" fill="#4A2A1C"/>
+    <path d="M208 872C226 856 250 882 272 864" fill="none" stroke="#2E1100" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g transform="rotate(14 328 874)">
+    <path d="M288 874A40 26 0 1 0 368 874A40 26 0 1 0 288 874Z" fill="#4A2A1C"/>
+    <path d="M298 878C316 862 338 888 358 870" fill="none" stroke="#2E1100" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -129,3 +129,7 @@ Every decision the CEO has approved so far. When this file and `original-prd.md`
 - **Trademark:** check "Clink" before beta. The team prepares the free searches (RISK_REVIEW.md 8); the CEO pays an attorney for a clearance opinion. Buy the domain only after that.
 - **Drink art and logo:** the team draws the full set in code as SVG, following DESIGN.md (5 heroes, 42 icons in two sizes, 5 glyphs, logo, wordmark, app icon). No freelance illustrator. This overrides DESIGN.md 9 and PRD 8 item 8.
 - **Still open, ask before beta:** moderation staffing and a paid image filter (PRD 8 item 2), a lawyer's review of the privacy policy and terms (item 5), an SMS cost cap (item 6), test devices and an E2E cloud plan (item 7).
+
+## CEO answers after the first art review
+- **App icon:** the notched ring is dropped (it reads as a loading spinner). The icon is a cup rim seen from above, a thick ellipse with a gleam on cobalt, the same idea as the dot on the "i" in the wordmark.
+- **Drink art:** one more pass on all 5 heroes before beta for more character (texture, bolder shapes), keeping the DESIGN.md shape grammar. Redraw the matcha bowl: its glaze streaks read as dirt.

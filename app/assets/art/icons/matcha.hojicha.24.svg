@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<!-- matcha.hojicha 24 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M2.9 18.03A7.5 2.25 0 0 1 17.9 18.03L17.3 18.93A6.9 2.07 0 0 1 3.5 18.93Z" fill="#EEF0EE"/>
+  <path d="M2.9 18.03A7.5 2.25 0 0 1 17.9 18.03L17.3 18.93A6.9 2.07 0 0 1 3.5 18.93Z" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M17.9 18.03A7.5 2.25 0 0 1 2.9 18.03" fill="none" stroke="#17202A" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7.91 17.53L7.91 18.03A2.49 0.75 0 0 0 12.89 18.03L12.89 17.53Z" fill="#EEF0EE" stroke="#17202A" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M15.05 14.31L16.36 14.31C17.95 14.31 17.95 16.22 14.91 16.32L14.46 16.32" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M5.4 13.5C5.4 15.72 6.45 17.53 7.5 17.53A2.9 0.87 0 0 0 13.3 17.53C14.35 17.53 15.4 15.72 15.4 13.5A5 1.5 0 0 0 5.4 13.5Z" fill="#EEF0EE"/>
+  <path d="M5.4 13.5C5.4 15.72 6.45 17.53 7.5 17.53A2.9 0.87 0 0 0 13.3 17.53C14.35 17.53 15.4 15.72 15.4 13.5" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="10.4" cy="13.5" rx="5" ry="1.5" fill="#F2EFEA"/>
+  <ellipse cx="10.4" cy="13.55" rx="3.3" ry="0.99" fill="#9A6B45"/>
+  <path d="M5.4 13.5A5 1.5 0 0 1 15.4 13.5" fill="none" stroke="#36591A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M15.4 13.5A5 1.5 0 0 1 5.4 13.5" fill="none" stroke="#36591A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13.8 13.2C13.96 11.36 15.62 10.41 17.11 10.61C16.95 12.11 15.62 13.49 13.8 13.2Z" fill="#8A4B2A" stroke="#17202A" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M13.8 13.2L16.38 11.18" fill="none" stroke="#9A6B45" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

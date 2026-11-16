@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<!-- matcha.strawberry 24 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M6.6 6.2C7 10.85 7.4 15.51 7.8 20.16A2.8 0.84 0 0 0 13.4 20.16C13.8 15.51 14.2 10.85 14.6 6.2A4 1.2 0 0 0 6.6 6.2Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M7.18 8.27L8.11 19.16A2.49 0.75 0 0 0 13.09 19.16L14.02 8.27A3.42 1.03 0 0 0 7.18 8.27Z" fill="#7BA23F"/>
+  <path d="M7.48 11.82L8.11 19.16A2.49 0.75 0 0 0 13.09 19.16L13.72 11.82A3.12 0.94 0 0 1 7.48 11.82Z" fill="#F2EFEA"/>
+  <path d="M7.79 15.36L8.11 19.16A2.49 0.75 0 0 0 13.09 19.16L13.41 15.36A2.81 0.84 0 0 1 7.79 15.36Z" fill="#E0475A"/>
+  <path d="M6.6 6.2A4 1.2 0 0 1 14.6 6.2" fill="none" stroke="#36591A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M6.6 6.2C7 10.85 7.4 15.51 7.8 20.16A2.8 0.84 0 0 0 13.4 20.16C13.8 15.51 14.2 10.85 14.6 6.2" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14.6 6.2A4 1.2 0 0 1 6.6 6.2" fill="none" stroke="#36591A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

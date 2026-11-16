@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- tea.bubble 64 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M17.6 16.53C18.67 28.94 19.73 41.35 20.8 53.76A7.47 2.24 0 0 0 35.73 53.76C36.8 41.35 37.87 28.94 38.93 16.53A10.67 3.2 0 0 0 17.6 16.53Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M19.14 22.06L21.64 51.09A6.63 1.99 0 0 0 34.9 51.09L37.39 22.06A9.12 2.74 0 0 0 19.14 22.06Z" fill="#C49470"/>
+  <path d="M32.28 24.52L31.18 52.88A6.63 1.99 0 0 0 34.9 51.09L37.39 22.06A9.12 2.74 0 0 1 32.28 24.52Z" fill="#A27552"/>
+  <path d="M22.73 30.09L22.92 33.74L23.1 37.38L23.28 41.03L23.46 44.67" fill="none" stroke="#FFFFFF" stroke-width="1.49" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85"/>
+  <path d="M17.6 16.53A10.67 3.2 0 0 1 38.93 16.53" fill="none" stroke="#6B5306" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32.37 22.59L36.24 4.4" fill="none" stroke="#17202A" stroke-width="9.07"/>
+  <path d="M32.37 22.59L35.93 5.87" fill="none" stroke="#F2992E" stroke-width="6.13"/>
+  <path d="M17.6 16.53C18.67 28.94 19.73 41.35 20.8 53.76A7.47 2.24 0 0 0 35.73 53.76C36.8 41.35 37.87 28.94 38.93 16.53" fill="none" stroke="#17202A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="23.97" cy="50.16" r="1.92" fill="#3B2418"/>
+  <circle cx="27.65" cy="51.49" r="1.92" fill="#3B2418"/>
+  <circle cx="31.33" cy="50.43" r="1.92" fill="#3B2418"/>
+  <circle cx="25.81" cy="46.96" r="1.92" fill="#3B2418"/>
+  <circle cx="29.74" cy="47.36" r="1.92" fill="#3B2418"/>
+  <path d="M38.93 16.53A10.67 3.2 0 0 1 17.6 16.53" fill="none" stroke="#6B5306" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

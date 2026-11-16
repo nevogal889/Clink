@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Tea hero (DESIGN.md 3.3). V7 glass cup with handle, black tea at 80%, paper tag on a
+       steel string over the right rim. White enamel teapot (V13) behind and left, one leaf. -->
+  <!-- Cast shadows -->
+  <ellipse cx="300" cy="850" rx="90" ry="27" fill="#17202A" fill-opacity="0.14"/>
+  <ellipse cx="652" cy="852" rx="150" ry="45" fill="#17202A" fill-opacity="0.14"/>
+  <ellipse cx="372" cy="898" rx="50" ry="15" fill="#17202A" fill-opacity="0.14"/>
+  <!-- Teapot: contour, handle, spout, body, shade, speckle, gleam, lid -->
+  <g id="contour-teapot" fill="#17202A" stroke="#17202A" stroke-width="16" stroke-linejoin="round">
+    <path fill-rule="evenodd" d="M225.6 651.6H159.3C125.3 651.6 120.2 723 140.6 765.5C154.2 794.4 186.5 813.1 225.6 813.1ZM225.6 677.1H166.1C147.4 677.1 144 724.7 157.6 751.9C167.8 774 189.9 787.6 225.6 787.6Z"/>
+    <path d="M365 784.2C399 765.5 412.6 723 417.7 672L427.9 646.5C434.7 639.7 444.9 646.5 441.5 656.7C434.7 706 424.5 768.9 388.8 809.7Z"/>
+    <path d="M220.5 835.2C152.5 808 144 680.5 186.5 638C207.8 617.6 237.5 610.8 280 610.8C322.5 610.8 352.2 617.6 373.5 638C416 680.5 407.5 808 339.5 835.2A59.5 17.8 0 0 1 220.5 835.2Z"/>
+    <path d="M225.6 614.2C229 580.2 252.8 566.6 280 566.6C307.2 566.6 331 580.2 334.4 614.2Z"/>
+    <ellipse cx="280" cy="614.2" rx="54.4" ry="16.3" stroke-width="30"/>
+    <ellipse cx="280" cy="558.1" rx="15.3" ry="4.6"/>
+    <path d="M264.7 558.1V568.3H295.3V558.1Z"/>
+  </g>
+  <path fill-rule="evenodd" fill="#F4F6F7" d="M225.6 651.6H159.3C125.3 651.6 120.2 723 140.6 765.5C154.2 794.4 186.5 813.1 225.6 813.1ZM225.6 677.1H166.1C147.4 677.1 144 724.7 157.6 751.9C167.8 774 189.9 787.6 225.6 787.6Z"/>
+  <path d="M365 784.2C399 765.5 412.6 723 417.7 672L427.9 646.5C434.7 639.7 444.9 646.5 441.5 656.7C434.7 706 424.5 768.9 388.8 809.7Z" fill="#F4F6F7"/>
+  <path d="M220.5 835.2C152.5 808 144 680.5 186.5 638C207.8 617.6 237.5 610.8 280 610.8C322.5 610.8 352.2 617.6 373.5 638C416 680.5 407.5 808 339.5 835.2A59.5 17.8 0 0 1 220.5 835.2Z" fill="#F4F6F7"/>
+  <path d="M332.7 613.3C352.2 619.3 365 627.8 373.5 638C416 680.5 407.5 808 339.5 835.2A59.5 17.8 0 0 1 306.2 851.3C332.7 808 348 714.5 332.7 613.3Z" fill="#D2D4D5"/>
+  <g fill="#17202A" fill-opacity="0.35">
+    <circle cx="382" cy="727.2" r="2.3"/>
+    <circle cx="302.1" cy="808" r="2.8"/>
+    <circle cx="235.8" cy="802" r="3.3"/>
+    <circle cx="283.4" cy="786.8" r="3.2"/>
+    <circle cx="272.4" cy="706" r="3.1"/>
+    <circle cx="292.8" cy="694.9" r="2.8"/>
+    <circle cx="358.2" cy="689.9" r="3.1"/>
+    <circle cx="334.4" cy="694.9" r="2.4"/>
+    <circle cx="312.3" cy="678.8" r="2"/>
+    <circle cx="259.6" cy="788.4" r="2.3"/>
+    <circle cx="267.2" cy="636.3" r="1.8"/>
+    <circle cx="340.3" cy="747.6" r="2.5"/>
+    <circle cx="236.7" cy="723.9" r="2.5"/>
+    <circle cx="241.8" cy="639.7" r="2.5"/>
+    <circle cx="266.4" cy="679.6" r="3"/>
+    <circle cx="244.3" cy="772.3" r="2.5"/>
+    <circle cx="307.2" cy="638.8" r="2"/>
+    <circle cx="245.2" cy="748.5" r="1.9"/>
+    <circle cx="330.1" cy="726.4" r="3.1"/>
+    <circle cx="324.2" cy="779.1" r="3"/>
+    <circle cx="346.3" cy="798.6" r="3.6"/>
+    <circle cx="357.3" cy="668.6" r="3.7"/>
+  </g>
+  <path d="M200.1 672C191.6 706 193.3 736.6 205.2 763.8" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="22" stroke-linecap="round"/>
+  <ellipse cx="280" cy="614.2" rx="54.4" ry="16.3" fill="#D2D4D5" stroke="#6B5306" stroke-width="14"/>
+  <path d="M225.6 614.2C229 580.2 252.8 566.6 280 566.6C307.2 566.6 331 580.2 334.4 614.2A54.4 16.3 0 0 1 225.6 614.2Z" fill="#F4F6F7"/>
+  <path d="M310.6 573.4C324.2 581.9 332.7 595.5 334.4 614.2A54.4 16.3 0 0 1 314.5 626.8C317.4 604 315.7 587 310.6 573.4Z" fill="#D2D4D5"/>
+  <path d="M225.6 614.2A54.4 16.3 0 0 0 334.4 614.2" fill="none" stroke="#6B5306" stroke-width="14"/>
+  <path d="M264.7 558.1V568.3A15.3 4.6 0 0 0 295.3 568.3V558.1Z" fill="#F4F6F7"/>
+  <ellipse cx="280" cy="558.1" rx="15.3" ry="4.6" fill="#F4F6F7"/>
+  <!-- Glass cup: contour (offset outward, since glass is see-through), handle, body -->
+  <g id="contour-cup" fill="none" stroke="#17202A" stroke-width="8">
+    <ellipse cx="620" cy="470" rx="180" ry="54" stroke-width="30"/>
+    <path d="M436 470L474.6 838A145.4 46.3 0 0 0 765.4 838L804 470"/>
+    <path d="M797 530H872C924 530 930 642 893 702C866 747 821 776 768 780"/>
+    <path d="M786 570H864C888 570 890 640 865 682C846 714 812 734 775 738"/>
+  </g>
+  <path d="M793.3 534H872C920 534 926 640 890 700C864 744 820 772 767.9 776L771.4 742C812 738 848 718 868 684C894 640 892 566 864 566H789.9Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M440 470L478.6 838A141.4 42.3 0 0 0 761.4 838L800 470A180 54 0 0 0 440 470Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M457.2 538.4L485.9 812A134.1 40.2 0 0 0 754.1 812L782.8 538.4A162.8 48.8 0 0 0 457.2 538.4Z" fill="#B8641E"/>
+  <path d="M691.6 582.2A162.8 48.8 0 0 0 782.8 538.4L754.1 812A134.1 40.2 0 0 1 679 848.1Z" fill="#944700"/>
+  <path d="M509 600L523 750" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="25" stroke-linecap="round"/>
+  <ellipse cx="620" cy="470" rx="180" ry="54" fill="none" stroke="#6B5306" stroke-width="14"/>
+  <!-- Tag on a steel string, hanging over the right rim -->
+  <path d="M700 548C716 520 734 506 744 512L748 612" fill="none" stroke="#8E9AA6" stroke-width="4" stroke-linecap="round"/>
+  <path d="M726 612H770A4 4 0 0 1 774 616V672A4 4 0 0 1 770 676H726A4 4 0 0 1 722 672V616A4 4 0 0 1 726 612Z" fill="#F5EDCF" transform="rotate(4 748 612)"/>
+  <!-- One loose leaf in front -->
+  <g transform="translate(360 884) rotate(-8)">
+    <path id="contour-leaf" d="M-56 0C-22 -26 30 -24 56 0C30 22 -22 24 -56 0Z" fill="#17202A" stroke="#17202A" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M-56 0C-22 -26 30 -24 56 0C30 22 -22 24 -56 0Z" fill="#6E7F3A"/>
+    <path d="M-46 1C-10 -4 20 -4 48 -1" fill="none" stroke="#50611D" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

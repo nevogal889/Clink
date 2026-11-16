@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.expo/
+app/ios/
+app/android/
+package-lock.json
+# Docs and the prototype are owned by their authors; don't reformat them.
+*.md
+prototype.html
+supabase/migrations/

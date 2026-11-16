@@ -1,0 +1,12 @@
+{
+  "about": "Dark-mode swap for the drink icons (DESIGN.md 3.2 and 3.5). Masters are drawn for light surfaces. The export replaces these literal hex values; liquid and garnish colours stay the same. The gleam uses stroke-opacity 0.85 in light and 0.7 in dark; 0.85 is used by the gleam only.",
+  "dark": {
+    "#17202A": "#EEF2F5",
+    "#4B3527": "#DDC1AE",
+    "#36591A": "#B7D69A",
+    "#6B5306": "#E8CF78",
+    "#9E2460": "#F5B0D0",
+    "#085C74": "#99D9EB"
+  },
+  "gleamOpacity": { "light": "0.85", "dark": "0.7" }
+}

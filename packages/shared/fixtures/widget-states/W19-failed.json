@@ -1,0 +1,129 @@
+{
+  "id": "W19",
+  "title": "Failed: a quick flare unsent for 45 s (Failed from 30 s, dropped at 2 min)",
+  "note": "The second flare is past its drop time, so it is ignored.",
+  "now": "2026-11-17T09:12:00Z",
+  "timeZone": "Europe/London",
+  "config": {
+    "audience": "auto"
+  },
+  "state": {
+    "v": 1,
+    "state": "ready",
+    "updatedAt": "2026-11-17T09:10:00Z",
+    "me": {
+      "initial": "D",
+      "friendsCount": 5
+    },
+    "usual": [
+      {
+        "slot": 1,
+        "drinkId": "coffee.flat_white",
+        "category": "coffee",
+        "name": "Flat White",
+        "drinkShort": "Flat White",
+        "summary": "Iced · Oat milk · Double shot",
+        "hasDetails": true
+      },
+      {
+        "slot": 2,
+        "drinkId": "matcha.ceremonial",
+        "category": "matcha",
+        "name": "Ceremonial Matcha",
+        "drinkShort": "Ceremonial",
+        "summary": "",
+        "hasDetails": false
+      },
+      {
+        "slot": 3,
+        "drinkId": "tea.jasmine",
+        "category": "tea",
+        "name": "Jasmine Tea",
+        "drinkShort": "Jasmine Tea",
+        "summary": "Less sweet",
+        "hasDetails": true
+      }
+    ],
+    "today": {
+      "localDate": "2026-11-17",
+      "drinks": 3,
+      "water": 4,
+      "caffeinated": 2,
+      "lastDrinkAt": "2026-11-17T07:30:00Z"
+    },
+    "groups": [
+      {
+        "id": "grp_work",
+        "name": "Work",
+        "emoji": "🏢",
+        "memberCount": 3,
+        "avatarFiles": ["a_leo.jpg", "a_sam.jpg", "a_ari.jpg"]
+      },
+      {
+        "id": "grp_home",
+        "name": "Home friends",
+        "emoji": "🏠",
+        "memberCount": 3,
+        "avatarFiles": ["a_maya.jpg", "a_noa.jpg", "a_leo.jpg"]
+      },
+      {
+        "id": "grp_empty",
+        "name": "Empty",
+        "emoji": null,
+        "memberCount": 0,
+        "avatarFiles": []
+      }
+    ],
+    "auto": {
+      "daytimeGroupId": "grp_work",
+      "otherGroupId": "grp_home"
+    },
+    "lastPlace": "Kaffa Roastery",
+    "myFlare": null,
+    "incoming": [],
+    "snaps": [],
+    "outbox": [
+      {
+        "id": "3a4b5c6d-7e8f-4a9b-8c0d-1e2f3a4b5c6d",
+        "op": "flare",
+        "createdAt": "2026-11-17T09:11:15Z",
+        "dropAt": "2026-11-17T09:13:15Z",
+        "payload": {
+          "audience": "auto",
+          "timingMin": 0,
+          "tappedAt": "2026-11-17T09:11:15Z",
+          "timeZone": "Europe/London"
+        }
+      },
+      {
+        "id": "9e8d7c6b-5a4f-4e3d-9c2b-1a0f9e8d7c6b",
+        "op": "flare",
+        "createdAt": "2026-11-17T09:09:00Z",
+        "dropAt": "2026-11-17T09:11:00Z",
+        "payload": {
+          "audience": "auto",
+          "timingMin": 0,
+          "tappedAt": "2026-11-17T09:09:00Z",
+          "timeZone": "Europe/London"
+        }
+      }
+    ]
+  },
+  "local": null,
+  "expect": {
+    "small": {
+      "kind": "idle",
+      "overlay": {
+        "kind": "failed",
+        "opId": "3a4b5c6d-7e8f-4a9b-8c0d-1e2f3a4b5c6d"
+      }
+    },
+    "medium": {
+      "kind": "idle",
+      "overlay": {
+        "kind": "failed",
+        "opId": "3a4b5c6d-7e8f-4a9b-8c0d-1e2f3a4b5c6d"
+      }
+    }
+  }
+}

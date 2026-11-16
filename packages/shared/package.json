@@ -1,0 +1,34 @@
+{
+  "name": "@clink/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Rules that live once: catalog, strings, XP, the Automatic rule, limits, events, widget-state and API schemas, fixtures.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fixtures/*": "./fixtures/*",
+    "./package.json": "./package.json",
+    "./generated/*": "./generated/*"
+  },
+  "files": [
+    "src",
+    "fixtures",
+    "generated",
+    "tools"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "jest",
+    "gen": "node ../../scripts/gen-catalog.mjs && node ../../scripts/gen-strings.mjs",
+    "gen:check": "node ../../scripts/gen-catalog.mjs --check && node ../../scripts/gen-strings.mjs --check"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.13",
+    "@babel/preset-env": "^7.29.14",
+    "@babel/preset-typescript": "^7.29.7"
+  }
+}

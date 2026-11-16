@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Matcha hero (DESIGN.md 3.3). V6 chawan in dark glaze with a three-tongue drip band,
+       unglazed foot ring, froth with back-edge bubbles, chasen at left, chashaku in front. -->
+  <!-- Cast shadows -->
+  <ellipse cx="652" cy="852" rx="160" ry="48" fill="#17202A" fill-opacity="0.14"/>
+  <ellipse cx="246" cy="874" rx="56" ry="16.8" fill="#17202A" fill-opacity="0.14"/>
+  <!-- Steel contour: outer silhouette only -->
+  <g id="contour" fill="#17202A" stroke="#17202A" stroke-width="16" stroke-linejoin="round">
+    <path d="M350 560C350 704 420 800 500 824L510 830V853A90 27 0 0 0 690 853V830L700 824C780 800 850 704 850 560A250 75 0 0 0 350 560Z"/>
+    <ellipse cx="600" cy="560" rx="250" ry="75" stroke-width="30"/>
+    <path d="M208 740C112 700 118 540 160 480Q172 456 190 466L220 444L250 466Q268 456 280 480C322 540 328 700 232 740Z"/>
+    <path d="M190 736H250V864A30 9 0 0 1 190 864Z"/>
+    <g fill="none" stroke-width="27" stroke-linecap="round">
+    <path d="M208 740C112 700 118 540 160 480Q175 452 202 492"/>
+    <path d="M232 740C328 700 322 540 280 480Q265 452 238 492"/>
+    </g>
+    <path d="M562 874L330 886C312 884 296 880 284 870C278 886 290 899 314 899L562 886Z"/>
+  </g>
+  <!-- Chasen: inner tuft, seven tines curling inward, bamboo handle with a node -->
+  <path d="M208 740C112 700 118 540 160 480Q172 456 190 466L220 444L250 466Q268 456 280 480C322 540 328 700 232 740Z" fill="#A7884C"/>
+  <g fill="none" stroke="#C9A86A" stroke-width="11" stroke-linecap="round">
+    <path d="M208 740C112 700 118 540 160 480Q175 452 202 492"/>
+    <path d="M212 740C148 700 152 540 180 480Q190 452 208 492"/>
+    <path d="M216 740C184 700 186 540 200 480Q205 452 214 492"/>
+    <path d="M220 740V462"/>
+    <path d="M224 740C256 700 254 540 240 480Q235 452 226 492"/>
+    <path d="M228 740C292 700 288 540 260 480Q250 452 232 492"/>
+    <path d="M232 740C328 700 322 540 280 480Q265 452 238 492"/>
+  </g>
+  <path d="M190 736H250V864A30 9 0 0 1 190 864Z" fill="#C9A86A"/>
+  <path d="M233.2 736H250V864A30 9 0 0 1 233.2 872.6Z" fill="#A7884C"/>
+  <path d="M190 796H250" fill="none" stroke="#A7884C" stroke-width="6"/>
+  <!-- Chawan: inside, froth, bubbles -->
+  <ellipse cx="600" cy="560" rx="250" ry="75" fill="#152013"/>
+  <ellipse cx="600" cy="578" rx="228" ry="68.4" fill="#8CB24A"/>
+  <g fill="#A9C96A">
+    <ellipse cx="472" cy="540" rx="10" ry="3"/>
+    <ellipse cx="500" cy="530" rx="7" ry="2.1"/>
+    <ellipse cx="530" cy="538" rx="12" ry="3.6"/>
+    <ellipse cx="560" cy="527" rx="8" ry="2.4"/>
+    <ellipse cx="594" cy="534" rx="11" ry="3.3"/>
+    <ellipse cx="626" cy="525" rx="7" ry="2.1"/>
+    <ellipse cx="652" cy="536" rx="10" ry="3"/>
+    <ellipse cx="684" cy="529" rx="8" ry="2.4"/>
+    <ellipse cx="714" cy="541" rx="9" ry="2.7"/>
+    <ellipse cx="548" cy="550" rx="6" ry="1.8"/>
+    <ellipse cx="612" cy="551" rx="7" ry="2.1"/>
+    <ellipse cx="670" cy="552" rx="5" ry="1.5"/>
+  </g>
+  <!-- Chawan body: glaze, shade, drip band, foot ring, gleam -->
+  <path d="M350 560C350 704 420 800 500 824L510 830A90 27 0 0 0 690 830L700 824C780 800 850 704 850 560A250 75 0 0 1 350 560Z" fill="#2E3A2C"/>
+  <path d="M710 627.3A250 75 0 0 0 850 560C850 704 780 800 700 824L690 830A90 27 0 0 1 639.6 854.2C690 790 710 700 710 627.3Z" fill="#152013"/>
+  <path d="M360 581A250 75 0 0 0 710 627.3V660C700 668 690 664 682 668C676 700 672 726 660 726C648 726 646 690 636 684C624 678 614 690 606 700C598 740 596 772 580 772C562 772 562 730 552 712C542 696 524 690 510 696C500 716 492 742 476 742C460 742 458 712 446 690C430 662 380 640 360 581Z" fill="#4C5E45"/>
+  <path d="M710 627.3A250 75 0 0 0 840 581C836 610 800 640 770 648C748 654 724 652 710 660Z" fill="#31422A"/>
+  <path d="M510 830A90 27 0 0 0 690 830V853A90 27 0 0 1 510 853Z" fill="#CDBFA6"/>
+  <path d="M639.6 854.2A90 27 0 0 0 690 830V853A90 27 0 0 1 639.6 877.2Z" fill="#AC9F86"/>
+  <path d="M452 660C462 700 486 748 520 780" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="35" stroke-linecap="round"/>
+  <!-- Rim line: dark-mode matcha ink, so it shows on the dark glaze -->
+  <ellipse cx="600" cy="560" rx="250" ry="75" fill="none" stroke="#B7D69A" stroke-width="14"/>
+  <!-- Chashaku lying in front -->
+  <path d="M562 874L330 886C312 884 296 880 284 870C278 886 290 899 314 899L562 886Z" fill="#C9A86A"/>
+  <path d="M430 880.4V891.2" fill="none" stroke="#A7884C" stroke-width="6"/>
+</svg>

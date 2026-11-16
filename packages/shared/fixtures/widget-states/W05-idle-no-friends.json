@@ -1,0 +1,80 @@
+{
+  "id": "W5",
+  "title": "Idle, no friends: invite tile, Who joins? becomes Invite",
+  "now": "2026-11-17T09:12:00Z",
+  "timeZone": "Europe/London",
+  "config": {
+    "audience": "auto"
+  },
+  "state": {
+    "v": 1,
+    "state": "ready",
+    "updatedAt": "2026-11-17T09:10:00Z",
+    "me": {
+      "initial": "D",
+      "friendsCount": 0
+    },
+    "usual": [
+      {
+        "slot": 1,
+        "drinkId": "coffee.flat_white",
+        "category": "coffee",
+        "name": "Flat White",
+        "drinkShort": "Flat White",
+        "summary": "Iced · Oat milk · Double shot",
+        "hasDetails": true
+      },
+      {
+        "slot": 2,
+        "drinkId": "matcha.ceremonial",
+        "category": "matcha",
+        "name": "Ceremonial Matcha",
+        "drinkShort": "Ceremonial",
+        "summary": "",
+        "hasDetails": false
+      },
+      {
+        "slot": 3,
+        "drinkId": "tea.jasmine",
+        "category": "tea",
+        "name": "Jasmine Tea",
+        "drinkShort": "Jasmine Tea",
+        "summary": "Less sweet",
+        "hasDetails": true
+      }
+    ],
+    "today": {
+      "localDate": "2026-11-17",
+      "drinks": 0,
+      "water": 0,
+      "caffeinated": 0,
+      "lastDrinkAt": null
+    },
+    "groups": [],
+    "auto": {
+      "daytimeGroupId": null,
+      "otherGroupId": null
+    },
+    "lastPlace": "Kaffa Roastery",
+    "myFlare": null,
+    "incoming": [],
+    "snaps": [],
+    "outbox": []
+  },
+  "local": null,
+  "expect": {
+    "small": {
+      "kind": "idle",
+      "noFriends": true
+    },
+    "medium": {
+      "kind": "idle",
+      "noFriends": true,
+      "snapId": null,
+      "audience": {
+        "type": "auto",
+        "groupId": null
+      }
+    }
+  }
+}

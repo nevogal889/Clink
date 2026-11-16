@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- App icon, monochrome (DESIGN.md 1.3): mark only, white on transparent. Source for the iOS
+       tinted variant (greyscale) and any single-colour use; the OS supplies the tint. -->
+  <path d="M763.66 409.74A280 280 0 1 1 634.74 280.82L602.81 318.55L595.9 367.82A184.8 184.8 0 1 0 676.66 448.58L725.93 441.67Z" fill="#FFFFFF"/>
+</svg>

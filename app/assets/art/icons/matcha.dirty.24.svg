@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<!-- matcha.dirty 24 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M6.6 12.38C6.87 14.87 7.13 17.37 7.4 19.86A3.8 1.14 0 0 0 15 19.86C15.27 17.37 15.53 14.87 15.8 12.38A4.6 1.38 0 0 0 6.6 12.38Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M7.12 13.55L7.69 18.86A3.51 1.05 0 0 0 14.71 18.86L15.28 13.55A4.08 1.22 0 0 0 7.12 13.55Z" fill="#3B2418"/>
+  <path d="M7.26 14.78L7.69 18.86A3.51 1.05 0 0 0 14.71 18.86L15.14 14.78A3.94 1.18 0 0 1 7.26 14.78Z" fill="#B5CB86"/>
+  <path d="M6.6 12.38A4.6 1.38 0 0 1 15.8 12.38" fill="none" stroke="#36591A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M6.6 12.38C6.87 14.87 7.13 17.37 7.4 19.86A3.8 1.14 0 0 0 15 19.86C15.27 17.37 15.53 14.87 15.8 12.38" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M15.8 12.38A4.6 1.38 0 0 1 6.6 12.38" fill="none" stroke="#36591A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

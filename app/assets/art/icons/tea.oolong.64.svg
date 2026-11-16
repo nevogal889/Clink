@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- tea.oolong 64 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M12.27 49.01A17.6 5.28 0 0 1 47.47 49.01L46.06 51.14A16.19 4.86 0 0 1 13.67 51.14Z" fill="#EEF0EE"/>
+  <path d="M37.61 53.75A16.19 4.86 0 0 0 46.06 51.14L47.47 49.01A17.6 5.28 0 0 1 37.61 53.75Z" fill="#CCCECC"/>
+  <path d="M12.27 49.01A17.6 5.28 0 0 1 47.47 49.01L46.06 51.14A16.19 4.86 0 0 1 13.67 51.14Z" fill="none" stroke="#17202A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M47.47 49.01A17.6 5.28 0 0 1 12.27 49.01" fill="none" stroke="#17202A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24.59 47.68L24.59 49.01A5.27 1.58 0 0 0 35.14 49.01L35.14 47.68Z" fill="#EEF0EE" stroke="#17202A" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M17.6 37.28C17.6 43 20.67 47.68 23.73 47.68A6.13 1.84 0 0 0 36 47.68C39.07 47.68 42.13 43 42.13 37.28A12.27 3.68 0 0 0 17.6 37.28Z" fill="#EEF0EE"/>
+  <path d="M35.26 40.58C35.26 46.3 33.91 50.15 32.57 49.33A6.13 1.84 0 0 0 36 47.68C39.07 47.68 42.13 43 42.13 37.28A12.27 3.68 0 0 1 35.26 40.58Z" fill="#CCCECC"/>
+  <path d="M23.05 43.35L23.19 44.32L23.38 45.28L23.63 46.21L23.94 47.12" fill="none" stroke="#FFFFFF" stroke-width="1.72" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85"/>
+  <path d="M17.6 37.28C17.6 43 20.67 47.68 23.73 47.68A6.13 1.84 0 0 0 36 47.68C39.07 47.68 42.13 43 42.13 37.28" fill="none" stroke="#17202A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="29.87" cy="37.28" rx="12.27" ry="3.68" fill="#C08A2E"/>
+  <path d="M17.6 37.28A12.27 3.68 0 0 1 42.13 37.28" fill="none" stroke="#6B5306" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M42.13 37.28A12.27 3.68 0 0 1 17.6 37.28" fill="none" stroke="#6B5306" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="rotate(-10 41.87 36.08)"><path d="M20 36.08C20 32.03 25.47 31.01 30.93 31.01C36.4 31.01 41.87 32.03 41.87 36.08A10.93 3.28 0 0 1 20 36.08Z" fill="#EEF0EE"/><path d="M35.74 39.03C35.74 33.55 34.94 31.27 33.34 31.06C38.59 31.01 41.87 32.03 41.87 36.08A10.93 3.28 0 0 1 35.74 39.03Z" fill="#CCCECC"/><path d="M20 36.08C20 32.03 25.47 31.01 30.93 31.01C36.4 31.01 41.87 32.03 41.87 36.08" fill="none" stroke="#17202A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M41.87 36.08A10.93 3.28 0 0 1 20 36.08" fill="none" stroke="#17202A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M28.13 28.88L28.13 31.55A2.8 0.84 0 0 0 33.73 31.55L33.73 28.88A2.8 0.84 0 0 0 28.13 28.88Z" fill="#EEF0EE" stroke="#17202A" stroke-width="2" stroke-linejoin="round"/></g>
+</svg>

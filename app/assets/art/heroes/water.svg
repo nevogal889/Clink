@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Water hero (DESIGN.md 3.3). V4 straight tumbler, water at 75%, two ice cubes, three
+       bubbles. White enamel jug (V12) behind and left with a water-ink rim and light speckle. -->
+  <!-- Cast shadows -->
+  <ellipse cx="318" cy="822" rx="130" ry="39" fill="#17202A" fill-opacity="0.14"/>
+  <ellipse cx="660" cy="856" rx="140" ry="42" fill="#17202A" fill-opacity="0.14"/>
+  <!-- Jug: contour, handle, body, shade, speckle, gleam, inside, rim, pouring lip -->
+  <g id="contour-jug" fill="#17202A" stroke="#17202A" stroke-width="16" stroke-linejoin="round">
+    <path fill-rule="evenodd" d="M380 424H452C494 424 500 520 470 590C452 632 430 664 404 690L370 600Z M382 456H446C468 456 470 528 444 584C430 614 416 636 398 654L370 560Z"/>
+    <path d="M198 400L168 813.4A122 36.6 0 0 0 412 813.4L382 400A92 27.6 0 0 0 198 400Z"/>
+    <ellipse cx="290" cy="400" rx="92" ry="27.6" stroke-width="30"/>
+    <path d="M208 388Q178 388 152 396Q178 404 206 413Z" stroke-width="30"/>
+  </g>
+  <path fill-rule="evenodd" fill="#F4F6F7" d="M380 424H452C494 424 500 520 470 590C452 632 430 664 404 690L370 600Z M382 456H446C468 456 470 528 444 584C430 614 416 636 398 654L370 560Z"/>
+  <path d="M198 400L168 813.4A122 36.6 0 0 0 412 813.4L382 400A92 27.6 0 0 1 198 400Z" fill="#F4F6F7"/>
+  <path d="M330.5 424.8A92 27.6 0 0 0 382 400L412 813.4A122 36.6 0 0 1 343.7 846.3Z" fill="#D2D4D5"/>
+  <g fill="#17202A" fill-opacity="0.35">
+    <circle cx="317" cy="445" r="3.9"/>
+    <circle cx="321" cy="554" r="2.2"/>
+    <circle cx="271" cy="532" r="3.0"/>
+    <circle cx="376" cy="694" r="3.5"/>
+    <circle cx="231" cy="502" r="2.7"/>
+    <circle cx="260" cy="685" r="2.1"/>
+    <circle cx="254" cy="784" r="2.2"/>
+    <circle cx="376" cy="606" r="3.6"/>
+    <circle cx="245" cy="615" r="2.2"/>
+    <circle cx="300" cy="632" r="4.0"/>
+    <circle cx="241" cy="561" r="3.7"/>
+    <circle cx="387" cy="734" r="4.1"/>
+    <circle cx="366" cy="532" r="3.5"/>
+    <circle cx="239" cy="729" r="2.9"/>
+    <circle cx="266" cy="753" r="2.5"/>
+    <circle cx="346" cy="584" r="4.1"/>
+    <circle cx="251" cy="647" r="3.3"/>
+    <circle cx="291" cy="581" r="4.3"/>
+  </g>
+  <path d="M222 520L209 705" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="13" stroke-linecap="round"/>
+  <ellipse cx="290" cy="400" rx="92" ry="27.6" fill="#D2D4D5"/>
+  <ellipse cx="290" cy="407" rx="76" ry="22.8" fill="#CFE8F1"/>
+  <path d="M208 388Q178 388 152 396Q178 404 206 413Z" fill="#F4F6F7"/>
+  <ellipse cx="290" cy="400" rx="92" ry="27.6" fill="none" stroke="#085C74" stroke-width="14"/>
+  <path d="M206 388Q178 388 152 396Q178 404 204 412" fill="none" stroke="#085C74" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Tumbler: contour (offset outward, since glass is see-through) and body -->
+  <g id="contour-glass" fill="none" stroke="#17202A" stroke-width="8">
+    <ellipse cx="620" cy="470" rx="170" ry="51" stroke-width="30"/>
+    <path d="M446 470L484.9 840.7A135.1 43.3 0 0 0 755.1 840.7L794 470"/>
+  </g>
+  <path d="M450 470L488.9 840.7A131.1 39.3 0 0 0 751.1 840.7L790 470A170 51 0 0 0 450 470Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <!-- Water, shade, two ice cubes, three bubbles -->
+  <path d="M469 555.5L495.9 812A124.1 37.2 0 0 0 744.1 812L771 555.5A151 45.3 0 0 0 469 555.5Z" fill="#CFE8F1"/>
+  <path d="M686.4 596.2A151 45.3 0 0 0 771 555.5L744.1 812A124.1 37.2 0 0 1 674.6 845.4Z" fill="#AEC6CF"/>
+  <rect x="604" y="616" width="82" height="82" rx="16" fill="#F4F6F7" transform="rotate(14 645 657)"/>
+  <rect x="560" y="512" width="88" height="88" rx="16" fill="#F4F6F7" transform="rotate(8 604 556)"/>
+  <g fill="none" stroke="#0B7391" stroke-opacity="0.6" stroke-width="4">
+    <circle cx="548" cy="770" r="12"/>
+    <circle cx="562" cy="722" r="9"/>
+    <circle cx="556" cy="684" r="6"/>
+  </g>
+  <path d="M514 590L526 730" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="24" stroke-linecap="round"/>
+  <ellipse cx="620" cy="470" rx="170" ry="51" fill="none" stroke="#085C74" stroke-width="14"/>
+</svg>

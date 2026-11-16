@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Water glyph: a water drop inside a V4 tumbler (DESIGN.md 3.1). -->
+  <g fill="none" stroke="#17202A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="12" cy="7.5" rx="7" ry="2.1"/>
+    <path d="M5 7.5L6.3 19.3A5.7 1.71 0 0 0 17.7 19.3L19 7.5"/>
+    <path d="M12 11.2C10.9 12.6 9.6 14.2 9.6 15.5A2.4 2.4 0 0 0 14.4 15.5C14.4 14.2 13.1 12.6 12 11.2Z"/>
+  </g>
+</svg>

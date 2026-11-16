@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <!-- Android adaptive icon foreground (DESIGN.md 1.3): 108 dp canvas, mark 48 dp wide inside the
+       66 dp safe zone, 2% low. Background layer is plain cobalt #2443A6. Also the monochrome layer
+       (Android reads its alpha only). -->
+  <path d="M75.57 44.56A24 24 0 1 1 64.52 33.51L61.78 36.74L61.19 40.97A15.84 15.84 0 1 0 68.11 47.89L72.34 47.3Z" fill="#FFFFFF"/>
+</svg>

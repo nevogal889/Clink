@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -42 348 146">
+  <!-- "clink" wordmark, one colour (DESIGN.md 1.3): the tittle takes the letter colour.
+       Letterforms drawn as outlines after Archivo SemiCondensed ExtraBold with tight tracking:
+       x-height 100, stem 24, baseline y 100. The i's tittle is a ring (a rim seen from above):
+       ellipse ratio 0.42, ring stroke 0.45 x stem. -->
+  <g fill="#17202A">
+    <path d="M76 33C70 11 57 -2 39 -2C14 -2 0 19 0 50C0 81 14 102 39 102C57 102 70 90 76 67L53 61C50 72 46 79 39 79C29 79 24 68 24 50C24 32 29 21 39 21C46 21 50 28 53 39Z"/>
+    <path d="M88 -40H112V100H88Z"/>
+    <path d="M128 0H152V100H128Z"/>
+    <path d="M166 0H190V14C198 4 210 -2 224 -2C242 -2 252 10 252 32V100H228V40C228 28 222 22 212 22C200 22 190 30 190 44V100H166Z"/>
+    <path d="M264 -40H288V54L316 0H344L309 58L348 100H319L293 70L288 76V100H264Z"/>
+  </g>
+  <ellipse cx="140" cy="-23" rx="19" ry="7.98" fill="none" stroke="#17202A" stroke-width="10.8"/>
+</svg>

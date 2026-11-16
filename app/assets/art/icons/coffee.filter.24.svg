@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<!-- coffee.filter 24 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M8.1 19.42L8.1 19.92A3.1 0.93 0 0 0 14.3 19.92L14.3 19.42Z" fill="#EEF0EE" stroke="#17202A" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M7 16.06C7.2 17.18 7.4 18.3 7.6 19.42A3.6 1.08 0 0 0 14.8 19.42C15 18.3 15.2 17.18 15.4 16.06A4.2 1.26 0 0 0 7 16.06Z" fill="#EEF0EE"/>
+  <path d="M7 16.06C7.2 17.18 7.4 18.3 7.6 19.42A3.6 1.08 0 0 0 14.8 19.42C15 18.3 15.2 17.18 15.4 16.06" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="11.2" cy="16.06" rx="4.2" ry="1.26" fill="#4A2C1E"/>
+  <path d="M7 16.06A4.2 1.26 0 0 1 15.4 16.06" fill="none" stroke="#4B3527" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M15.4 16.06A4.2 1.26 0 0 1 7 16.06" fill="none" stroke="#4B3527" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="11.2" cy="15.46" rx="4.9" ry="1.47" fill="#EEF0EE" stroke="#17202A" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M5.9 7.59C7.07 10.05 8.23 12.5 9.4 14.96A1.8 0.54 0 0 0 13 14.96C14.17 12.5 15.33 10.05 16.5 7.59A5.3 1.59 0 0 0 5.9 7.59Z" fill="#EEF0EE"/>
+  <path d="M9.3 10.44L10.12 14.04" fill="none" stroke="#17202A" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12.56 10.51L11.97 14.07" fill="none" stroke="#17202A" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M5.9 7.59C7.07 10.05 8.23 12.5 9.4 14.96A1.8 0.54 0 0 0 13 14.96C14.17 12.5 15.33 10.05 16.5 7.59" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="11.2" cy="7.59" rx="5.3" ry="1.59" fill="#4A2C1E"/>
+  <ellipse cx="11.2" cy="7.59" rx="5.3" ry="1.59" fill="#4A2C1E"/>
+  <path d="M5.9 7.59A5.3 1.59 0 0 1 16.5 7.59" fill="none" stroke="#4B3527" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16.5 7.59A5.3 1.59 0 0 1 5.9 7.59" fill="none" stroke="#4B3527" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

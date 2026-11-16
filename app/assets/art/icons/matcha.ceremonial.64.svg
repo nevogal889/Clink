@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- matcha.ceremonial 64 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M7.73 39.73C4.8 43.2 4.8 52.8 7.47 54.4A2.93 0.88 0 0 0 13.33 54.4C16 52.8 16 43.2 13.07 39.73Z" fill="#C9A86A" stroke="#17202A" stroke-width="2.7" stroke-linejoin="round"/>
+  <path d="M9.52 42.13Q6.59 46.67 8.35 53.6" fill="none" stroke="#17202A" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.45"/>
+  <path d="M10.4 42.13Q10.4 46.67 10.4 53.6" fill="none" stroke="#17202A" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.45"/>
+  <path d="M11.28 42.13Q14.21 46.67 12.45 53.6" fill="none" stroke="#17202A" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.45"/>
+  <path d="M8.53 24.53L8.53 40.53L12.27 40.53L12.27 24.53Z" fill="#C9A86A" stroke="#17202A" stroke-width="2.7" stroke-linejoin="round"/>
+  <ellipse cx="10.4" cy="24.53" rx="1.87" ry="0.56" fill="#C9A86A" stroke="#17202A" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M28.85 51.2L28.85 53.6A6.88 2.06 0 0 0 42.61 53.6L42.61 51.2Z" fill="#CDBFA6" stroke="#17202A" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M20 40.72C20 46.48 23.87 51.2 27.73 51.2A8 2.4 0 0 0 43.73 51.2C47.6 51.2 51.47 46.48 51.47 40.72A15.73 4.72 0 0 0 20 40.72Z" fill="#2E3A2C"/>
+  <path d="M42.66 44.96C42.66 50.72 40.95 54.4 39.25 53.36A8 2.4 0 0 0 43.73 51.2C47.6 51.2 51.47 46.48 51.47 40.72A15.73 4.72 0 0 1 42.66 44.96Z" fill="#152013"/>
+  <path d="M20 40.72A15.73 4.72 0 0 0 51.47 40.72L51.31 40.72L50.01 43.57L48.71 44.68L47.42 45.77L46.12 47.74L44.82 49.15L43.52 48.14L42.22 47.38L40.93 47.44L39.63 47.73L38.33 48.8L37.03 50.84L35.73 50.55L34.44 48.57L33.14 47.81L31.84 47.62L30.54 47.5L29.24 47.88L27.95 49.23L26.65 48.97L25.35 46.83L24.05 45.51L22.75 44.66L21.46 43.57L20.16 40.72Z" fill="#4C5E45"/>
+  <path d="M26.99 47.65L27.17 48.62L27.41 49.56L27.72 50.47L28.11 51.35" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85"/>
+  <path d="M20 40.72C20 46.48 23.87 51.2 27.73 51.2A8 2.4 0 0 0 43.73 51.2C47.6 51.2 51.47 46.48 51.47 40.72" fill="none" stroke="#17202A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="35.73" cy="40.72" rx="15.73" ry="4.72" fill="#152013"/>
+  <ellipse cx="35.73" cy="41.92" rx="14.8" ry="4.44" fill="#8CB24A"/>
+  <circle cx="31.97" cy="40.72" r="1.46" fill="#A9C96A"/>
+  <circle cx="36.24" cy="39.76" r="1.18" fill="#A9C96A"/>
+  <circle cx="40" cy="40.96" r="0.97" fill="#A9C96A"/>
+  <path d="M20 40.72A15.73 4.72 0 0 1 51.47 40.72" fill="none" stroke="#B7D69A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M51.47 40.72A15.73 4.72 0 0 1 20 40.72" fill="none" stroke="#B7D69A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

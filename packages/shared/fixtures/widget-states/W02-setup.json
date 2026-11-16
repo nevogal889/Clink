@@ -1,0 +1,23 @@
+{
+  "id": "W2",
+  "title": "Signed in, onboarding not finished (wm.setup)",
+  "now": "2026-11-17T09:12:00Z",
+  "timeZone": "Europe/London",
+  "config": {
+    "audience": "auto"
+  },
+  "state": {
+    "v": 1,
+    "state": "setup",
+    "updatedAt": "2026-11-17T09:11:00Z"
+  },
+  "local": null,
+  "expect": {
+    "small": {
+      "kind": "setup"
+    },
+    "medium": {
+      "kind": "setup"
+    }
+  }
+}

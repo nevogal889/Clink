@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Tea glyph: V13 teapot, spout right, lid with knob (DESIGN.md 3.1). -->
+  <g fill="none" stroke="#17202A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7.2 20.4C4 18.7 3.8 12.6 7.6 10.4C9.9 9.2 12.3 9.2 14.6 10.4C18.4 12.6 18.2 18.7 15 20.4A3.9 1.17 0 0 1 7.2 20.4Z"/>
+    <path d="M8 9.7C8.2 7.9 9.5 7 11.1 7C12.7 7 14 7.9 14.2 9.7"/>
+    <path d="M11.1 7V5.6"/>
+    <path d="M17.4 16.4C19.4 15.6 20.2 13.4 20.9 11.2"/>
+    <path d="M5.4 12H3.9C2.2 12 2.1 15.6 4.3 16.9"/>
+  </g>
+</svg>

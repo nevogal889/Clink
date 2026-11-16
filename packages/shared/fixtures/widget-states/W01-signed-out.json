@@ -1,0 +1,23 @@
+{
+  "id": "W1",
+  "title": "Signed out (after sign-out or account deletion)",
+  "now": "2026-11-17T09:12:00Z",
+  "timeZone": "Europe/London",
+  "config": {
+    "audience": "auto"
+  },
+  "state": {
+    "v": 1,
+    "state": "signed_out",
+    "updatedAt": "2026-11-17T09:11:00Z"
+  },
+  "local": null,
+  "expect": {
+    "small": {
+      "kind": "signed_out"
+    },
+    "medium": {
+      "kind": "signed_out"
+    }
+  }
+}

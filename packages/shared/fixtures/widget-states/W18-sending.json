@@ -1,0 +1,146 @@
+{
+  "id": "W18",
+  "title": "Sending: I'm in queued offline 10 s ago",
+  "note": "A queued log never shows Sending or Failed (PRD 3.20).",
+  "now": "2026-11-17T09:12:00Z",
+  "timeZone": "Europe/London",
+  "config": {
+    "audience": "auto"
+  },
+  "state": {
+    "v": 1,
+    "state": "ready",
+    "updatedAt": "2026-11-17T09:10:00Z",
+    "me": {
+      "initial": "D",
+      "friendsCount": 5
+    },
+    "usual": [
+      {
+        "slot": 1,
+        "drinkId": "coffee.flat_white",
+        "category": "coffee",
+        "name": "Flat White",
+        "drinkShort": "Flat White",
+        "summary": "Iced · Oat milk · Double shot",
+        "hasDetails": true
+      },
+      {
+        "slot": 2,
+        "drinkId": "matcha.ceremonial",
+        "category": "matcha",
+        "name": "Ceremonial Matcha",
+        "drinkShort": "Ceremonial",
+        "summary": "",
+        "hasDetails": false
+      },
+      {
+        "slot": 3,
+        "drinkId": "tea.jasmine",
+        "category": "tea",
+        "name": "Jasmine Tea",
+        "drinkShort": "Jasmine Tea",
+        "summary": "Less sweet",
+        "hasDetails": true
+      }
+    ],
+    "today": {
+      "localDate": "2026-11-17",
+      "drinks": 3,
+      "water": 4,
+      "caffeinated": 2,
+      "lastDrinkAt": "2026-11-17T07:30:00Z"
+    },
+    "groups": [
+      {
+        "id": "grp_work",
+        "name": "Work",
+        "emoji": "🏢",
+        "memberCount": 3,
+        "avatarFiles": ["a_leo.jpg", "a_sam.jpg", "a_ari.jpg"]
+      },
+      {
+        "id": "grp_home",
+        "name": "Home friends",
+        "emoji": "🏠",
+        "memberCount": 3,
+        "avatarFiles": ["a_maya.jpg", "a_noa.jpg", "a_leo.jpg"]
+      },
+      {
+        "id": "grp_empty",
+        "name": "Empty",
+        "emoji": null,
+        "memberCount": 0,
+        "avatarFiles": []
+      }
+    ],
+    "auto": {
+      "daytimeGroupId": "grp_work",
+      "otherGroupId": "grp_home"
+    },
+    "lastPlace": "Kaffa Roastery",
+    "myFlare": null,
+    "incoming": [
+      {
+        "flareId": "flr_maya",
+        "senderName": "Maya",
+        "avatarFile": "a_maya.jpg",
+        "category": "matcha",
+        "wants": "matcha",
+        "label": "matcha",
+        "drinkName": "Ceremonial Matcha",
+        "place": "Café Lumi",
+        "photoFile": null,
+        "sentAt": "2026-11-17T09:10:00Z",
+        "meetAt": "2026-11-17T09:22:00Z",
+        "expiresAt": "2026-11-17T09:25:00Z",
+        "myResponse": null
+      }
+    ],
+    "snaps": [],
+    "outbox": [
+      {
+        "id": "7f9c2b1e-4d3a-4f5e-9a8b-1c2d3e4f5a6b",
+        "op": "respond",
+        "createdAt": "2026-11-17T09:11:50Z",
+        "dropAt": "2026-11-17T09:25:00Z",
+        "payload": {
+          "flareId": "flr_maya",
+          "kind": "in",
+          "slot": null
+        }
+      },
+      {
+        "id": "0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e",
+        "op": "log",
+        "createdAt": "2026-11-17T08:52:00Z",
+        "dropAt": null,
+        "payload": {
+          "drinkId": "water.still",
+          "slot": null,
+          "category": "water",
+          "loggedAt": "2026-11-17T08:52:00Z"
+        }
+      }
+    ]
+  },
+  "local": null,
+  "expect": {
+    "small": {
+      "kind": "incoming",
+      "flareId": "flr_maya",
+      "overlay": {
+        "kind": "sending",
+        "opId": "7f9c2b1e-4d3a-4f5e-9a8b-1c2d3e4f5a6b"
+      }
+    },
+    "medium": {
+      "kind": "incoming",
+      "flareId": "flr_maya",
+      "overlay": {
+        "kind": "sending",
+        "opId": "7f9c2b1e-4d3a-4f5e-9a8b-1c2d3e4f5a6b"
+      }
+    }
+  }
+}

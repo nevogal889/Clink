@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+<!-- tea.jasmine 24 grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4). -->
+  <path d="M8.22 19.5L8.22 20.1A2.58 0.77 0 0 0 13.38 20.1L13.38 19.5Z" fill="#EEF0EE" stroke="#17202A" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M7.2 12.08C7.4 14.55 7.6 17.03 7.8 19.5A3 0.9 0 0 0 13.8 19.5C14 17.03 14.2 14.55 14.4 12.08A3.6 1.08 0 0 0 7.2 12.08Z" fill="#EEF0EE"/>
+  <path d="M7.2 12.08C7.4 14.55 7.6 17.03 7.8 19.5A3 0.9 0 0 0 13.8 19.5C14 17.03 14.2 14.55 14.4 12.08" fill="none" stroke="#17202A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="10.8" cy="12.08" rx="3.6" ry="1.08" fill="#D9C77A"/>
+  <path d="M7.2 12.08A3.6 1.08 0 0 1 14.4 12.08" fill="none" stroke="#6B5306" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14.4 12.08A3.6 1.08 0 0 1 7.2 12.08" fill="none" stroke="#6B5306" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="14.8" cy="8.65" rx="1.43" ry="0.95" fill="#F7F7F2" stroke="#17202A" stroke-width="0.8" stroke-linejoin="round" transform="rotate(-90 14.8 8.65)"/>
+  <ellipse cx="16.16" cy="9.64" rx="1.43" ry="0.95" fill="#F7F7F2" stroke="#17202A" stroke-width="0.8" stroke-linejoin="round" transform="rotate(-18 16.16 9.64)"/>
+  <ellipse cx="15.64" cy="11.24" rx="1.43" ry="0.95" fill="#F7F7F2" stroke="#17202A" stroke-width="0.8" stroke-linejoin="round" transform="rotate(54 15.64 11.24)"/>
+  <ellipse cx="13.96" cy="11.24" rx="1.43" ry="0.95" fill="#F7F7F2" stroke="#17202A" stroke-width="0.8" stroke-linejoin="round" transform="rotate(126 13.96 11.24)"/>
+  <ellipse cx="13.44" cy="9.64" rx="1.43" ry="0.95" fill="#F7F7F2" stroke="#17202A" stroke-width="0.8" stroke-linejoin="round" transform="rotate(198 13.44 9.64)"/>
+  <circle cx="14.8" cy="10.08" r="0.6" fill="#F2D64B" stroke="#17202A" stroke-width="0.8" stroke-linejoin="round"/>
+</svg>

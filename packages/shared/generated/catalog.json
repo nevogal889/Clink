@@ -1,0 +1,854 @@
+{
+  "source": "docs/COPY.md section 2",
+  "categories": ["coffee", "matcha", "tea", "smoothie_juice"],
+  "sharedLists": {
+    "SIZE": ["Small", "Regular", "Large"],
+    "MILK": [
+      "No milk",
+      "Whole milk",
+      "Skim milk",
+      "Oat milk",
+      "Almond milk",
+      "Soy milk",
+      "Coconut milk",
+      "Lactose-free milk"
+    ],
+    "ICE": ["Light ice", "Regular ice", "Extra ice"]
+  },
+  "optionSets": {
+    "coffee": [
+      {
+        "key": "size",
+        "label": "Size",
+        "multi": false,
+        "values": ["Small", "Regular", "Large"],
+        "onlyFor": {}
+      },
+      {
+        "key": "temp",
+        "label": "Temperature",
+        "multi": false,
+        "values": ["Iced", "Warm", "Hot", "Extra hot"],
+        "onlyFor": {}
+      },
+      {
+        "key": "ice",
+        "label": "Ice",
+        "multi": false,
+        "values": ["Light ice", "Regular ice", "Extra ice"],
+        "onlyFor": {}
+      },
+      {
+        "key": "shots",
+        "label": "Shots",
+        "multi": false,
+        "values": ["Single shot", "Double shot", "Triple shot"],
+        "onlyFor": {}
+      },
+      {
+        "key": "caf",
+        "label": "Caffeine",
+        "multi": false,
+        "values": ["Full caffeine", "Half-caf", "Decaf"],
+        "onlyFor": {}
+      },
+      {
+        "key": "milk",
+        "label": "Milk",
+        "multi": false,
+        "values": [
+          "No milk",
+          "Whole milk",
+          "Skim milk",
+          "Oat milk",
+          "Almond milk",
+          "Soy milk",
+          "Coconut milk",
+          "Lactose-free milk"
+        ],
+        "onlyFor": {}
+      },
+      {
+        "key": "sweet",
+        "label": "Sweetness",
+        "multi": false,
+        "values": ["No sugar", "½ sugar", "1 sugar", "2 sugars", "Sweetener"],
+        "onlyFor": {}
+      },
+      {
+        "key": "extras",
+        "label": "Extras",
+        "multi": true,
+        "values": [
+          "Extra foam",
+          "No foam",
+          "Cold foam",
+          "Vanilla syrup",
+          "Caramel syrup",
+          "Hazelnut syrup",
+          "Cinnamon",
+          "Cocoa on top"
+        ],
+        "onlyFor": {}
+      }
+    ],
+    "matcha": [
+      {
+        "key": "size",
+        "label": "Size",
+        "multi": false,
+        "values": ["Small", "Regular", "Large"],
+        "onlyFor": {}
+      },
+      {
+        "key": "temp",
+        "label": "Temperature",
+        "multi": false,
+        "values": ["Iced", "Warm", "Hot"],
+        "onlyFor": {}
+      },
+      {
+        "key": "ice",
+        "label": "Ice",
+        "multi": false,
+        "values": ["Light ice", "Regular ice", "Extra ice"],
+        "onlyFor": {}
+      },
+      {
+        "key": "milk",
+        "label": "Milk",
+        "multi": false,
+        "values": [
+          "No milk",
+          "Whole milk",
+          "Skim milk",
+          "Oat milk",
+          "Almond milk",
+          "Soy milk",
+          "Coconut milk",
+          "Lactose-free milk"
+        ],
+        "onlyFor": {}
+      },
+      {
+        "key": "sweet",
+        "label": "Sweetness",
+        "multi": false,
+        "values": ["Unsweetened", "Lightly sweet", "Sweet", "Honey"],
+        "onlyFor": {}
+      },
+      {
+        "key": "strength",
+        "label": "Strength",
+        "multi": false,
+        "values": ["Light", "Regular", "Strong"],
+        "onlyFor": {}
+      },
+      {
+        "key": "grade",
+        "label": "Grade",
+        "multi": false,
+        "values": ["Ceremonial grade", "Any grade is fine"],
+        "onlyFor": {}
+      },
+      {
+        "key": "extras",
+        "label": "Extras",
+        "multi": true,
+        "values": ["Vanilla syrup", "Cold foam", "Extra foam"],
+        "onlyFor": {}
+      }
+    ],
+    "tea": [
+      {
+        "key": "size",
+        "label": "Size",
+        "multi": false,
+        "values": ["Small", "Regular", "Large"],
+        "onlyFor": {}
+      },
+      {
+        "key": "temp",
+        "label": "Temperature",
+        "multi": false,
+        "values": ["Iced", "Hot", "Extra hot"],
+        "onlyFor": {}
+      },
+      {
+        "key": "ice",
+        "label": "Ice",
+        "multi": false,
+        "values": ["Light ice", "Regular ice", "Extra ice"],
+        "onlyFor": {}
+      },
+      {
+        "key": "milk",
+        "label": "Milk",
+        "multi": false,
+        "values": [
+          "No milk",
+          "Splash of milk",
+          "Whole milk",
+          "Oat milk",
+          "Almond milk",
+          "Soy milk",
+          "Lactose-free milk"
+        ],
+        "onlyFor": {}
+      },
+      {
+        "key": "sweet",
+        "label": "Sweetness",
+        "multi": false,
+        "values": ["No sugar", "Less sweet", "1 sugar", "2 sugars", "Honey", "Sweetener"],
+        "onlyFor": {}
+      },
+      {
+        "key": "strength",
+        "label": "Strength",
+        "multi": false,
+        "values": ["Light", "Regular", "Strong", "Leave the bag in"],
+        "onlyFor": {}
+      },
+      {
+        "key": "extras",
+        "label": "Extras",
+        "multi": true,
+        "values": ["Lemon slice", "Fresh mint", "Ginger", "Tapioca pearls"],
+        "onlyFor": { "Tapioca pearls": ["tea.bubble"] }
+      }
+    ],
+    "smoothie_juice": [
+      {
+        "key": "size",
+        "label": "Size",
+        "multi": false,
+        "values": ["Small", "Regular", "Large"],
+        "onlyFor": {}
+      },
+      {
+        "key": "base",
+        "label": "Base",
+        "multi": false,
+        "values": [
+          "Water",
+          "Milk",
+          "Oat milk",
+          "Almond milk",
+          "Coconut water",
+          "Yogurt",
+          "Apple juice"
+        ],
+        "onlyFor": {}
+      },
+      {
+        "key": "ice",
+        "label": "Ice",
+        "multi": false,
+        "values": ["No ice", "Light ice", "Regular ice"],
+        "onlyFor": {}
+      },
+      {
+        "key": "sweet",
+        "label": "Sweetness",
+        "multi": false,
+        "values": ["No added sugar", "A little honey", "As it comes"],
+        "onlyFor": {}
+      },
+      {
+        "key": "extras",
+        "label": "Add-ins",
+        "multi": true,
+        "values": [
+          "Protein",
+          "Ginger shot",
+          "Chia seeds",
+          "Spinach",
+          "Peanut butter",
+          "Fresh mint"
+        ],
+        "onlyFor": {}
+      }
+    ]
+  },
+  "freeTextFields": [
+    { "key": "note", "label": "Note", "max": 120 },
+    { "key": "planB", "label": "Plan B", "max": 80 }
+  ],
+  "drinks": [
+    {
+      "id": "coffee.espresso",
+      "category": "coffee",
+      "slug": "espresso",
+      "name": "Espresso",
+      "description": "A short, strong shot of coffee",
+      "caffeine": true,
+      "widgetName": "Espresso",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["shots", "caf", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "coffee.americano",
+      "category": "coffee",
+      "slug": "americano",
+      "name": "Americano",
+      "description": "Espresso topped up with hot water",
+      "caffeine": true,
+      "widgetName": "Americano",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["size", "temp", "ice", "shots", "caf", "milk", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "coffee.filter",
+      "category": "coffee",
+      "slug": "filter",
+      "name": "Filter Coffee",
+      "description": "Brewed black coffee, also called drip",
+      "caffeine": true,
+      "widgetName": "Filter Coffee",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["size", "temp", "ice", "caf", "milk", "sweet"],
+      "alwaysIced": false
+    },
+    {
+      "id": "coffee.cappuccino",
+      "category": "coffee",
+      "slug": "cappuccino",
+      "name": "Cappuccino",
+      "description": "Espresso with steamed milk and thick foam",
+      "caffeine": true,
+      "widgetName": "Cappuccino",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["size", "temp", "shots", "caf", "milk", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "coffee.latte",
+      "category": "coffee",
+      "slug": "latte",
+      "name": "Latte",
+      "description": "Espresso with lots of steamed milk",
+      "caffeine": true,
+      "widgetName": "Latte",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["size", "temp", "ice", "shots", "caf", "milk", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "coffee.flat_white",
+      "category": "coffee",
+      "slug": "flat_white",
+      "name": "Flat White",
+      "description": "Double espresso with thin, silky milk",
+      "caffeine": true,
+      "widgetName": "Flat White",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["size", "temp", "ice", "shots", "caf", "milk", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "coffee.cortado",
+      "category": "coffee",
+      "slug": "cortado",
+      "name": "Cortado",
+      "description": "Espresso cut with a little warm milk",
+      "caffeine": true,
+      "widgetName": "Cortado",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["temp", "shots", "caf", "milk", "sweet"],
+      "alwaysIced": false
+    },
+    {
+      "id": "coffee.macchiato",
+      "category": "coffee",
+      "slug": "macchiato",
+      "name": "Macchiato",
+      "description": "Espresso with a spoonful of milk foam",
+      "caffeine": true,
+      "widgetName": "Macchiato",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["shots", "caf", "milk", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "coffee.mocha",
+      "category": "coffee",
+      "slug": "mocha",
+      "name": "Mocha",
+      "description": "Espresso, chocolate and steamed milk",
+      "caffeine": true,
+      "widgetName": "Mocha",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["size", "temp", "ice", "shots", "caf", "milk", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "coffee.cold_brew",
+      "category": "coffee",
+      "slug": "cold_brew",
+      "name": "Cold Brew",
+      "description": "Coffee steeped cold for hours, served iced",
+      "caffeine": true,
+      "widgetName": "Cold Brew",
+      "wants": "coffee",
+      "label": "coffee",
+      "fields": ["size", "ice", "caf", "milk", "sweet", "extras"],
+      "alwaysIced": true
+    },
+    {
+      "id": "matcha.latte",
+      "category": "matcha",
+      "slug": "latte",
+      "name": "Matcha Latte",
+      "description": "Whisked matcha with steamed or cold milk",
+      "caffeine": true,
+      "widgetName": "Matcha Latte",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "temp", "ice", "milk", "sweet", "strength", "grade", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "matcha.ceremonial",
+      "category": "matcha",
+      "slug": "ceremonial",
+      "name": "Ceremonial Matcha",
+      "description": "Top-grade matcha whisked with water only",
+      "caffeine": true,
+      "widgetName": "Ceremonial",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "temp", "ice", "strength", "grade", "sweet"],
+      "alwaysIced": false
+    },
+    {
+      "id": "matcha.strawberry",
+      "category": "matcha",
+      "slug": "strawberry",
+      "name": "Strawberry Matcha",
+      "description": "Matcha latte over strawberry purée",
+      "caffeine": true,
+      "widgetName": "Strawberry",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "temp", "ice", "milk", "sweet", "strength", "grade", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "matcha.dirty",
+      "category": "matcha",
+      "slug": "dirty",
+      "name": "Dirty Matcha",
+      "description": "Matcha latte with a shot of espresso",
+      "caffeine": true,
+      "widgetName": "Dirty Matcha",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "temp", "ice", "milk", "sweet", "strength", "grade", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "matcha.hojicha",
+      "category": "matcha",
+      "slug": "hojicha",
+      "name": "Hojicha Latte",
+      "description": "Roasted green tea latte, toasty and mellow",
+      "caffeine": true,
+      "widgetName": "Hojicha Latte",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "temp", "ice", "milk", "sweet", "strength", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "matcha.coconut",
+      "category": "matcha",
+      "slug": "coconut",
+      "name": "Coconut Matcha",
+      "description": "Matcha shaken with coconut water over ice",
+      "caffeine": true,
+      "widgetName": "Coconut Matcha",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "ice", "sweet", "strength", "grade"],
+      "alwaysIced": true
+    },
+    {
+      "id": "matcha.lemonade",
+      "category": "matcha",
+      "slug": "lemonade",
+      "name": "Matcha Lemonade",
+      "description": "Matcha shaken with lemonade over ice",
+      "caffeine": true,
+      "widgetName": "Matcha Lemonade",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "ice", "sweet", "strength", "grade"],
+      "alwaysIced": true
+    },
+    {
+      "id": "matcha.tonic",
+      "category": "matcha",
+      "slug": "tonic",
+      "name": "Matcha Tonic",
+      "description": "Matcha poured over tonic water and ice",
+      "caffeine": true,
+      "widgetName": "Matcha Tonic",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "ice", "sweet", "strength", "grade"],
+      "alwaysIced": true
+    },
+    {
+      "id": "matcha.blended",
+      "category": "matcha",
+      "slug": "blended",
+      "name": "Blended Matcha",
+      "description": "Matcha, milk and ice blended smooth",
+      "caffeine": true,
+      "widgetName": "Blended Matcha",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "milk", "sweet", "strength", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "matcha.mango",
+      "category": "matcha",
+      "slug": "mango",
+      "name": "Mango Matcha",
+      "description": "Matcha latte layered over mango purée",
+      "caffeine": true,
+      "widgetName": "Mango Matcha",
+      "wants": "matcha",
+      "label": "matcha",
+      "fields": ["size", "temp", "ice", "milk", "sweet", "strength", "grade", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "tea.english_breakfast",
+      "category": "tea",
+      "slug": "english_breakfast",
+      "name": "English Breakfast",
+      "description": "Strong black tea, often with milk",
+      "caffeine": true,
+      "widgetName": "Breakfast Tea",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "temp", "ice", "milk", "sweet", "strength", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "tea.earl_grey",
+      "category": "tea",
+      "slug": "earl_grey",
+      "name": "Earl Grey",
+      "description": "Black tea with bergamot",
+      "caffeine": true,
+      "widgetName": "Earl Grey",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "temp", "ice", "milk", "sweet", "strength", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "tea.green",
+      "category": "tea",
+      "slug": "green",
+      "name": "Green Tea",
+      "description": "Light, grassy green tea",
+      "caffeine": true,
+      "widgetName": "Green Tea",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "temp", "ice", "sweet", "strength", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "tea.jasmine",
+      "category": "tea",
+      "slug": "jasmine",
+      "name": "Jasmine Tea",
+      "description": "Green tea scented with jasmine flowers",
+      "caffeine": true,
+      "widgetName": "Jasmine Tea",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "temp", "ice", "sweet", "strength", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "tea.oolong",
+      "category": "tea",
+      "slug": "oolong",
+      "name": "Oolong",
+      "description": "Half-oxidized tea, between green and black",
+      "caffeine": true,
+      "widgetName": "Oolong",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "temp", "ice", "sweet", "strength"],
+      "alwaysIced": false
+    },
+    {
+      "id": "tea.chai_latte",
+      "category": "tea",
+      "slug": "chai_latte",
+      "name": "Chai Latte",
+      "description": "Spiced black tea with steamed milk",
+      "caffeine": true,
+      "widgetName": "Chai Latte",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "temp", "ice", "milk", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "tea.bubble",
+      "category": "tea",
+      "slug": "bubble",
+      "name": "Bubble Tea",
+      "description": "Milk tea with chewy tapioca pearls",
+      "caffeine": true,
+      "widgetName": "Bubble Tea",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "ice", "milk", "sweet", "extras"],
+      "alwaysIced": true
+    },
+    {
+      "id": "tea.peppermint",
+      "category": "tea",
+      "slug": "peppermint",
+      "name": "Peppermint",
+      "description": "Herbal peppermint tea, caffeine-free",
+      "caffeine": false,
+      "widgetName": "Peppermint",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "temp", "ice", "sweet", "strength", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "tea.chamomile",
+      "category": "tea",
+      "slug": "chamomile",
+      "name": "Chamomile",
+      "description": "Herbal tea from chamomile flowers",
+      "caffeine": false,
+      "widgetName": "Chamomile",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "temp", "sweet", "strength", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "tea.ginger_lemon",
+      "category": "tea",
+      "slug": "ginger_lemon",
+      "name": "Ginger & Lemon",
+      "description": "Fresh ginger and lemon in hot water",
+      "caffeine": false,
+      "widgetName": "Ginger & Lemon",
+      "wants": "tea",
+      "label": "tea",
+      "fields": ["size", "temp", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.orange",
+      "category": "smoothie_juice",
+      "slug": "orange",
+      "name": "Fresh Orange Juice",
+      "description": "Freshly squeezed oranges",
+      "caffeine": false,
+      "widgetName": "Orange Juice",
+      "wants": "juice",
+      "label": "juice",
+      "fields": ["size", "ice", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.green_juice",
+      "category": "smoothie_juice",
+      "slug": "green_juice",
+      "name": "Green Juice",
+      "description": "Pressed greens, apple and lemon",
+      "caffeine": false,
+      "widgetName": "Green Juice",
+      "wants": "juice",
+      "label": "juice",
+      "fields": ["size", "ice", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.green_smoothie",
+      "category": "smoothie_juice",
+      "slug": "green_smoothie",
+      "name": "Green Smoothie",
+      "description": "Spinach, banana and fruit, blended",
+      "caffeine": false,
+      "widgetName": "Green Smoothie",
+      "wants": "a smoothie",
+      "label": "smoothie",
+      "fields": ["size", "base", "ice", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.berry",
+      "category": "smoothie_juice",
+      "slug": "berry",
+      "name": "Berry Smoothie",
+      "description": "Mixed berries blended with yogurt or milk",
+      "caffeine": false,
+      "widgetName": "Berry Smoothie",
+      "wants": "a smoothie",
+      "label": "smoothie",
+      "fields": ["size", "base", "ice", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.strawberry_banana",
+      "category": "smoothie_juice",
+      "slug": "strawberry_banana",
+      "name": "Strawberry Banana",
+      "description": "Strawberries and banana, blended smooth",
+      "caffeine": false,
+      "widgetName": "Berry Banana",
+      "wants": "a smoothie",
+      "label": "smoothie",
+      "fields": ["size", "base", "ice", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.mango",
+      "category": "smoothie_juice",
+      "slug": "mango",
+      "name": "Mango Smoothie",
+      "description": "Ripe mango blended thick",
+      "caffeine": false,
+      "widgetName": "Mango Smoothie",
+      "wants": "a smoothie",
+      "label": "smoothie",
+      "fields": ["size", "base", "ice", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.acai",
+      "category": "smoothie_juice",
+      "slug": "acai",
+      "name": "Açaí Smoothie",
+      "description": "Açaí berries blended with banana",
+      "caffeine": false,
+      "widgetName": "Açaí Smoothie",
+      "wants": "a smoothie",
+      "label": "smoothie",
+      "fields": ["size", "base", "ice", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.lemonade",
+      "category": "smoothie_juice",
+      "slug": "lemonade",
+      "name": "Lemonade",
+      "description": "Fresh lemon, water and a little sugar",
+      "caffeine": false,
+      "widgetName": "Lemonade",
+      "wants": "lemonade",
+      "label": "lemonade",
+      "fields": ["size", "ice", "sweet", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.watermelon",
+      "category": "smoothie_juice",
+      "slug": "watermelon",
+      "name": "Watermelon Juice",
+      "description": "Fresh watermelon, nothing else",
+      "caffeine": false,
+      "widgetName": "Watermelon",
+      "wants": "juice",
+      "label": "juice",
+      "fields": ["size", "ice", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "smoothie_juice.carrot_ginger",
+      "category": "smoothie_juice",
+      "slug": "carrot_ginger",
+      "name": "Carrot Ginger",
+      "description": "Fresh carrot, orange and ginger",
+      "caffeine": false,
+      "widgetName": "Carrot Ginger",
+      "wants": "juice",
+      "label": "juice",
+      "fields": ["size", "ice", "extras"],
+      "alwaysIced": false
+    },
+    {
+      "id": "water.still",
+      "category": "water",
+      "slug": "still",
+      "name": "Water",
+      "description": "Still water",
+      "caffeine": false,
+      "widgetName": "Water",
+      "wants": null,
+      "label": null,
+      "fields": [],
+      "alwaysIced": false
+    },
+    {
+      "id": "water.sparkling",
+      "category": "water",
+      "slug": "sparkling",
+      "name": "Sparkling Water",
+      "description": "Water with bubbles",
+      "caffeine": false,
+      "widgetName": "Sparkling",
+      "wants": null,
+      "label": null,
+      "fields": [],
+      "alwaysIced": false
+    }
+  ],
+  "customWords": {
+    "coffee": { "wants": "coffee", "label": "coffee" },
+    "matcha": { "wants": "matcha", "label": "matcha" },
+    "tea": { "wants": "tea", "label": "tea" },
+    "smoothie_juice": { "wants": "a drink", "label": "drink" }
+  },
+  "presets": [
+    {
+      "key": "preset.mix",
+      "label": "A bit of everything",
+      "drinkIds": ["coffee.flat_white", "matcha.latte", "tea.jasmine"]
+    },
+    {
+      "key": "preset.coffee",
+      "label": "Coffee all day",
+      "drinkIds": ["coffee.latte", "coffee.americano", "coffee.cold_brew"]
+    },
+    {
+      "key": "preset.matcha",
+      "label": "Mostly matcha",
+      "drinkIds": ["matcha.latte", "matcha.ceremonial", "matcha.hojicha"]
+    },
+    {
+      "key": "preset.tea",
+      "label": "Tea and chai",
+      "drinkIds": ["tea.english_breakfast", "tea.chai_latte", "tea.chamomile"]
+    }
+  ]
+}
