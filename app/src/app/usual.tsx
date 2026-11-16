@@ -15,11 +15,27 @@ export default function UsualScreen() {
   const { state, actions } = useData();
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const editor = useUsualEditor({ list: state.usual, onChange: (next) => void actions.setUsual(next), mode: 'settings' });
+  const editor = useUsualEditor({
+    list: state.usual,
+    onChange: (next) => void actions.setUsual(next),
+    mode: 'settings',
+  });
   return (
     <View style={{ flex: 1, backgroundColor: c.surfaceBase }} testID="screen-usual">
-      <Stack.Screen options={{ headerShown: true, title: '', headerShadowVisible: false, headerStyle: { backgroundColor: c.surfaceBase }, headerTintColor: c.inkPrimary, headerBackButtonDisplayMode: 'minimal' }} />
-      <ScrollView stickyHeaderIndices={[editor.tabsIndex + 1]} contentContainerStyle={{ paddingBottom: insets.bottom + spacing.s8 }}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: '',
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: c.surfaceBase },
+          headerTintColor: c.inkPrimary,
+          headerBackButtonDisplayMode: 'minimal',
+        }}
+      />
+      <ScrollView
+        stickyHeaderIndices={[editor.tabsIndex + 1]}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.s8 }}
+      >
         <View style={{ paddingHorizontal: spacing.gutter, paddingTop: spacing.s2 }}>
           <Txt variant="displayL" accessibilityRole="header">
             {t('usual.title')}

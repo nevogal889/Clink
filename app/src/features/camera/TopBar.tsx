@@ -35,29 +35,66 @@ export function TopBar({
 }) {
   const { c, cat } = useTheme();
   const water_ = cat('water');
-  const profileLabel = newLevel ? `${t('top.profile.a11y')}, ${t('top.profile.dot.a11y')}` : t('top.profile.a11y');
+  const profileLabel = newLevel
+    ? `${t('top.profile.a11y')}, ${t('top.profile.dot.a11y')}`
+    : t('top.profile.a11y');
   return (
     <View
       testID="top-bar"
-      style={{ height: spacing.topBar, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.gutter - 4, gap: spacing.s1 }}
+      style={{
+        height: spacing.topBar,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.gutter - 4,
+        gap: spacing.s1,
+      }}
     >
-      <Press testID="top-profile" onPress={onProfile} accessibilityLabel={profileLabel} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+      <Press
+        testID="top-profile"
+        onPress={onProfile}
+        accessibilityLabel={profileLabel}
+        style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+      >
         <Avatar name={name} photoUri={photoUri} size={36} />
         {newLevel ? (
           <View
             testID="level-dot"
-            style={{ position: 'absolute', top: 3, right: 3, width: 10, height: 10, borderRadius: 5, backgroundColor: c.cobalt, borderWidth: 2, borderColor: c.surfaceBase }}
+            style={{
+              position: 'absolute',
+              top: 3,
+              right: 3,
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: c.cobalt,
+              borderWidth: 2,
+              borderColor: c.surfaceBase,
+            }}
           />
         ) : null}
       </Press>
       <Press
         testID="top-friends"
         onPress={onFriends}
-        accessibilityLabel={friendCount > 0 ? t('top.friends', { n: friendCount }) : t('top.friends_none')}
+        accessibilityLabel={
+          friendCount > 0 ? t('top.friends', { n: friendCount }) : t('top.friends_none')
+        }
         hitSlop={4}
-        style={{ minHeight: 36, paddingHorizontal: spacing.s3, borderRadius: radius.chip, borderCurve: 'continuous', borderWidth: 1, borderColor: c.lineControl, justifyContent: 'center' }}
+        style={{
+          minHeight: 36,
+          paddingHorizontal: spacing.s3,
+          borderRadius: radius.chip,
+          borderCurve: 'continuous',
+          borderWidth: 1,
+          borderColor: c.lineControl,
+          justifyContent: 'center',
+        }}
       >
-        <Txt variant="callout" style={{ fontFamily: 'Archivo-SemiBold' }} color={friendCount > 0 ? c.inkPrimary : c.cobalt}>
+        <Txt
+          variant="callout"
+          style={{ fontFamily: 'Archivo-SemiBold' }}
+          color={friendCount > 0 ? c.inkPrimary : c.cobalt}
+        >
           {friendCount > 0 ? t('top.friends', { n: friendCount }) : t('top.friends_none')}
         </Txt>
       </Press>
@@ -67,7 +104,16 @@ export function TopBar({
         onPress={onTracker}
         accessibilityLabel={t('top.today.a11y', { drinks, water })}
         hitSlop={4}
-        style={{ minHeight: 36, paddingHorizontal: spacing.s3, borderRadius: radius.chip, borderCurve: 'continuous', backgroundColor: c.surfaceSunk, flexDirection: 'row', alignItems: 'center', gap: spacing.s1 }}
+        style={{
+          minHeight: 36,
+          paddingHorizontal: spacing.s3,
+          borderRadius: radius.chip,
+          borderCurve: 'continuous',
+          backgroundColor: c.surfaceSunk,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.s1,
+        }}
       >
         <Icon name="mug" size={18} color={c.inkPrimary} />
         <Txt variant="numeralS" testID="top-drinks">
@@ -79,7 +125,12 @@ export function TopBar({
           {String(water)}
         </Txt>
       </Press>
-      <IconButton testID="top-settings" name="settings" accessibilityLabel={t('set.title')} onPress={onSettings} />
+      <IconButton
+        testID="top-settings"
+        name="settings"
+        accessibilityLabel={t('set.title')}
+        onPress={onSettings}
+      />
     </View>
   );
 }

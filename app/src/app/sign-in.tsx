@@ -2,7 +2,7 @@
 import { t } from '@clink/shared';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Linking, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { AuthMethod } from '@/lib/api';
@@ -17,7 +17,6 @@ import { spacing, typography } from '@/ui/theme';
 import { lookPlatform } from '@/ui/theme/look';
 import { Txt } from '@/ui/Txt';
 import { useTheme } from '@/ui/useTheme';
-import { Linking } from 'react-native';
 
 export default function SignIn() {
   const router = useRouter();
@@ -60,15 +59,15 @@ export default function SignIn() {
       <View style={{ paddingHorizontal: spacing.gutter }}>
         <Wordmark width={84} />
       </View>
-      <View style={{ flex: 1, justifyContent: 'flex-end', marginTop: spacing.s4 }}>
-        <Shelf height={Math.max(200, Math.min(height * 0.42, 360))} />
+      <View style={{ flex: 1, justifyContent: 'center', paddingVertical: spacing.s6 }}>
+        <Shelf height={Math.max(180, Math.min(height * 0.3, 300))} />
+        <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s6 }}>
+          <Txt variant="displayL" accessibilityRole="header" style={{ maxWidth: 320 }}>
+            {t('splash.tagline')}
+          </Txt>
+        </View>
       </View>
-      <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s5 }}>
-        <Txt variant="displayL" accessibilityRole="header" style={{ maxWidth: 320 }}>
-          {t('splash.tagline')}
-        </Txt>
-      </View>
-      <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s6, gap: spacing.s3 }}>
+      <View style={{ paddingHorizontal: spacing.gutter, gap: spacing.s3 }}>
         <ProviderButton
           testID="signin-primary"
           provider={primary}
@@ -86,17 +85,34 @@ export default function SignIn() {
           onPress={() => go('phone')}
         />
         {error ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.s3, flexWrap: 'wrap' }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.s3,
+              flexWrap: 'wrap',
+            }}
+          >
             <Txt variant="callout" color={c.danger} accessibilityLiveRegion="polite">
               {t('err.signin_failed')}
             </Txt>
           </View>
         ) : null}
-        <TextButton testID="signin-other" small label={t('signin.other')} onPress={() => setOtherOpen(true)} />
+        <TextButton
+          testID="signin-other"
+          small
+          label={t('signin.other')}
+          onPress={() => setOtherOpen(true)}
+        />
         <LegalLine />
       </View>
 
-      <Sheet visible={otherOpen} onClose={() => setOtherOpen(false)} detent="small" testID="sheet-other">
+      <Sheet
+        visible={otherOpen}
+        onClose={() => setOtherOpen(false)}
+        detent="small"
+        testID="sheet-other"
+      >
         <View style={{ paddingTop: spacing.s2, paddingBottom: spacing.s4 }}>
           <ProviderButton
             testID="signin-other-provider"
@@ -133,7 +149,12 @@ function LegalLine() {
   return (
     <Text
       maxFontSizeMultiplier={cap.maxFontSizeMultiplier}
-      style={{ fontFamily: cap.fontFamily, fontSize: cap.fontSize, lineHeight: cap.lineHeight, color: c.inkSecondary }}
+      style={{
+        fontFamily: cap.fontFamily,
+        fontSize: cap.fontSize,
+        lineHeight: cap.lineHeight,
+        color: c.inkSecondary,
+      }}
     >
       {parts.map((p, i) =>
         p.url !== undefined ? (

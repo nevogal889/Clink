@@ -60,7 +60,11 @@ export function move(list: readonly UsualDrink[], from: number, to: number): Usu
   return next;
 }
 
-export function withDetails(list: readonly UsualDrink[], index: number, details: DrinkDetails): UsualDrink[] {
+export function withDetails(
+  list: readonly UsualDrink[],
+  index: number,
+  details: DrinkDetails,
+): UsualDrink[] {
   return list.map((u, i) => (i === index ? { ...u, details: cleanDetails(details) } : u));
 }
 
@@ -71,7 +75,8 @@ export function cleanDetails(details: DrinkDetails): DrinkDetails {
     if (Array.isArray(v)) {
       if (v.length) out[k] = v;
     } else if (typeof v === 'string') {
-      if (k === 'note' || k === 'planB' ? v.trim() : v) out[k] = k === 'note' || k === 'planB' ? v.trim() : v;
+      if (k === 'note' || k === 'planB' ? v.trim() : v)
+        out[k] = k === 'note' || k === 'planB' ? v.trim() : v;
     }
   }
   return out as DrinkDetails;

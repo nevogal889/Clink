@@ -1,5 +1,5 @@
 // Buttons, chips and fields from DESIGN.md 2.6 and 4 ("Shared pieces").
-import { useRef, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -26,9 +26,13 @@ export function Press({
   scaleTo = motion.press.scale,
   children,
   ...rest
-}: Omit<PressableProps, 'style'> & { style?: StyleProp<ViewStyle>; scaleTo?: number; children?: ReactNode }) {
+}: Omit<PressableProps, 'style'> & {
+  style?: StyleProp<ViewStyle>;
+  scaleTo?: number;
+  children?: ReactNode;
+}) {
   const reduced = useReducedMotion();
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useState(() => new Animated.Value(1))[0];
   const to = (v: number) =>
     Animated.timing(scale, {
       toValue: v,
@@ -71,7 +75,19 @@ interface ButtonProps {
 }
 
 /** Primary button: 56 high, full width inside the gutters, label type. */
-export function PrimaryButton({ label, onPress, disabled, busy, fill, ink, icon, testID, accessibilityLabel, accessibilityHint, style }: ButtonProps) {
+export function PrimaryButton({
+  label,
+  onPress,
+  disabled,
+  busy,
+  fill,
+  ink,
+  icon,
+  testID,
+  accessibilityLabel,
+  accessibilityHint,
+  style,
+}: ButtonProps) {
   const { c, mode } = useTheme();
   const bg = fill ?? c.cobalt;
   const fg = ink ?? c.onCobalt;
@@ -100,7 +116,10 @@ export function PrimaryButton({ label, onPress, disabled, busy, fill, ink, icon,
       ]}
     >
       {busy ? <ActivityIndicator color={fg} /> : icon}
-      <Txt variant="label" color={disabled ? (mode === 'dark' ? c.inkTertiary : c.inkSecondary) : fg}>
+      <Txt
+        variant="label"
+        color={disabled ? (mode === 'dark' ? c.inkTertiary : c.inkSecondary) : fg}
+      >
         {label}
       </Txt>
     </Press>
@@ -138,9 +157,17 @@ export function TextButton({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: !!disabled }}
       hitSlop={6}
-      style={{ minHeight: spacing.textButton, justifyContent: 'center', alignSelf: align, paddingHorizontal: spacing.s1 }}
+      style={{
+        minHeight: spacing.textButton,
+        justifyContent: 'center',
+        alignSelf: align,
+        paddingHorizontal: spacing.s1,
+      }}
     >
-      <Txt variant={small ? 'caption' : 'label'} color={disabled ? c.inkTertiary : (color ?? (danger ? c.danger : c.cobalt))}>
+      <Txt
+        variant={small ? 'caption' : 'label'}
+        color={disabled ? c.inkTertiary : (color ?? (danger ? c.danger : c.cobalt))}
+      >
         {label}
       </Txt>
     </Press>
@@ -148,7 +175,22 @@ export function TextButton({
 }
 
 /** Tonal button: cobalt tint fill, cobalt label (Make it yours, Add). */
-export function TonalButton({ label, onPress, testID, accessibilityLabel, icon }: { label: string; onPress: () => void; testID?: string; accessibilityLabel?: string; icon?: IconName }) {
+export function TonalButton({
+  label,
+  onPress,
+  testID,
+  accessibilityLabel,
+  icon,
+  align = 'flex-start',
+}: {
+  label: string;
+  onPress: () => void;
+  testID?: string;
+  accessibilityLabel?: string;
+  icon?: IconName;
+  /** alignSelf: 'center' inside rows, 'flex-start' in columns. */
+  align?: ViewStyle['alignSelf'];
+}) {
   const { c } = useTheme();
   return (
     <Press
@@ -165,7 +207,7 @@ export function TonalButton({ label, onPress, testID, accessibilityLabel, icon }
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.s1,
-        alignSelf: 'flex-start',
+        alignSelf: align,
       }}
     >
       {icon ? <Icon name={icon} size={16} color={c.cobalt} /> : null}

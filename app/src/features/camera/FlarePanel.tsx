@@ -3,17 +3,10 @@
 // Layout call: the 112 pt hero sits right of the chips and the place field, so the five timing
 // pills get the full width. Five pills with 44 pt targets don't fit beside the hero on a 390 pt
 // phone.
-import {
-  FLARE_CATEGORIES,
-  TEXT_LIMITS,
-  TIMING_PILLS,
-  t,
-  type FlareCategory,
-} from '@clink/shared';
+import { FLARE_CATEGORIES, TEXT_LIMITS, TIMING_PILLS, t, type FlareCategory } from '@clink/shared';
 import { ActivityIndicator, ScrollView, View, useWindowDimensions } from 'react-native';
 
 import { formatClock, formatMins } from '@/lib/format';
-import { pt } from '@/lib/pendingCopy';
 import { catName } from '@/features/catalog/Catalog';
 import { Glyph } from '@/ui/Art';
 import { Chip, Field, Press } from '@/ui/controls';
@@ -77,14 +70,23 @@ export function FlarePanel({
     <PourPanel
       category={category}
       testID="flare-panel"
-      style={{ borderTopLeftRadius: radius.panel, borderTopRightRadius: radius.panel, borderCurve: 'continuous', paddingTop: spacing.s4 }}
+      style={{
+        borderTopLeftRadius: radius.panel,
+        borderTopRightRadius: radius.panel,
+        borderCurve: 'continuous',
+        paddingTop: spacing.s4,
+      }}
     >
       <View style={{ flexDirection: 'row' }}>
         <View style={{ flex: 1, gap: spacing.s3 }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: spacing.gutter, paddingRight: spacing.s2, gap: spacing.s2 }}
+            contentContainerStyle={{
+              paddingLeft: spacing.gutter,
+              paddingRight: spacing.s2,
+              gap: spacing.s2,
+            }}
             accessibilityRole="radiogroup"
           >
             {FLARE_CATEGORIES.map((cat) => {
@@ -121,13 +123,23 @@ export function FlarePanel({
             />
           </View>
         </View>
-        <View style={{ width: heroSize + spacing.s3, alignItems: 'flex-end', justifyContent: 'flex-end', paddingRight: spacing.gutter - 8 }}>
+        <View
+          style={{
+            width: heroSize + spacing.s3,
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+            paddingRight: spacing.gutter - 8,
+          }}
+        >
           <PourHero category={category} size={heroSize} />
         </View>
       </View>
 
       <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s3 }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }} accessibilityRole="radiogroup">
+        <View
+          style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}
+          accessibilityRole="radiogroup"
+        >
           {TIMING_PILLS.map((p) => {
             if (p.kind === 'other') {
               const label = timing.other ? t('time.pill', { n: timing.minutes }) : t('time.other');
@@ -137,7 +149,11 @@ export function FlarePanel({
                   testID="pill-other"
                   accessibilityRole="radio"
                   label={label}
-                  accessibilityLabel={timing.other ? t('a11y.pill.time', { mins_cap: formatMins(timing.minutes, true) }) : t('time.other')}
+                  accessibilityLabel={
+                    timing.other
+                      ? t('a11y.pill.time', { mins_cap: formatMins(timing.minutes, true) })
+                      : t('time.other')
+                  }
                   selected={timing.other}
                   onTint
                   onPress={onOther}
@@ -164,7 +180,16 @@ export function FlarePanel({
         </Txt>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.s3, paddingHorizontal: spacing.gutter, marginTop: spacing.s3, paddingBottom: spacing.s4 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.s3,
+          paddingHorizontal: spacing.gutter,
+          marginTop: spacing.s3,
+          paddingBottom: spacing.s4,
+        }}
+      >
         <View style={{ flex: 1 }}>
           <Press
             testID="cam-to"
@@ -185,17 +210,27 @@ export function FlarePanel({
               gap: spacing.s1,
             }}
           >
-            <Txt variant="callout" style={{ fontFamily: 'Archivo-SemiBold', flexShrink: 1 }} numberOfLines={1}>
+            <Txt
+              variant="callout"
+              style={{ fontFamily: 'Archivo-SemiBold', flexShrink: 1 }}
+              numberOfLines={1}
+            >
               {toLabel}
             </Txt>
             {audience.auto ? (
-              <View style={{ paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, backgroundColor: c.inkPrimary }}>
+              <View
+                style={{
+                  paddingHorizontal: 5,
+                  paddingVertical: 1,
+                  borderRadius: 4,
+                  backgroundColor: c.inkPrimary,
+                }}
+              >
                 <Txt variant="micro" color={c.surfaceBase}>
-                  {pt('compose.auto_tag')}
+                  {t('compose.auto_tag')}
                 </Txt>
               </View>
             ) : null}
-            <Icon name="chevronDown" size={16} color={c.inkSecondary} />
           </Press>
         </View>
         <Press
@@ -220,7 +255,16 @@ export function FlarePanel({
           {sending ? (
             <ActivityIndicator color={col.onSolid} />
           ) : thumbnail && !noFriends ? (
-            <View style={{ width: 24, height: 24, borderRadius: 6, backgroundColor: col.tint, alignItems: 'center', justifyContent: 'center' }}>
+            <View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 6,
+                backgroundColor: col.tint,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Glyph category={category} size={16} color={col.ink} />
             </View>
           ) : !noFriends ? (
@@ -237,7 +281,11 @@ export function FlarePanel({
           color={sendFailed ? c.danger : undefined}
           tone="secondary"
           accessibilityLiveRegion="polite"
-          style={{ paddingHorizontal: spacing.gutter, marginTop: -spacing.s2, paddingBottom: spacing.s4 }}
+          style={{
+            paddingHorizontal: spacing.gutter,
+            marginTop: -spacing.s2,
+            paddingBottom: spacing.s4,
+          }}
         >
           {sendFailed ? t('off.retry') : t('compose.audience_empty', { group: audience.label })}
         </Txt>

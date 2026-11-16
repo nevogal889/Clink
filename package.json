@@ -20,8 +20,11 @@
     "test:shared": "jest --selectProjects shared",
     "test:app": "jest --selectProjects app",
     "test:db": "bash scripts/run-pgtap.sh",
+    "check:gen": "npm run gen:check --workspace @clink/shared",
+    "check:icons": "node app/assets/art/icons/_source/check-icons.mjs",
+    "test:art": "node --test scripts/gen-art-gallery.test.mjs",
     "export:web": "npm run export:web --workspace @clink/app",
-    "ci": "npm run typecheck && npm run lint && npm run format:check && npm test"
+    "ci": "npm run typecheck && npm run lint && npm run format:check && npm run check:gen && npm run check:icons && npm test && npm run test:art"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
@@ -32,5 +35,9 @@
     "jest": "^30.5.2",
     "prettier": "^3.10.1",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   }
 }

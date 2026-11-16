@@ -30,13 +30,15 @@ English only in v1, written in **US English** (color, favorite, license, skim mi
 | `{group}` | Group name | 20 | Widgets truncate at 14 + "…" |
 | `{n}`, `{in}`, `{orders}` | Counts | 2 digits | ICU plural rules, always |
 | `{time}` | Clock time in device format (10:45 or 10:45 AM) | 8 | none |
-| `{ago}` | Relative time: "just now", "12m", "1h 42m" | 7 | none |
+| `{ago}` | Relative time: "just now", "12m", "1h 42m". A line that reads "{ago} ago" has a `_now` key for under a minute | 8 | none |
 | `{mins}` | Minutes from now: "now", "in 5 min", "in 45 min" | 9 | none |
 | `{url}` | Invite URL. Only ever inside share messages (section 7). | 40 | never shown in the app |
 | `{min}` | Minimum age from `app_config` | 2 digits | none |
 | `{domain}` | Our web domain, for support@ and privacy@ | 24 | none |
 | `{device}` | Device model from the OS ("iPhone", "Pixel 8") | 20 | Truncate to 19 + "…" |
 | `{ago_words}`, `{left_words}` | Spoken times for screen readers: "1 hour 42 minutes", "14 minutes" | n/a | never shown |
+
+The app builds `{ago}`, `{mins}`, `{mins_cap}`, `{ago_words}` and `{left_words}` from the keys in 4.27.
 
 Plurals are written with ICU, for example `{n, plural, one {# drink} other {# drinks}}`. Never write "drink(s)".
 
@@ -490,6 +492,7 @@ Progress label on steps 2 to 6: `onb.progress` = "{n} of 6" (max 8). Back button
 | `onb.phone.title` | Card (Apple and Google users with no phone) | Add your number so friends can find you | 42 |
 | `onb.phone.helper` | Card helper | Optional. Nobody sees it. | 28 |
 | `onb.phone.cta` | Card button | Add number | 12 |
+| `onb.phone.added` | Line after the number is saved | Number added. Nobody sees it. | 30 |
 | `onb.later` | Text button | Later | 8 |
 
 **Step 5: notifications pre-prompt**: see 4.25.
@@ -576,6 +579,7 @@ The camera bar for your own live flare reuses `live.title` and the countdown.
 | `aud.footer` | Footer, groups set up | Automatic sends to {daytime} on weekdays 8:00 to 18:00, and to {other} the rest of the time. | 120 |
 | `aud.footer_nogroups` | Footer, no groups | Automatic sends to Everyone until you set up groups. | 56 |
 | `aud.private` | Footer second line | Only you see your groups. Snaps always go to everyone. | 58 |
+| `compose.auto_tag` | Tag on the To: chip when Automatic picked the audience | Auto | 6 |
 
 ### 4.6 Timing
 
@@ -722,6 +726,7 @@ Show to barista layout (order set by Copy; type sizes by `DESIGN.md`): drink nam
 | `friends.sec.contacts` | Section | On Clink from your contacts | 30 |
 | `friends.share.title` | Share row title | Bring someone in | 18 |
 | `friends.last_drink` | Row sub-line (opt-in only) | last drink {ago} ago | 24 |
+| `friends.last_drink_now` | Row sub-line, under a minute | last drink just now | 24 |
 | `friends.usual.a11y` | 📝 label | See {name}'s usual | 24 |
 | `friends.req.row` | Request row | {name} wants to be friends | 36 |
 | `friends.req.accept` | Button | Accept | 8 |
@@ -789,6 +794,7 @@ Show to barista layout (order set by Copy; type sizes by `DESIGN.md`): drink nam
 | `det.save` | Button | Done | 6 |
 | `det.clear` | Text button | Clear all | 10 |
 | `det.saved` | Toast | Saved | 8 |
+| `usual.preset_set` | Undo snackbar after a preset fills the usual 3 | Set to {preset}. | 30 |
 
 Field labels and values come from section 2.7. Closing the editor any way saves; there is no discard dialog (`DESIGN.md` 8 rule 8).
 
@@ -800,12 +806,14 @@ Field labels and values come from section 2.7. Closing the editor any way saves;
 | `today.drinks` | Count | {n, plural, one {# drink} other {# drinks}} | 10 |
 | `today.water` | Count | {n, plural, one {# water} other {# waters}} | 10 |
 | `today.last` | Line | Last drink {ago} ago | 22 |
+| `today.last_now` | Line, under a minute | Last drink just now | 22 |
 | `today.last_none` | Line, nothing yet | No drinks yet today | 20 |
 | `today.row` | Entry row | {time} · {drink} | 42 |
 | `today.entries` | Section header | Entries | 10 |
 | `today.undo` | Button | Undo last | 10 |
 | `today.remove` | Row swipe action | Remove | 8 |
 | `today.removed` | Toast | Removed {drink} | 40 |
+| `today.logged` | Undo snackbar after a quick log | Logged {drink} | 40 |
 | `today.log` | Button | Log a drink | 12 |
 | `today.log.water` | Picker row | Water | 10 |
 | `today.log.sparkling` | Picker row | Sparkling Water | 16 |
@@ -827,6 +835,8 @@ The note shows after the 4th caffeinated drink of the day (`PRD.md` 3.11). No nu
 | `profile.level_desc` | Description | (from section 3) | 70 |
 | `profile.to_next` | Progress line | {xp} XP to {next_level_name} | 32 |
 | `profile.top` | Progress line at level 8 | Top level | 10 |
+| `profile.level_n` | Level number above the level name | Level {n} | 10 |
+| `profile.total` | Total, right of the progress line | {xp} XP | 10 |
 | `profile.private` | Footer | Only you can see your level. | 30 |
 | `profile.how` | Text button | How XP works | 14 |
 | `profile.history` | Section | Recent | 8 |
@@ -1220,6 +1230,25 @@ Screen readers only; never shown. One key per row of `DESIGN.md` 5.6, which refe
 
 `{cat_name}` is the tab word (`cat.coffee` … `cat.smoothie_juice`).
 
+
+### 4.27 Time formats
+
+Used to build the time variables in 0.2 (`app/src/lib/format.ts`).
+
+| Key | Element | Text | Max |
+|---|---|---|---|
+| `fmt.ago.now` | `{ago}`, under a minute | just now | 8 |
+| `fmt.ago.m` | `{ago}`, under an hour | {m}m | 7 |
+| `fmt.ago.h` | `{ago}`, whole hours | {h}h | 7 |
+| `fmt.ago.hm` | `{ago}`, hours and minutes | {h}h {m}m | 7 |
+| `fmt.mins.now` | `{mins}`, starting now | now | 9 |
+| `fmt.mins.in` | `{mins}`, later | in {n} min | 9 |
+| `fmt.mins_cap.now` | `{mins_cap}`, starting now | Now | 9 |
+| `fmt.mins_cap.in` | `{mins_cap}`, later | In {n} min | 9 |
+| `fmt.words.m` | `{ago_words}` and `{left_words}`, minutes | {m, plural, one {# minute} other {# minutes}} | n/a |
+| `fmt.words.h` | `{ago_words}` and `{left_words}`, whole hours | {h, plural, one {# hour} other {# hours}} | n/a |
+| `fmt.words.hm` | `{ago_words}` and `{left_words}`, hours and minutes | {h, plural, one {# hour} other {# hours}} {m, plural, one {# minute} other {# minutes}} | n/a |
+
 ---
 
 ## 5. Notifications
@@ -1346,6 +1375,7 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 | `wm.signin` | Signed out | Sign in to Clink | 18 |
 | `wm.counts` | Idle | {drinks} · {water} (each from the small strings) | 22 |
 | `wm.last` | Idle | Last drink {ago} ago | 22 |
+| `wm.last_now` | Idle, under a minute | Last drink just now | 22 |
 | `wm.last_none` | Idle | No drinks yet today | 20 |
 | `wm.usual` | Idle sub-line | {drink_short} | 15 |
 | `wm.caff` | Idle sub-line after 4 caffeinated | Herbal tea next? | 18 |
@@ -1463,7 +1493,7 @@ None of these need the CEO.
 | Product / CEO question 2 in `PRD.md` | Which report confirmation ships (`report.done` or `report.done_soft`) depends on who reviews reports. |
 | Tech (`ARCHITECTURE.md`) | Generate the string table and `catalog.json` from sections 2 and 4 to 6 (`scripts/gen-strings`, `gen-native-catalog`). Truncate `{name}` to 12 in notification payloads. |
 | Design (`DESIGN.md`) | Confirm or lower the widget limits in section 6. Draw the 📝 note marker. Pictures for the 40 drinks and 2 waters in section 2. |
-| Design (`DESIGN.md`) | These strings run over their Max when every variable is at its full budget (rendered length / Max): `bar.in` 41/36, `live.meta` 57/56, `snapv.meta` 65/60, `report.block_ask` 23/20, `ws.in.sub` 20/16 (with "Lemonade"), `wm.live.chip_in` 17/14, `wm.live.chip_bring` 30/14, `wm.in.meta` 30/28, `wm.audience_empty` 36/30. A shorter wording would drop the name, place or time, so Copy keeps it. Design either raises the Max or confirms that the longest variable truncates with "…" in that slot. `{audience}` has no budget in 0.2 yet; Copy proposes 20, the same as `{group}`. |
+| Design (`DESIGN.md`) | These strings run over their Max when every variable is at its full budget (rendered length / Max): `bar.in` 41/36, `live.meta` 57/56, `snapv.meta` 65/60, `report.block_ask` 23/20, `ws.in.sub` 20/16 (with "Lemonade"), `wm.live.chip_in` 17/14, `wm.live.chip_bring` 30/14, `wm.in.meta` 30/28, `wm.audience_empty` 36/30. With `{ago}` at "just now" (8, PRD F9): `ws.last` 13/12, `wm.snap` 23/22. A shorter wording would drop the name, place or time, so Copy keeps it. Design either raises the Max or confirms that the longest variable truncates with "…" in that slot. `{audience}` has no budget in 0.2 yet; Copy proposes 20, the same as `{group}`. |
 | Legal | Check 4.18, `perm.contacts.body`, `signin.legal`, the moderation notices and the iOS purpose strings against the privacy policy, terms and store forms. Write the Community Guidelines with Words. |
 
 Closed on 2026-11-15 (see `RISK_REVIEW.md` resolution log): option sets adopted in `PRD.md` 3.7; notifications 7 and 8 deleted, 7b kept; `xp.e.adjust` confirmed; "Tapioca pearls" filtered per drink; the "Something else" quick-log button kept.

@@ -62,7 +62,13 @@ function catalogUsual(drinkId: string, details: DrinkDetails = {}): UsualDrink {
 function seed(scenario: MockScenario, now: Date): MockState {
   const base: MockState = {
     session: null,
-    me: { displayName: '', photoUri: null, providerName: null, hasPhone: false, onboarding: 'name' },
+    me: {
+      displayName: '',
+      photoUri: null,
+      providerName: null,
+      hasPhone: false,
+      onboarding: 'name',
+    },
     usual: [],
     logs: [],
     xp: { total: 0, history: [], levelSeen: 1 },
@@ -89,16 +95,34 @@ function seed(scenario: MockScenario, now: Date): MockState {
   const log = (drinkId: string, min: number, i: number, details: DrinkDetails = {}): LogEntry => {
     const d = getDrink(drinkId);
     if (!d) throw new Error(drinkId);
-    return { id: nextId('log'), drinkId, customName: null, category: d.category, details, loggedAt: ago(min, i) };
+    return {
+      id: nextId('log'),
+      drinkId,
+      customName: null,
+      category: d.category,
+      details,
+      loggedAt: ago(min, i),
+    };
   };
   const day = (n: number) => new Date(now.getTime() - n * 86_400_000).toISOString();
 
   return {
     ...base,
     session: { userId: 'u_me', method: 'apple' },
-    me: { displayName: 'Dana Kim', photoUri: null, providerName: 'Dana', hasPhone: false, onboarding: 'done' },
+    me: {
+      displayName: 'Dana Kim',
+      photoUri: null,
+      providerName: 'Dana',
+      hasPhone: false,
+      onboarding: 'done',
+    },
     usual: [
-      catalogUsual('coffee.flat_white', { size: 'Regular', milk: 'Oat milk', sweet: 'No sugar', note: 'Very hot' }),
+      catalogUsual('coffee.flat_white', {
+        size: 'Regular',
+        milk: 'Oat milk',
+        sweet: 'No sugar',
+        note: 'Very hot',
+      }),
       catalogUsual('matcha.latte', { temp: 'Iced', ice: 'Light ice', milk: 'Oat milk' }),
       catalogUsual('tea.jasmine'),
     ],
@@ -176,7 +200,8 @@ export function createMockApi(opts: MockOptions = {}): ClinkApi & { state: MockS
     getUsual: () => wait(clone(state.usual)),
     async setUsual(drinks) {
       if (drinks.length > 3) throw new Error('At most 3 usual drinks');
-      for (const d of drinks) if (d.drinkId && !isFlareDrink(d.drinkId)) throw new Error('Water never takes a slot');
+      for (const d of drinks)
+        if (d.drinkId && !isFlareDrink(d.drinkId)) throw new Error('Water never takes a slot');
       state.usual = clone(drinks);
       return wait(clone(state.usual));
     },

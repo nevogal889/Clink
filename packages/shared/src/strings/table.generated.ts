@@ -113,6 +113,7 @@ export const STRINGS = {
   'onb.phone.title': 'Add your number so friends can find you',
   'onb.phone.helper': 'Optional. Nobody sees it.',
   'onb.phone.cta': 'Add number',
+  'onb.phone.added': 'Number added. Nobody sees it.',
   'onb.later': 'Later',
   'onb.widget.title': 'Put Clink on your home screen',
   'onb.widget.sub': "Friends' snaps and flares show up there. Most of Clink happens on it.",
@@ -177,6 +178,7 @@ export const STRINGS = {
     'Automatic sends to {daytime} on weekdays 8:00 to 18:00, and to {other} the rest of the time.',
   'aud.footer_nogroups': 'Automatic sends to Everyone until you set up groups.',
   'aud.private': 'Only you see your groups. Snaps always go to everyone.',
+  'compose.auto_tag': 'Auto',
   'time.now': 'Now',
   'time.pill': '{n}m',
   'time.other': 'Other',
@@ -300,6 +302,7 @@ export const STRINGS = {
   'friends.sec.contacts': 'On Clink from your contacts',
   'friends.share.title': 'Bring someone in',
   'friends.last_drink': 'last drink {ago} ago',
+  'friends.last_drink_now': 'last drink just now',
   'friends.usual.a11y': "See {name}'s usual",
   'friends.req.row': '{name} wants to be friends',
   'friends.req.accept': 'Accept',
@@ -358,16 +361,19 @@ export const STRINGS = {
   'det.save': 'Done',
   'det.clear': 'Clear all',
   'det.saved': 'Saved',
+  'usual.preset_set': 'Set to {preset}.',
   'today.title': 'Today',
   'today.drinks': '{n, plural, one {# drink} other {# drinks}}',
   'today.water': '{n, plural, one {# water} other {# waters}}',
   'today.last': 'Last drink {ago} ago',
+  'today.last_now': 'Last drink just now',
   'today.last_none': 'No drinks yet today',
   'today.row': '{time} · {drink}',
   'today.entries': 'Entries',
   'today.undo': 'Undo last',
   'today.remove': 'Remove',
   'today.removed': 'Removed {drink}',
+  'today.logged': 'Logged {drink}',
   'today.log': 'Log a drink',
   'today.log.water': 'Water',
   'today.log.sparkling': 'Sparkling Water',
@@ -381,6 +387,8 @@ export const STRINGS = {
   'profile.level': 'Level {n} · {level_name}',
   'profile.to_next': '{xp} XP to {next_level_name}',
   'profile.top': 'Top level',
+  'profile.level_n': 'Level {n}',
+  'profile.total': '{xp} XP',
   'profile.private': 'Only you can see your level.',
   'profile.how': 'How XP works',
   'profile.history': 'Recent',
@@ -675,6 +683,18 @@ export const STRINGS = {
   'a11y.snap.photo': 'Photo from {name}, {ago_words} ago, {place}',
   'a11y.order.notes': 'Has notes',
   'a11y.usual.slot': 'Number {n}, {drink}',
+  'fmt.ago.now': 'just now',
+  'fmt.ago.m': '{m}m',
+  'fmt.ago.h': '{h}h',
+  'fmt.ago.hm': '{h}h {m}m',
+  'fmt.mins.now': 'now',
+  'fmt.mins.in': 'in {n} min',
+  'fmt.mins_cap.now': 'Now',
+  'fmt.mins_cap.in': 'In {n} min',
+  'fmt.words.m': '{m, plural, one {# minute} other {# minutes}}',
+  'fmt.words.h': '{h, plural, one {# hour} other {# hours}}',
+  'fmt.words.hm':
+    '{h, plural, one {# hour} other {# hours}} {m, plural, one {# minute} other {# minutes}}',
   'la.title': 'Your {cat} flare',
   'la.place': '{place}',
   'la.counts': '{in} in · {orders, plural, one {# drink} other {# drinks}}',
@@ -715,6 +735,7 @@ export const STRINGS = {
   'wm.signin': 'Sign in to Clink',
   'wm.counts': '{drinks} · {water}',
   'wm.last': 'Last drink {ago} ago',
+  'wm.last_now': 'Last drink just now',
   'wm.last_none': 'No drinks yet today',
   'wm.usual': '{drink_short}',
   'wm.caff': 'Herbal tea next?',
@@ -1538,6 +1559,12 @@ export const STRING_META: Record<
     max: 12,
     placeholders: [],
   },
+  'onb.phone.added': {
+    section: '4.3',
+    context: 'Line after the number is saved',
+    max: 30,
+    placeholders: [],
+  },
   'onb.later': {
     section: '4.3',
     context: 'Text button',
@@ -1984,6 +2011,12 @@ export const STRING_META: Record<
     section: '4.5',
     context: 'Footer second line',
     max: 58,
+    placeholders: [],
+  },
+  'compose.auto_tag': {
+    section: '4.5',
+    context: 'Tag on the To: chip when Automatic picked the audience',
+    max: 6,
     placeholders: [],
   },
   'time.now': {
@@ -2963,6 +2996,12 @@ export const STRING_META: Record<
       },
     ],
   },
+  'friends.last_drink_now': {
+    section: '4.12',
+    context: 'Row sub-line, under a minute',
+    max: 24,
+    placeholders: [],
+  },
   'friends.usual.a11y': {
     section: '4.12',
     context: '📝 label',
@@ -3345,6 +3384,17 @@ export const STRING_META: Record<
     max: 8,
     placeholders: [],
   },
+  'usual.preset_set': {
+    section: '4.14',
+    context: 'Undo snackbar after a preset fills the usual 3',
+    max: 30,
+    placeholders: [
+      {
+        name: 'preset',
+        type: 'simple',
+      },
+    ],
+  },
   'today.title': {
     section: '4.15',
     context: 'Sheet title',
@@ -3383,6 +3433,12 @@ export const STRING_META: Record<
         type: 'simple',
       },
     ],
+  },
+  'today.last_now': {
+    section: '4.15',
+    context: 'Line, under a minute',
+    max: 22,
+    placeholders: [],
   },
   'today.last_none': {
     section: '4.15',
@@ -3426,6 +3482,17 @@ export const STRING_META: Record<
   'today.removed': {
     section: '4.15',
     context: 'Toast',
+    max: 40,
+    placeholders: [
+      {
+        name: 'drink',
+        type: 'simple',
+      },
+    ],
+  },
+  'today.logged': {
+    section: '4.15',
+    context: 'Undo snackbar after a quick log',
     max: 40,
     placeholders: [
       {
@@ -3529,6 +3596,28 @@ export const STRING_META: Record<
     context: 'Progress line at level 8',
     max: 10,
     placeholders: [],
+  },
+  'profile.level_n': {
+    section: '4.16',
+    context: 'Level number above the level name',
+    max: 10,
+    placeholders: [
+      {
+        name: 'n',
+        type: 'simple',
+      },
+    ],
+  },
+  'profile.total': {
+    section: '4.16',
+    context: 'Total, right of the progress line',
+    max: 10,
+    placeholders: [
+      {
+        name: 'xp',
+        type: 'simple',
+      },
+    ],
   },
   'profile.private': {
     section: '4.16',
@@ -5592,6 +5681,120 @@ export const STRING_META: Record<
       },
     ],
   },
+  'fmt.ago.now': {
+    section: '4.27',
+    context: '`{ago}`, under a minute',
+    max: 8,
+    placeholders: [],
+  },
+  'fmt.ago.m': {
+    section: '4.27',
+    context: '`{ago}`, under an hour',
+    max: 7,
+    placeholders: [
+      {
+        name: 'm',
+        type: 'simple',
+      },
+    ],
+  },
+  'fmt.ago.h': {
+    section: '4.27',
+    context: '`{ago}`, whole hours',
+    max: 7,
+    placeholders: [
+      {
+        name: 'h',
+        type: 'simple',
+      },
+    ],
+  },
+  'fmt.ago.hm': {
+    section: '4.27',
+    context: '`{ago}`, hours and minutes',
+    max: 7,
+    placeholders: [
+      {
+        name: 'h',
+        type: 'simple',
+      },
+      {
+        name: 'm',
+        type: 'simple',
+      },
+    ],
+  },
+  'fmt.mins.now': {
+    section: '4.27',
+    context: '`{mins}`, starting now',
+    max: 9,
+    placeholders: [],
+  },
+  'fmt.mins.in': {
+    section: '4.27',
+    context: '`{mins}`, later',
+    max: 9,
+    placeholders: [
+      {
+        name: 'n',
+        type: 'simple',
+      },
+    ],
+  },
+  'fmt.mins_cap.now': {
+    section: '4.27',
+    context: '`{mins_cap}`, starting now',
+    max: 9,
+    placeholders: [],
+  },
+  'fmt.mins_cap.in': {
+    section: '4.27',
+    context: '`{mins_cap}`, later',
+    max: 9,
+    placeholders: [
+      {
+        name: 'n',
+        type: 'simple',
+      },
+    ],
+  },
+  'fmt.words.m': {
+    section: '4.27',
+    context: '`{ago_words}` and `{left_words}`, minutes',
+    max: null,
+    placeholders: [
+      {
+        name: 'm',
+        type: 'plural',
+      },
+    ],
+  },
+  'fmt.words.h': {
+    section: '4.27',
+    context: '`{ago_words}` and `{left_words}`, whole hours',
+    max: null,
+    placeholders: [
+      {
+        name: 'h',
+        type: 'plural',
+      },
+    ],
+  },
+  'fmt.words.hm': {
+    section: '4.27',
+    context: '`{ago_words}` and `{left_words}`, hours and minutes',
+    max: null,
+    placeholders: [
+      {
+        name: 'h',
+        type: 'plural',
+      },
+      {
+        name: 'm',
+        type: 'plural',
+      },
+    ],
+  },
   'la.title': {
     section: '5.3',
     context: 'Lock screen title',
@@ -5946,6 +6149,12 @@ export const STRING_META: Record<
         type: 'simple',
       },
     ],
+  },
+  'wm.last_now': {
+    section: '6.2',
+    context: 'Idle, under a minute',
+    max: 22,
+    placeholders: [],
   },
   'wm.last_none': {
     section: '6.2',
@@ -7000,6 +7209,7 @@ export interface StringParams {
   'onb.phone.title': Record<string, never>;
   'onb.phone.helper': Record<string, never>;
   'onb.phone.cta': Record<string, never>;
+  'onb.phone.added': Record<string, never>;
   'onb.later': Record<string, never>;
   'onb.widget.title': Record<string, never>;
   'onb.widget.sub': Record<string, never>;
@@ -7062,6 +7272,7 @@ export interface StringParams {
   'aud.footer': { daytime: string | number; other: string | number };
   'aud.footer_nogroups': Record<string, never>;
   'aud.private': Record<string, never>;
+  'compose.auto_tag': Record<string, never>;
   'time.now': Record<string, never>;
   'time.pill': { n: string | number };
   'time.other': Record<string, never>;
@@ -7182,6 +7393,7 @@ export interface StringParams {
   'friends.sec.contacts': Record<string, never>;
   'friends.share.title': Record<string, never>;
   'friends.last_drink': { ago: string | number };
+  'friends.last_drink_now': Record<string, never>;
   'friends.usual.a11y': { name: string | number };
   'friends.req.row': { name: string | number };
   'friends.req.accept': Record<string, never>;
@@ -7239,16 +7451,19 @@ export interface StringParams {
   'det.save': Record<string, never>;
   'det.clear': Record<string, never>;
   'det.saved': Record<string, never>;
+  'usual.preset_set': { preset: string | number };
   'today.title': Record<string, never>;
   'today.drinks': { n: number };
   'today.water': { n: number };
   'today.last': { ago: string | number };
+  'today.last_now': Record<string, never>;
   'today.last_none': Record<string, never>;
   'today.row': { time: string | number; drink: string | number };
   'today.entries': Record<string, never>;
   'today.undo': Record<string, never>;
   'today.remove': Record<string, never>;
   'today.removed': { drink: string | number };
+  'today.logged': { drink: string | number };
   'today.log': Record<string, never>;
   'today.log.water': Record<string, never>;
   'today.log.sparkling': Record<string, never>;
@@ -7262,6 +7477,8 @@ export interface StringParams {
   'profile.level': { n: string | number; level_name: string | number };
   'profile.to_next': { xp: string | number; next_level_name: string | number };
   'profile.top': Record<string, never>;
+  'profile.level_n': { n: string | number };
+  'profile.total': { xp: string | number };
   'profile.private': Record<string, never>;
   'profile.how': Record<string, never>;
   'profile.history': Record<string, never>;
@@ -7565,6 +7782,17 @@ export interface StringParams {
   'a11y.snap.photo': { name: string | number; ago_words: string | number; place: string | number };
   'a11y.order.notes': Record<string, never>;
   'a11y.usual.slot': { n: string | number; drink: string | number };
+  'fmt.ago.now': Record<string, never>;
+  'fmt.ago.m': { m: string | number };
+  'fmt.ago.h': { h: string | number };
+  'fmt.ago.hm': { h: string | number; m: string | number };
+  'fmt.mins.now': Record<string, never>;
+  'fmt.mins.in': { n: string | number };
+  'fmt.mins_cap.now': Record<string, never>;
+  'fmt.mins_cap.in': { n: string | number };
+  'fmt.words.m': { m: number };
+  'fmt.words.h': { h: number };
+  'fmt.words.hm': { h: number; m: number };
   'la.title': { cat: string | number };
   'la.place': { place: string | number };
   'la.counts': { in: string | number; orders: number };
@@ -7605,6 +7833,7 @@ export interface StringParams {
   'wm.signin': Record<string, never>;
   'wm.counts': { drinks: string | number; water: string | number };
   'wm.last': { ago: string | number };
+  'wm.last_now': Record<string, never>;
   'wm.last_none': Record<string, never>;
   'wm.usual': { drink_short: string | number };
   'wm.caff': Record<string, never>;
@@ -7711,22 +7940,22 @@ export const STRING_REFERENCES = [
   {
     key: 'profile.level_desc',
     note: '(from section 3)',
-    line: 827,
+    line: 835,
   },
   {
     key: 'empty.requests',
     note: '(section hidden)',
-    line: 1039,
+    line: 1049,
   },
   {
     key: 'a11y.w.confirm',
     note: 'the visible confirmation text ("Logged {drink}", "Sent to {audience}")',
-    line: 1192,
+    line: 1202,
   },
   {
     key: 'a11y.react',
     note: 'uses `snapv.react.a11y`',
-    line: 1219,
+    line: 1229,
   },
 ] as const;
 
@@ -7987,8 +8216,8 @@ export const VARIABLE_BUDGETS = {
     overflow: 'none',
   },
   ago: {
-    budget: 7,
-    budgetNote: '7',
+    budget: 8,
+    budgetNote: '8',
     overflow: 'none',
   },
   mins: {
@@ -8041,367 +8270,367 @@ export const BANNED_TERMS = [
   {
     phrase: 'seamless',
     qualifier: null,
-    line: 92,
+    line: 94,
   },
   {
     phrase: 'seamlessly',
     qualifier: null,
-    line: 92,
+    line: 94,
   },
   {
     phrase: 'effortless',
     qualifier: null,
-    line: 92,
+    line: 94,
   },
   {
     phrase: 'frictionless',
     qualifier: null,
-    line: 92,
+    line: 94,
   },
   {
     phrase: 'elevate',
     qualifier: null,
-    line: 93,
+    line: 95,
   },
   {
     phrase: 'enhance',
     qualifier: null,
-    line: 93,
+    line: 95,
   },
   {
     phrase: 'empower',
     qualifier: null,
-    line: 93,
+    line: 95,
   },
   {
     phrase: 'supercharge',
     qualifier: null,
-    line: 93,
+    line: 95,
   },
   {
     phrase: 'boost',
     qualifier: null,
-    line: 93,
+    line: 95,
   },
   {
     phrase: 'level up',
     qualifier: "as a verb phrase about the user's life",
-    line: 93,
+    line: 95,
   },
   {
     phrase: 'delightful',
     qualifier: null,
-    line: 94,
+    line: 96,
   },
   {
     phrase: 'delight',
     qualifier: null,
-    line: 94,
+    line: 96,
   },
   {
     phrase: 'magical',
     qualifier: null,
-    line: 94,
+    line: 96,
   },
   {
     phrase: 'magic',
     qualifier: null,
-    line: 94,
+    line: 96,
   },
   {
     phrase: 'amazing',
     qualifier: null,
-    line: 94,
+    line: 96,
   },
   {
     phrase: 'awesome',
     qualifier: null,
-    line: 94,
+    line: 96,
   },
   {
     phrase: 'incredible',
     qualifier: null,
-    line: 94,
+    line: 96,
   },
   {
     phrase: 'unlock',
     qualifier: null,
-    line: 95,
+    line: 97,
   },
   {
     phrase: 'unleash',
     qualifier: null,
-    line: 95,
+    line: 97,
   },
   {
     phrase: 'discover',
     qualifier: null,
-    line: 95,
+    line: 97,
   },
   {
     phrase: 'explore',
     qualifier: null,
-    line: 95,
+    line: 97,
   },
   {
     phrase: 'embark',
     qualifier: null,
-    line: 95,
+    line: 97,
   },
   {
     phrase: 'dive in',
     qualifier: null,
-    line: 95,
+    line: 97,
   },
   {
     phrase: "let's dive",
     qualifier: null,
-    line: 95,
+    line: 97,
   },
   {
     phrase: 'journey',
     qualifier: null,
-    line: 96,
+    line: 98,
   },
   {
     phrase: 'experience',
     qualifier: 'as a noun for using the app, or as a verb',
-    line: 96,
+    line: 98,
   },
   {
     phrase: 'adventure',
     qualifier: null,
-    line: 96,
+    line: 98,
   },
   {
     phrase: 'leverage',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'robust',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'curated',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'crafted',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'tailored',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'bespoke',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'vibrant',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'tapestry',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'realm',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'landscape',
     qualifier: null,
-    line: 97,
+    line: 99,
   },
   {
     phrase: 'game-changer',
     qualifier: null,
-    line: 98,
+    line: 100,
   },
   {
     phrase: 'next level',
     qualifier: null,
-    line: 98,
+    line: 100,
   },
   {
     phrase: 'take it to the next level',
     qualifier: null,
-    line: 98,
+    line: 100,
   },
   {
     phrase: 'the future of',
     qualifier: null,
-    line: 98,
+    line: 100,
   },
   {
     phrase: 'hassle-free',
     qualifier: null,
-    line: 99,
+    line: 101,
   },
   {
     phrase: 'at your fingertips',
     qualifier: null,
-    line: 99,
+    line: 101,
   },
   {
     phrase: "we've got you covered",
     qualifier: null,
-    line: 99,
+    line: 101,
   },
   {
     phrase: 'say goodbye to',
     qualifier: null,
-    line: 99,
+    line: 101,
   },
   {
     phrase: "it's worth noting",
     qualifier: null,
-    line: 100,
+    line: 102,
   },
   {
     phrase: "it's important to note",
     qualifier: null,
-    line: 100,
+    line: 102,
   },
   {
     phrase: 'rest assured',
     qualifier: null,
-    line: 100,
+    line: 102,
   },
   {
     phrase: 'simply',
     qualifier: null,
-    line: 100,
+    line: 102,
   },
   {
     phrase: 'just',
     qualifier: 'as a softener: "just tap"',
-    line: 100,
+    line: 102,
   },
   {
     phrase: 'in the world of',
     qualifier: null,
-    line: 101,
+    line: 103,
   },
   {
     phrase: "whether you're X or Y",
     qualifier: null,
-    line: 101,
+    line: 103,
   },
   {
     phrase: 'from X to Y',
     qualifier: 'as a sweeping range',
-    line: 101,
+    line: 103,
   },
   {
     phrase: 'Oops',
     qualifier: null,
-    line: 102,
+    line: 104,
   },
   {
     phrase: 'Uh-oh',
     qualifier: null,
-    line: 102,
+    line: 104,
   },
   {
     phrase: 'Whoops',
     qualifier: null,
-    line: 102,
+    line: 104,
   },
   {
     phrase: 'Yay',
     qualifier: null,
-    line: 102,
+    line: 104,
   },
   {
     phrase: 'Woohoo',
     qualifier: null,
-    line: 102,
+    line: 104,
   },
   {
     phrase: 'Hooray',
     qualifier: null,
-    line: 102,
+    line: 104,
   },
   {
     phrase: 'Success!',
     qualifier: null,
-    line: 103,
+    line: 105,
   },
   {
     phrase: 'Congratulations!',
     qualifier: null,
-    line: 103,
+    line: 105,
   },
   {
     phrase: "You're all set!",
     qualifier: null,
-    line: 103,
+    line: 105,
   },
   {
     phrase: 'Welcome aboard',
     qualifier: null,
-    line: 103,
+    line: 105,
   },
   {
     phrase: 'friendly reminder',
     qualifier: null,
-    line: 104,
+    line: 106,
   },
   {
     phrase: 'quick reminder',
     qualifier: null,
-    line: 104,
+    line: 106,
   },
   {
     phrase: "don't miss out",
     qualifier: null,
-    line: 104,
+    line: 106,
   },
   {
     phrase: 'FOMO',
     qualifier: null,
-    line: 104,
+    line: 106,
   },
   {
     phrase: 'Ready to',
     qualifier: null,
-    line: 105,
+    line: 107,
   },
   {
     phrase: 'Get ready to',
     qualifier: null,
-    line: 105,
+    line: 107,
   },
   {
     phrase: 'Join the fun',
     qualifier: null,
-    line: 105,
+    line: 107,
   },
   {
     phrase: 'Let the fun begin',
     qualifier: null,
-    line: 105,
+    line: 107,
   },
   {
     phrase: 'Hey there',
     qualifier: null,
-    line: 106,
+    line: 108,
   },
   {
     phrase: 'Hi friend',
     qualifier: null,
-    line: 106,
+    line: 108,
   },
   {
     phrase: 'declined',

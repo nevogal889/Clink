@@ -8,8 +8,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import * as prettier from 'prettier';
-
 const here = path.dirname(fileURLToPath(import.meta.url));
 const artDir = path.resolve(here, '../../../assets/art');
 const outFile = path.join(here, 'art.generated.ts');
@@ -54,6 +52,7 @@ const raw = [
   block('BRAND', brand),
 ].join('\n');
 
+const prettier = await import('prettier');
 const options = (await prettier.resolveConfig(outFile)) ?? {};
 const out = await prettier.format(raw, { ...options, filepath: outFile });
 

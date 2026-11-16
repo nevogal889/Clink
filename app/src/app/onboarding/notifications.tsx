@@ -4,7 +4,6 @@ import { t } from '@clink/shared';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { pt } from '@/lib/pendingCopy';
 import { useData } from '@/lib/store';
 import { OnboardingFrame } from '@/features/onboarding/OnboardingFrame';
 import { stepNumber } from '@/features/onboarding/steps';
@@ -44,7 +43,7 @@ function ExampleNotification({ title, body }: { title: string; body: string }) {
             {title}
           </Txt>
           <Txt variant="caption" tone="tertiary">
-            {pt('fmt.mins.now')}
+            {t('fmt.mins.now')}
           </Txt>
         </View>
         <Txt variant="callout" tone="secondary">
@@ -80,13 +79,24 @@ export default function NotificationsStep() {
       actions={
         <>
           <PrimaryButton testID="notif-yes" label={t('perm.notif.yes')} busy={busy} onPress={yes} />
-          <TextButton testID="notif-no" label={t('perm.notif.no')} align="center" onPress={() => void advance()} />
+          <TextButton
+            testID="notif-no"
+            label={t('perm.notif.no')}
+            align="center"
+            onPress={() => void advance()}
+          />
         </>
       }
     >
       <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s8, gap: spacing.s3 }}>
-        <ExampleNotification title={t('perm.notif.example1.title')} body={t('perm.notif.example1.body')} />
-        <ExampleNotification title={t('perm.notif.example2.title')} body={t('perm.notif.example2.body')} />
+        <ExampleNotification
+          title={t('perm.notif.example1.title')}
+          body={t('perm.notif.example1.body')}
+        />
+        <ExampleNotification
+          title={t('perm.notif.example2.title')}
+          body={t('perm.notif.example2.body')}
+        />
       </View>
     </OnboardingFrame>
   );

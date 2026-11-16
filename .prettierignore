@@ -8,3 +8,5 @@ package-lock.json
 *.md
 prototype.html
 supabase/migrations/
+# Generated review pages (scripts/gen-art-gallery.mjs, icons/_source/build-sheet.mjs).
+docs/art/*.html

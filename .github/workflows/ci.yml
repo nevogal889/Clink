@@ -29,7 +29,13 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
+      - name: Generated catalog and strings match COPY.md
+        run: npm run check:gen
+      - name: Drink icons match their generator and the palette
+        run: npm run check:icons
       - run: npm test -- --ci
+      - name: Art gallery checks
+        run: npm run test:art
       - name: Expo web export (screens reviewable in a browser)
         run: npm run export:web
 
@@ -65,3 +71,16 @@ jobs:
           sudo apt-get install -y -qq --no-install-recommends postgresql-client libtap-parser-sourcehandler-pgtap-perl
       - name: Run supabase/tests
         run: bash scripts/run-pgtap.sh
+      - name: Races (uses the database the pgTAP step left behind)
+        run: bash supabase/tests/concurrency/races.sh
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Edge functions (lint, types, tests against the same database)
+        working-directory: supabase/functions
+        env:
+          CLINK_TEST_DB_URL: postgres://postgres:postgres@localhost:5432/clink_pgtap
+        run: |
+          deno lint
+          deno check */index.ts
+          deno test --allow-env --allow-net tests/

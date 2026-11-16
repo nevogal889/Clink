@@ -1,7 +1,16 @@
 // Undo snackbar (DESIGN.md 4 "Shared pieces"): inverse surface, bottom of the screen, 5 s, or 10 s
 // while a screen reader runs, announced, with the action reachable before it times out.
 import { TIMERS, t } from '@clink/shared';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { AccessibilityInfo, Pressable, View } from 'react-native';
 
 import { radius, spacing } from './theme';
@@ -18,12 +27,22 @@ interface Ctx {
   current: (SnackbarSpec & { id: number }) | null;
   show: (spec: SnackbarSpec) => void;
   dismiss: () => void;
+  /** Height of the focused screen's bottom action area; the root snackbar sits above it. */
+  inset: number;
+  setInset: (px: number) => void;
 }
 
-const SnackbarContext = createContext<Ctx>({ current: null, show: () => undefined, dismiss: () => undefined });
+const SnackbarContext = createContext<Ctx>({
+  current: null,
+  show: () => undefined,
+  dismiss: () => undefined,
+  inset: 0,
+  setInset: () => undefined,
+});
 
 export function SnackbarProvider({ children }: { children: ReactNode }) {
   const [current, setCurrent] = useState<Ctx['current']>(null);
+  const [inset, setInset] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seq = useRef(0);
   const readerOn = useRef(false);
@@ -48,11 +67,17 @@ export function SnackbarProvider({ children }: { children: ReactNode }) {
     timer.current = setTimeout(() => setCurrent(null), secs * 1000);
   }, []);
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
 
-  const value = useMemo(() => ({ current, show, dismiss }), [current, show, dismiss]);
+  const value = useMemo(
+    () => ({ current, show, dismiss, inset, setInset }),
+    [current, show, dismiss, inset],
+  );
   return <SnackbarContext.Provider value={value}>{children}</SnackbarContext.Provider>;
 }
 
@@ -60,8 +85,28 @@ export function useSnackbar() {
   return useContext(SnackbarContext);
 }
 
-export function SnackbarHost({ bottom = spacing.s4 }: { bottom?: number }) {
-  const { current, dismiss } = useSnackbar();
+/**
+ * Keeps the root snackbar above a screen's bottom action area while that screen is focused, so
+ * Undo never covers Continue or Who joins? (DESIGN.md 8 rule 9).
+ */
+export function useSnackbarInset(px: number, focused: boolean) {
+  const { setInset } = useSnackbar();
+  useEffect(() => {
+    if (!focused) return;
+    setInset(px);
+    return () => setInset(0);
+  }, [px, focused, setInset]);
+}
+
+export function SnackbarHost({
+  bottom: base = spacing.s4,
+  followInset = false,
+}: {
+  bottom?: number;
+  followInset?: boolean;
+}) {
+  const { current, dismiss, inset } = useSnackbar();
+  const bottom = followInset && inset > 0 ? inset + spacing.s2 : base;
   const theme = useTheme();
   if (!current) return null;
   return (
@@ -86,7 +131,11 @@ export function SnackbarHost({ bottom = spacing.s4 }: { bottom?: number }) {
           theme.mode === 'light' ? theme.floating : null,
         ]}
       >
-        <Txt variant="callout" color={theme.c.inverseInk} style={{ flex: 1, paddingVertical: spacing.s3 }}>
+        <Txt
+          variant="callout"
+          color={theme.c.inverseInk}
+          style={{ flex: 1, paddingVertical: spacing.s3 }}
+        >
           {current.text}
         </Txt>
         {current.onAction ? (
@@ -98,7 +147,13 @@ export function SnackbarHost({ bottom = spacing.s4 }: { bottom?: number }) {
               current.onAction?.();
               dismiss();
             }}
-            style={{ minHeight: 44, minWidth: 64, paddingHorizontal: spacing.s3, alignItems: 'center', justifyContent: 'center' }}
+            style={{
+              minHeight: 44,
+              minWidth: 64,
+              paddingHorizontal: spacing.s3,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             <Txt variant="label" color={theme.c.inverseAction}>
               {t('snack.undo')}

@@ -79,8 +79,7 @@ const empty: AppState = {
 const DataContext = createContext<Ctx | null>(null);
 
 export function DataProvider({ api: given, children }: { api?: ClinkApi; children: ReactNode }) {
-  const apiRef = useRef<ClinkApi>(given ?? createDefaultApi());
-  const api = apiRef.current;
+  const [api] = useState<ClinkApi>(() => given ?? createDefaultApi());
   const [state, setState] = useState<AppState>(empty);
   const stateRef = useRef(state);
   useEffect(() => {
@@ -106,7 +105,9 @@ export function DataProvider({ api: given, children }: { api?: ClinkApi; childre
     patch({ ready: true, session, me, usual, today, xp, audience, lastPlace, live });
   }, [api, patch]);
 
+  // First load from the data layer. The state updates happen when the requests resolve.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll().catch(() => patch({ ready: true }));
   }, [loadAll, patch]);
 
@@ -167,7 +168,9 @@ export function DataProvider({ api: given, children }: { api?: ClinkApi; childre
       },
       async markLevelSeen(level) {
         await api.markLevelSeen(level);
-        setState((s) => (s.xp ? { ...s, xp: { ...s.xp, levelSeen: Math.max(s.xp.levelSeen, level) } } : s));
+        setState((s) =>
+          s.xp ? { ...s, xp: { ...s.xp, levelSeen: Math.max(s.xp.levelSeen, level) } } : s,
+        );
       },
       async addPhone(e164) {
         patch({ me: await api.addPhone(e164) });

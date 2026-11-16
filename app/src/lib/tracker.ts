@@ -22,7 +22,9 @@ export interface TodaySummary {
 
 export function entryCaffeinated(e: Pick<LogEntry, 'drinkId' | 'category' | 'details'>): boolean {
   if (e.category === 'water') return false;
-  return e.drinkId ? isCaffeinated({ drinkId: e.drinkId }, e.details) : isCaffeinated({ category: e.category }, e.details);
+  return e.drinkId
+    ? isCaffeinated({ drinkId: e.drinkId }, e.details)
+    : isCaffeinated({ category: e.category }, e.details);
 }
 
 export function summarizeToday(entries: readonly LogEntry[], now: Date): TodaySummary {

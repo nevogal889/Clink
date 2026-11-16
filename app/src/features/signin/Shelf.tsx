@@ -18,19 +18,24 @@ export function Shelf({ height }: { height: number }) {
   // Each hero's subject fills about the middle 80% of its artboard. Size them so neighbours
   // just overlap their empty margins, and let the outer two run off the edges.
   const n = LOG_CATEGORIES.length;
-  const size = Math.min(height / GROUND, width / 2.9);
+  const size = Math.min(height / GROUND, width / 2.45);
   const step = (width + size * 0.3) / n;
-  const groundY = height - 8;
+  // The shelf is as tall as the heroes standing on it, so no empty band sits above them.
+  const own = width > 0 ? Math.min(height, size * GROUND + 8) : height;
+  const groundY = own - 8;
 
   return (
-    <View onLayout={onLayout} style={{ height, overflow: 'hidden' }} testID="shelf">
+    <View onLayout={onLayout} style={{ height: own, overflow: 'hidden' }} testID="shelf">
       {width > 0
         ? LOG_CATEGORIES.map((cat, i) => {
             const left = i * step - size * 0.15 + (step - size) / 2;
             // Alternate a small rise so the row reads as objects on a shelf, not a strip.
             const top = groundY - size * GROUND;
             return (
-              <View key={cat} style={{ position: 'absolute', left, top, zIndex: i % 2 === 0 ? 2 : 1 }}>
+              <View
+                key={cat}
+                style={{ position: 'absolute', left, top, zIndex: i % 2 === 0 ? 2 : 1 }}
+              >
                 <Hero category={cat} size={size} />
               </View>
             );

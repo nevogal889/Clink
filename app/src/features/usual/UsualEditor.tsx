@@ -2,15 +2,29 @@
 // "Make it yours" and "Add your own" sheets. Onboarding shows presets first (DESIGN.md 4.3 step 3).
 // The editor returns its blocks as an array so the screen's ScrollView can keep the category tabs
 // sticky (stickyHeaderIndices counts direct children, and arrays flatten into children).
-import { PRESETS, orderSummary, t, type DrinkDetails, type FlareCategory, type Preset } from '@clink/shared';
-import { useRef, useState, type ReactNode } from 'react';
+import {
+  PRESETS,
+  orderSummary,
+  t,
+  type DrinkDetails,
+  type FlareCategory,
+  type Preset,
+} from '@clink/shared';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, PanResponder, ScrollView, View } from 'react-native';
 
 import type { UsualDrink } from '@/lib/api';
-import { pt } from '@/lib/pendingCopy';
 import { playHaptic } from '@/lib/platform';
 import { usualName } from '@/lib/tracker';
-import { applyPreset, custom, fromCatalog, move, slotOf, toggleDrink, withDetails } from '@/lib/usual';
+import {
+  applyPreset,
+  custom,
+  fromCatalog,
+  move,
+  slotOf,
+  toggleDrink,
+  withDetails,
+} from '@/lib/usual';
 import { AddOwnSheet, CategoryHeader, CategoryTabs, DrinkRows } from '@/features/catalog/Catalog';
 import { DetailsEditor } from '@/features/usual/DetailsEditor';
 import { DrinkIcon } from '@/ui/Art';
@@ -40,9 +54,17 @@ function SlotRow({
 }) {
   const { c } = useTheme();
   const n = index + 1;
-  const dy = useRef(new Animated.Value(0)).current;
+  const [dy] = useState(() => new Animated.Value(0));
   const [dragging, setDragging] = useState(false);
-  const pan = useRef(
+  // The handlers read the latest slot and list through a ref, so a drag after an edit never
+  // moves a stale copy of the list.
+  const latest = useRef({ index, onMove });
+  useEffect(() => {
+    latest.current = { index, onMove };
+  });
+  // The initializer only builds the handlers; `latest` is read inside them, during a gesture.
+  // eslint-disable-next-line react-hooks/refs
+  const [pan] = useState(() =>
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
@@ -54,7 +76,8 @@ function SlotRow({
         const steps = Math.round(g.dy / SLOT_H);
         if (steps !== 0) {
           playHaptic('selection');
-          onMove(index, index + steps);
+          const { index: at, onMove: moveTo } = latest.current;
+          moveTo(at, at + steps);
         }
       },
       onPanResponderTerminate: () => {
@@ -62,7 +85,7 @@ function SlotRow({
         dy.setValue(0);
       },
     }),
-  ).current;
+  );
 
   if (!drink) {
     return (
@@ -115,51 +138,81 @@ function SlotRow({
         transform: [{ translateY: dy }],
       }}
     >
-      <View
-        accessible
-        accessibilityLabel={t('a11y.usual.slot', { n, drink: name })}
-        accessibilityValue={summary ? { text: summary } : undefined}
-        accessibilityActions={actions}
-        onAccessibilityAction={(e) => onMove(index, index + (e.nativeEvent.actionName === 'moveUp' ? -1 : 1))}
-        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.s3 }}
-      >
-        <Txt variant="numeralM" style={{ width: 22 }}>
+      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.s3 }}>
+        <Txt
+          variant="numeralM"
+          style={{ width: 22 }}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
           {String(n)}
         </Txt>
         <DrinkIcon drinkId={drink.drinkId} category={drink.category} size={48} />
-        <View style={{ flex: 1, paddingVertical: spacing.s2 }}>
-          <Txt variant="headline">{name}</Txt>
-          {summary ? (
-            <Txt variant="callout" tone="secondary" numberOfLines={2}>
-              {summary}
-            </Txt>
-          ) : null}
+        <View style={{ flex: 1, paddingVertical: spacing.s3, gap: 2 }}>
+          {/* The slot's screen reader element: "Number 1, Flat White", with Move up / Move down
+              in place of the drag handle (DESIGN.md 7). */}
+          <Txt
+            variant="headline"
+            accessibilityLabel={t('a11y.usual.slot', { n, drink: name })}
+            accessibilityActions={actions}
+            onAccessibilityAction={(e) =>
+              onMove(index, index + (e.nativeEvent.actionName === 'moveUp' ? -1 : 1))
+            }
+          >
+            {name}
+          </Txt>
           {index === 0 ? (
             <Txt variant="caption" tone="tertiary">
               {t('usual.slot1_helper')}
             </Txt>
           ) : null}
+          {summary ? (
+            <Press
+              testID={`slot-${n}-details`}
+              onPress={onDetails}
+              scaleTo={0.99}
+              accessibilityLabel={`${t('usual.edit_details')}, ${name}`}
+              accessibilityValue={{ text: summary }}
+              hitSlop={6}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.s1,
+                alignSelf: 'flex-start',
+              }}
+            >
+              <Txt variant="callout" tone="secondary" style={{ flexShrink: 1 }}>
+                {summary}
+              </Txt>
+              <Icon name="pencil" size={14} color={c.cobalt} />
+            </Press>
+          ) : (
+            <View style={{ marginTop: spacing.s1 }}>
+              <TonalButton
+                testID={`slot-${n}-details`}
+                label={t('usual.make_yours')}
+                accessibilityLabel={`${t('usual.make_yours')}, ${name}`}
+                onPress={onDetails}
+              />
+            </View>
+          )}
         </View>
       </View>
-      {summary ? (
-        <Press
-          testID={`slot-${n}-details`}
-          onPress={onDetails}
-          accessibilityLabel={`${t('usual.edit_details')}, ${name}`}
-          style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Icon name="pencil" size={20} color={c.cobalt} />
-        </Press>
-      ) : (
-        <TonalButton testID={`slot-${n}-details`} label={t('usual.make_yours')} accessibilityLabel={`${t('usual.make_yours')}, ${name}`} onPress={onDetails} />
-      )}
       {count > 1 ? (
         <View
           {...pan.panHandlers}
           accessible={false}
           importantForAccessibility="no-hide-descendants"
           testID={`slot-${n}-grip`}
-          style={{ width: 36, height: 44, alignItems: 'center', justifyContent: 'center', cursor: 'grab' } as never}
+          style={
+            {
+              width: 36,
+              height: 44,
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'grab',
+            } as never
+          }
         >
           <Icon name="grip" size={20} color={c.inkTertiary} />
         </View>
@@ -241,7 +294,10 @@ export function useUsualEditor({
     playHaptic('selection');
     change(next);
     if (replaced) {
-      snack.show({ text: t('usual.replaced', { drink: usualName(replaced) }), onAction: () => change(before) });
+      snack.show({
+        text: t('usual.replaced', { drink: usualName(replaced) }),
+        onAction: () => change(before),
+      });
     }
   }
 
@@ -250,11 +306,18 @@ export function useUsualEditor({
     playHaptic('selection');
     change(applyPreset(p));
     setCategory(fromCatalog(p.drinkIds[0]).category);
-    snack.show({ text: pt('usual.preset_set', { preset: t(p.key) }), onAction: () => change(before) });
+    snack.show({
+      text: t('usual.preset_set', { preset: t(p.key) }),
+      onAction: () => change(before),
+    });
   }
 
   const slots = (
-    <View key="slots" style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s6 }} testID="usual-slots">
+    <View
+      key="slots"
+      style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s6 }}
+      testID="usual-slots"
+    >
       {[0, 1, 2].map((i) => (
         <SlotRow
           key={list[i] ? `${list[i]?.drinkId ?? list[i]?.customName}-${i}` : `empty-${i}`}
@@ -276,7 +339,11 @@ export function useUsualEditor({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: spacing.gutter, gap: spacing.s2, paddingTop: spacing.s2 }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.gutter,
+          gap: spacing.s2,
+          paddingTop: spacing.s2,
+        }}
       >
         {PRESETS.map((p) => (
           <PresetChip key={p.key} preset={p} onPress={() => preset(p)} />
@@ -287,7 +354,14 @@ export function useUsualEditor({
 
   const tabs = (
     <View key="tabs" style={{ marginTop: spacing.s8 }}>
-      <CategoryTabs value={category} onChange={(cat) => { playHaptic('selection'); setCategory(cat); }} background={c.surfaceBase} />
+      <CategoryTabs
+        value={category}
+        onChange={(cat) => {
+          playHaptic('selection');
+          setCategory(cat);
+        }}
+        background={c.surfaceBase}
+      />
     </View>
   );
 
@@ -306,7 +380,8 @@ export function useUsualEditor({
     </View>
   );
 
-  const blocks = mode === 'onboarding' ? [presets, slots, tabs, catalog] : [slots, presets, tabs, catalog];
+  const blocks =
+    mode === 'onboarding' ? [presets, slots, tabs, catalog] : [slots, presets, tabs, catalog];
   const editingDrink = editing !== null ? (list[editing] ?? null) : null;
 
   const overlays = (

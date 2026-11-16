@@ -104,13 +104,16 @@ function hexToRgb(h) {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 function rgbToHex([r, g, b]) {
-  const c = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+  const c = (v) =>
+    Math.max(0, Math.min(255, Math.round(v)))
+      .toString(16)
+      .padStart(2, '0');
   return `#${c(r)}${c(g)}${c(b)}`.toUpperCase();
 }
 const lin = (v) => ((v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
 const delin = (v) => 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
 const WP = [0.95047, 1, 1.08883];
-const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116);
+const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116);
 const finv = (t) => (t ** 3 > 216 / 24389 ? t ** 3 : (116 * t - 16) / (24389 / 27));
 function toLab(hex) {
   const [r, g, b] = hexToRgb(hex).map(lin);
@@ -325,7 +328,7 @@ class Vessel {
     return [this.cx + s * dx, y + R * dx * Math.sqrt(1 - s * s)];
   }
   bodyCmds(closeTop = true) {
-    const { cx, rx, bx, ywb, yr } = this;
+    const { cx, rx, bx, yr } = this;
     const [p0L, c1L, c2L, p3L] = this.wl;
     const [p0R, c1R, c2R, p3R] = this.wr;
     const cmds = [
@@ -386,15 +389,47 @@ class Vessel {
 // Vessel set. Heights from DESIGN.md 3.1; widths chosen to fill the 20-unit live area.
 const V = {
   V1: (o = {}) =>
-    new Vessel({ cx: 10.8, rx: 3.8, bx: 2.4, H: 8, wall: 'arc', foot: 0.5, handle: { w: 2.5 }, saucer: { rx: 6.0, t: 0.8 }, ...o }),
+    new Vessel({
+      cx: 10.8,
+      rx: 3.8,
+      bx: 2.4,
+      H: 8,
+      wall: 'arc',
+      foot: 0.5,
+      handle: { w: 2.5 },
+      saucer: { rx: 6.0, t: 0.8 },
+      ...o,
+    }),
   V2: (o = {}) =>
-    new Vessel({ cx: 10.4, rx: 5.0, bx: 2.9, H: 9, wall: 'arc', foot: 0.5, handle: { w: 2.9 }, saucer: { rx: 7.5, t: 0.9 }, ...o }),
-  V3: (o = {}) => new Vessel({ cx: 10.2, rx: 4.6, bx: 4.6, H: 11, body: C.enamel, handle: { w: 3.4 }, ...o }),
+    new Vessel({
+      cx: 10.4,
+      rx: 5.0,
+      bx: 2.9,
+      H: 9,
+      wall: 'arc',
+      foot: 0.5,
+      handle: { w: 2.9 },
+      saucer: { rx: 7.5, t: 0.9 },
+      ...o,
+    }),
+  V3: (o = {}) =>
+    new Vessel({ cx: 10.2, rx: 4.6, bx: 4.6, H: 11, body: C.enamel, handle: { w: 3.4 }, ...o }),
   V4: (o = {}) => new Vessel({ cx: 11.2, rx: 4.6, bx: 3.8, H: 10, glass: true, ...o }),
   V5: (o = {}) => new Vessel({ cx: 10.6, rx: 4.0, bx: 2.8, H: 16, glass: true, ...o }),
   V6: (o = {}) =>
-    new Vessel({ cx: 13.4, rx: 5.9, bx: 3.0, H: 7.5, wall: 'arc', foot: 0.9, body: C.glaze, ink: C.inkMatchaDark, ...o }),
-  V7: (o = {}) => new Vessel({ cx: 10.4, rx: 4.5, bx: 3.95, H: 10, glass: true, handle: { w: 3.2 }, ...o }),
+    new Vessel({
+      cx: 13.4,
+      rx: 5.9,
+      bx: 3.0,
+      H: 7.5,
+      wall: 'arc',
+      foot: 0.9,
+      body: C.glaze,
+      ink: C.inkMatchaDark,
+      ...o,
+    }),
+  V7: (o = {}) =>
+    new Vessel({ cx: 10.4, rx: 4.5, bx: 3.95, H: 10, glass: true, handle: { w: 3.2 }, ...o }),
   V8: (o = {}) => new Vessel({ cx: 10.8, rx: 3.6, bx: 3.0, H: 10, foot: 0.6, ...o }),
 };
 
@@ -429,7 +464,13 @@ function drawSaucer(ic, v) {
   }
   ic.path(silhouette, ic.line(C.outline, ic.bw));
   // the saucer's top edge, front half, as a lighter line
-  ic.path([['M', cx + rx, sy], ['A', rx, R * rx, 0, 0, 1, cx - rx, sy]], ic.line(C.outline, ic.dw));
+  ic.path(
+    [
+      ['M', cx + rx, sy],
+      ['A', rx, R * rx, 0, 0, 1, cx - rx, sy],
+    ],
+    ic.line(C.outline, ic.dw),
+  );
 }
 
 function drawFoot(ic, v, color) {
@@ -458,10 +499,22 @@ function drawHandle(ic, v) {
 }
 
 function rimBack(ic, v, rx = v.rx, cy = v.yr) {
-  ic.path([['M', v.cx - rx, cy], ['A', rx, R * rx, 0, 0, 1, v.cx + rx, cy]], ic.line(v.ink, ic.rw));
+  ic.path(
+    [
+      ['M', v.cx - rx, cy],
+      ['A', rx, R * rx, 0, 0, 1, v.cx + rx, cy],
+    ],
+    ic.line(v.ink, ic.rw),
+  );
 }
 function rimFront(ic, v, rx = v.rx, cy = v.yr) {
-  ic.path([['M', v.cx + rx, cy], ['A', rx, R * rx, 0, 0, 1, v.cx - rx, cy]], ic.line(v.ink, ic.rw));
+  ic.path(
+    [
+      ['M', v.cx + rx, cy],
+      ['A', rx, R * rx, 0, 0, 1, v.cx - rx, cy],
+    ],
+    ic.line(v.ink, ic.rw),
+  );
 }
 
 // Opaque vessel (ceramic, enamel, chawan). `surface` paints the liquid inside the rim.
@@ -472,7 +525,8 @@ function drawOpaque(ic, v, { liquid, surface, flush = false, afterBody, aboveRim
   ic.path(v.bodyCmds(), { fill: v.body });
   if (ic.L) ic.path(v.shadeCmds(), { fill: shade(v.body) });
   if (afterBody) afterBody(ic, v);
-  if (ic.L) ic.path(v.gleamCmds(), ic.line(C.white, v.gleamWidth() * ic.k, { 'stroke-opacity': '0.85' }));
+  if (ic.L)
+    ic.path(v.gleamCmds(), ic.line(C.white, v.gleamWidth() * ic.k, { 'stroke-opacity': '0.85' }));
   ic.path(v.bodyCmds(false), ic.line(C.outline, ic.bw));
   // inside of the rim
   const { cx, yr, rx } = v;
@@ -550,7 +604,8 @@ function drawGlass(ic, v, { layers, inLiquid, aboveLiquid, straw, overRim, front
   });
   const top = levelY(v, sorted[0].to);
   if (inLiquid) inLiquid(ic, v, { y: top, half: liquidHalf(v, top) });
-  if (ic.L) ic.path(v.gleamCmds(), ic.line(C.white, v.gleamWidth() * ic.k, { 'stroke-opacity': '0.85' }));
+  if (ic.L)
+    ic.path(v.gleamCmds(), ic.line(C.white, v.gleamWidth() * ic.k, { 'stroke-opacity': '0.85' }));
   rimBack(ic, v);
   if (aboveLiquid) aboveLiquid(ic, v, { y: top, half: liquidHalf(v, top) });
   if (straw) drawStraw(ic, v, top, straw);
@@ -570,8 +625,20 @@ function drawStraw(ic, v, yLiquid, { width = 1.5, color = C.orange } = {}) {
   // outline band, a touch longer at the top, then the straw colour
   const ext = 0.55;
   const dx = lean * ext;
-  ic.path([['M', x0, y0], ['L', x1 + dx, yTop - ext]], { fill: 'none', stroke: C.outline, 'stroke-width': fmt((width + 1.1) * ic.k) });
-  ic.path([['M', x0, y0], ['L', x1, yTop]], { fill: 'none', stroke: color, 'stroke-width': fmt(width * ic.k) });
+  ic.path(
+    [
+      ['M', x0, y0],
+      ['L', x1 + dx, yTop - ext],
+    ],
+    { fill: 'none', stroke: C.outline, 'stroke-width': fmt((width + 1.1) * ic.k) },
+  );
+  ic.path(
+    [
+      ['M', x0, y0],
+      ['L', x1, yTop],
+    ],
+    { fill: 'none', stroke: color, 'stroke-width': fmt(width * ic.k) },
+  );
 }
 
 // Fill a closed shape but stroke only its top contour (the base sits in the cup, unseen).
@@ -583,11 +650,27 @@ function mound(ic, top, close, color, w) {
 // --- shared marks --------------------------------------------------------------------------
 
 function ice(ic, cx, cy, deg, size = 2.7) {
-  ic.rrect(cx, cy, size, size, size * 0.24, deg, ic.solid(C.white, ic.dw, { 'fill-opacity': '0.7' }));
+  ic.rrect(
+    cx,
+    cy,
+    size,
+    size,
+    size * 0.24,
+    deg,
+    ic.solid(C.white, ic.dw, { 'fill-opacity': '0.7' }),
+  );
 }
 function bubbles(ic, pts) {
   // three circles, smaller as they rise
-  pts.forEach(([x, y, r]) => ic.circle(x, y, r, { fill: C.white, 'fill-opacity': '0.6', stroke: C.bubble, 'stroke-opacity': '0.6', 'stroke-width': fmt(ic.dw * 0.9) }));
+  pts.forEach(([x, y, r]) =>
+    ic.circle(x, y, r, {
+      fill: C.white,
+      'fill-opacity': '0.6',
+      stroke: C.bubble,
+      'stroke-opacity': '0.6',
+      'stroke-width': fmt(ic.dw * 0.9),
+    }),
+  );
 }
 
 function wheel(ic, cx, cy, r, { rind, pith, flesh }) {
@@ -598,7 +681,10 @@ function wheel(ic, cx, cy, r, { rind, pith, flesh }) {
   const segs = [];
   for (let i = 0; i < n; i++) {
     const a = (i * Math.PI) / n + Math.PI / 8;
-    segs.push(['M', cx - Math.cos(a) * (r - 0.95), cy - Math.sin(a) * (r - 0.95)], ['L', cx + Math.cos(a) * (r - 0.95), cy + Math.sin(a) * (r - 0.95)]);
+    segs.push(
+      ['M', cx - Math.cos(a) * (r - 0.95), cy - Math.sin(a) * (r - 0.95)],
+      ['L', cx + Math.cos(a) * (r - 0.95), cy + Math.sin(a) * (r - 0.95)],
+    );
   }
   ic.path(segs, ic.line(pith, ic.L ? 1 : 0.5));
   ic.circle(cx, cy, r - 0.95 > 0.9 ? 0.45 : 0.3, { fill: pith });
@@ -614,7 +700,10 @@ const LIME = { rind: C.mint, pith: C.ceramic, flesh: C.lime };
 function leafShape(ic, cx, cy, len, wid, deg, color, { rib = true, ribColor } = {}) {
   // almond leaf along +x before rotation, base at (cx, cy)
   const a = deg * DEG;
-  const rot = ([x, y]) => [cx + x * Math.cos(a) - y * Math.sin(a), cy + x * Math.sin(a) + y * Math.cos(a)];
+  const rot = ([x, y]) => [
+    cx + x * Math.cos(a) - y * Math.sin(a),
+    cy + x * Math.sin(a) + y * Math.cos(a),
+  ];
   const tip = rot([len, 0]);
   const cmds = [
     ['M', cx, cy],
@@ -623,16 +712,29 @@ function leafShape(ic, cx, cy, len, wid, deg, color, { rib = true, ribColor } = 
     ['Z'],
   ];
   ic.path(cmds, ic.solid(color));
-  if (rib) ic.path([['M', cx, cy], ['L', ...rot([len * 0.78, 0])]], ic.line(ribColor ?? C.outline, ic.dw * 0.6, ribColor ? {} : { 'stroke-opacity': '0.5' }));
+  if (rib)
+    ic.path(
+      [
+        ['M', cx, cy],
+        ['L', ...rot([len * 0.78, 0])],
+      ],
+      ic.line(ribColor ?? C.outline, ic.dw * 0.6, ribColor ? {} : { 'stroke-opacity': '0.5' }),
+    );
 }
 
 function flower(ic, cx, cy, n, petalLen, petalW, petal, centre, centreR, deg0 = -90) {
   for (let i = 0; i < n; i++) {
     const a = deg0 + (360 * i) / n;
-    ic.ellipse(cx + Math.cos(a * DEG) * petalLen * 0.55, cy + Math.sin(a * DEG) * petalLen * 0.55, petalLen * 0.55, petalW / 2, {
-      ...ic.solid(petal, ic.dw * 0.8),
-      transform: `rotate(${fmt(a)} ${ic.n(cx + Math.cos(a * DEG) * petalLen * 0.55)} ${ic.n(cy + Math.sin(a * DEG) * petalLen * 0.55)})`,
-    });
+    ic.ellipse(
+      cx + Math.cos(a * DEG) * petalLen * 0.55,
+      cy + Math.sin(a * DEG) * petalLen * 0.55,
+      petalLen * 0.55,
+      petalW / 2,
+      {
+        ...ic.solid(petal, ic.dw * 0.8),
+        transform: `rotate(${fmt(a)} ${ic.n(cx + Math.cos(a * DEG) * petalLen * 0.55)} ${ic.n(cy + Math.sin(a * DEG) * petalLen * 0.55)})`,
+      },
+    );
   }
   ic.circle(cx, cy, centreR, ic.solid(centre, ic.dw * 0.8));
 }
@@ -650,7 +752,9 @@ function star(ic, cx, cy, n, rOut, rIn, color, deg0 = -90) {
   if (ic.L) {
     for (let i = 0; i < n; i++) {
       const a = (deg0 + (360 * i) / n) * DEG;
-      ic.circle(cx + Math.cos(a) * rOut * 0.55, cy + Math.sin(a) * rOut * 0.55, 0.28, { fill: C.cinnamon });
+      ic.circle(cx + Math.cos(a) * rOut * 0.55, cy + Math.sin(a) * rOut * 0.55, 0.28, {
+        fill: C.cinnamon,
+      });
     }
   }
   ic.circle(cx, cy, rIn * 0.45, { fill: C.cinnamon });
@@ -674,7 +778,14 @@ function teaTag(ic, v, { from, tagX, tagY }) {
 function mangoCube(ic, x, y, s = ic.L ? 2.6 : 3.0) {
   ic.rrect(x, y, s, s, s * 0.22, 14, ic.solid(C.mango));
   // a cube, seen from above: show a top face line
-  if (ic.L) ic.path([['M', x - s * 0.32, y - s * 0.1], ['L', x + s * 0.35, y - s * 0.02]], ic.line(C.outline, ic.dw * 0.5, { 'stroke-opacity': '0.35' }));
+  if (ic.L)
+    ic.path(
+      [
+        ['M', x - s * 0.32, y - s * 0.1],
+        ['L', x + s * 0.35, y - s * 0.02],
+      ],
+      ic.line(C.outline, ic.dw * 0.5, { 'stroke-opacity': '0.35' }),
+    );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -683,12 +794,22 @@ function mangoCube(ic, x, y, s = ic.L ? 2.6 : 3.0) {
 function drawGaiwan(ic, liquid) {
   // V9: a deep lidded bowl on a saucer. The lid sits inside the rim, tilted 10 degrees so its
   // left edge lifts and a crescent of tea shows underneath.
-  const v = new Vessel({ cx: 11.2, rx: 4.6, bx: 2.3, H: 8.4, wall: 'arc', foot: 0.5, saucer: { rx: 6.6, t: 0.8 }, ink: C.inkTea });
+  const v = new Vessel({
+    cx: 11.2,
+    rx: 4.6,
+    bx: 2.3,
+    H: 8.4,
+    wall: 'arc',
+    foot: 0.5,
+    saucer: { rx: 6.6, t: 0.8 },
+    ink: C.inkTea,
+  });
   drawSaucer(ic, v);
   drawFoot(ic, v);
   ic.path(v.bodyCmds(), { fill: v.body });
   if (ic.L) ic.path(v.shadeCmds(), { fill: shade(v.body) });
-  if (ic.L) ic.path(v.gleamCmds(), ic.line(C.white, v.gleamWidth() * ic.k, { 'stroke-opacity': '0.85' }));
+  if (ic.L)
+    ic.path(v.gleamCmds(), ic.line(C.white, v.gleamWidth() * ic.k, { 'stroke-opacity': '0.85' }));
   ic.path(v.bodyCmds(false), ic.line(C.outline, ic.bw));
   ic.ellipse(v.cx, v.yr, v.rx, R * v.rx, { fill: liquid });
   rimBack(ic, v);
@@ -722,7 +843,9 @@ function drawGaiwan(ic, liquid) {
   }
   g.push(`<path d="${ic.d(lidTop)}"${attrStr(ic.line(C.outline, ic.bw))}/>`);
   // the lid's edge, front half
-  g.push(`<path d="${ic.d([["M", lcx + lrx, lcy], ...lidFront])}"${attrStr(ic.line(C.outline, ic.dw))}/>`);
+  g.push(
+    `<path d="${ic.d([['M', lcx + lrx, lcy], ...lidFront])}"${attrStr(ic.line(C.outline, ic.dw))}/>`,
+  );
   // knob: a short cylinder
   const kr = 1.05;
   const kb = lcy - domeH + 0.2;
@@ -751,28 +874,49 @@ function drawDripper(ic) {
   rimBack(ic, cup);
   rimFront(ic, cup);
   // dripper: flat plate on the cup, cone above. Its rim is the drink's rim line.
-  const d = new Vessel({ cx: 11.2, rx: 5.3, bx: 1.7, H: 15, wall: 'straight' });
   // move the cone base to sit on the plate
   const plateY = cup.yr - 0.6;
   const plateRx = 4.9;
   ic.ellipse(cup.cx, plateY, plateRx, R * plateRx, ic.solid(C.ceramic, ic.bw));
-  if (ic.L) ic.path([['M', cup.cx - plateRx + 0.5, plateY + 0.25], ['A', plateRx - 0.5, R * (plateRx - 0.5), 0, 0, 0, cup.cx + plateRx - 0.5, plateY + 0.25]], ic.line(shade(C.ceramic), 0.6 * ic.k));
+  if (ic.L)
+    ic.path(
+      [
+        ['M', cup.cx - plateRx + 0.5, plateY + 0.25],
+        ['A', plateRx - 0.5, R * (plateRx - 0.5), 0, 0, 0, cup.cx + plateRx - 0.5, plateY + 0.25],
+      ],
+      ic.line(shade(C.ceramic), 0.6 * ic.k),
+    );
   const cone = new Vessel({ cx: 11.2, rx: 5.3, bx: 1.8, H: 15, wall: 'straight' });
   cone.ywb = plateY - 0.5;
   cone.yr = 21 - 15 + R * 5.3;
   const p0 = [cone.cx + cone.rx, cone.yr];
   const p3 = [cone.cx + cone.bx, cone.ywb];
-  cone.wr = [p0, [p0[0] + (p3[0] - p0[0]) / 3, p0[1] + (p3[1] - p0[1]) / 3], [p0[0] + (2 * (p3[0] - p0[0])) / 3, p0[1] + (2 * (p3[1] - p0[1])) / 3], p3];
+  cone.wr = [
+    p0,
+    [p0[0] + (p3[0] - p0[0]) / 3, p0[1] + (p3[1] - p0[1]) / 3],
+    [p0[0] + (2 * (p3[0] - p0[0])) / 3, p0[1] + (2 * (p3[1] - p0[1])) / 3],
+    p3,
+  ];
   ic.path(cone.bodyCmds(), { fill: C.ceramic });
   if (ic.L) ic.path(cone.shadeCmds(), { fill: shade(C.ceramic) });
-  if (ic.L) ic.path(cone.gleamCmds(0.22, 0.6), ic.line(C.white, cone.gleamWidth() * ic.k * 0.8, { 'stroke-opacity': '0.85' }));
+  if (ic.L)
+    ic.path(
+      cone.gleamCmds(0.22, 0.6),
+      ic.line(C.white, cone.gleamWidth() * ic.k * 0.8, { 'stroke-opacity': '0.85' }),
+    );
   // two ribs on the front face
   [-0.42, 0.3].forEach((s) => {
     const a = cone.T(p0, s);
     const b = cone.T(p3, s);
     const t0 = 0.22;
     const t1 = 0.78;
-    ic.path([['M', a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0], ['L', a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1]], ic.line(C.outline, ic.dw * 0.8));
+    ic.path(
+      [
+        ['M', a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0],
+        ['L', a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1],
+      ],
+      ic.line(C.outline, ic.dw * 0.8),
+    );
   });
   ic.path(cone.bodyCmds(false), ic.line(C.outline, ic.bw));
   // inner back wall, then the coffee bed
@@ -836,7 +980,13 @@ function drawBottle(ic) {
     const gx = cx - 0.57 * bx;
     const gy = R * bx * 0.82;
     const h = yb - ys;
-    ic.path([['M', gx, ys + 0.3 * h + gy], ['L', gx, ys + 0.7 * h + gy]], ic.line(C.white, 0.07 * 2 * bx * ic.k, { 'stroke-opacity': '0.85' }));
+    ic.path(
+      [
+        ['M', gx, ys + 0.3 * h + gy],
+        ['L', gx, ys + 0.7 * h + gy],
+      ],
+      ic.line(C.white, 0.07 * 2 * bx * ic.k, { 'stroke-opacity': '0.85' }),
+    );
   }
   ic.path(body, ic.line(C.outline, ic.bw));
   // cap: flat, dark, its top ellipse is the rim line
@@ -849,8 +999,15 @@ function drawBottle(ic) {
     ['Z'],
   ];
   ic.path(cap, ic.solid(C.cap, ic.bw));
-  if (ic.L) ic.path([['M', cx - capX * 0.35, capTop + 0.7], ['L', cx - capX * 0.35, capBot - 0.2]], ic.line(C.steel, 0.5 * ic.k));
-  ic.ellipse(cx, capTop, capX, R * capX, { fill: C.cap, ...ic.line(C.inkSmoothie, ic.rw) , fill: C.cap });
+  if (ic.L)
+    ic.path(
+      [
+        ['M', cx - capX * 0.35, capTop + 0.7],
+        ['L', cx - capX * 0.35, capBot - 0.2],
+      ],
+      ic.line(C.steel, 0.5 * ic.k),
+    );
+  ic.ellipse(cx, capTop, capX, R * capX, { ...ic.line(C.inkSmoothie, ic.rw), fill: C.cap });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -863,7 +1020,8 @@ D['coffee.espresso'] = (ic) => {
   const v = V.V1();
   drawOpaque(ic, v, {
     liquid: C.crema,
-    surface: (ic, v, s) => ic.ellipse(v.cx - 0.1, s.cy + 0.08, s.rx * 0.62, R * s.rx * 0.62, { fill: C.espresso }),
+    surface: (ic, v, s) =>
+      ic.ellipse(v.cx - 0.1, s.cy + 0.08, s.rx * 0.62, R * s.rx * 0.62, { fill: C.espresso }),
   });
 };
 D['coffee.americano'] = (ic) => {
@@ -891,7 +1049,23 @@ D['coffee.cappuccino'] = (ic) => {
         ic.dw,
       );
       if (ic.L)
-        ic.path([['M', cx + r * 0.44, yr + 0.1], ['C', cx + r * 0.44, yr - h * 0.6, cx + r * 0.3, yr - h * 0.9, cx + r * 0.1, yr - h * 0.98], ['C', cx + r * 0.5, yr - h, cx + r * 0.98, yr - h * 0.9, cx + r - 0.1, yr], ['Z']], { fill: shade(C.foam) });
+        ic.path(
+          [
+            ['M', cx + r * 0.44, yr + 0.1],
+            [
+              'C',
+              cx + r * 0.44,
+              yr - h * 0.6,
+              cx + r * 0.3,
+              yr - h * 0.9,
+              cx + r * 0.1,
+              yr - h * 0.98,
+            ],
+            ['C', cx + r * 0.5, yr - h, cx + r * 0.98, yr - h * 0.9, cx + r - 0.1, yr],
+            ['Z'],
+          ],
+          { fill: shade(C.foam) },
+        );
       // three cocoa dots
       [
         [-1.6, -1.45, 0.55],
@@ -923,10 +1097,26 @@ D['coffee.flat_white'] = (ic) => {
         [0, 1, 2].forEach((i) => {
           const ww = w * (1 - i * 0.22);
           const yy = cy + 0.45 - i * 0.5;
-          ic.path([['M', cx - ww, yy], ['Q', cx, yy + 0.9 - i * 0.1, cx + ww, yy], ['Q', cx, yy - 0.5, cx - ww, yy], ['Z']], { fill: C.milkCoffee });
+          ic.path(
+            [
+              ['M', cx - ww, yy],
+              ['Q', cx, yy + 0.9 - i * 0.1, cx + ww, yy],
+              ['Q', cx, yy - 0.5, cx - ww, yy],
+              ['Z'],
+            ],
+            { fill: C.milkCoffee },
+          );
         });
       } else {
-        ic.path([['M', cx - w, cy - 0.1], ['Q', cx, cy + 0.9, cx + w, cy - 0.1], ['Q', cx, cy + 0.2, cx - w, cy - 0.1], ['Z']], { fill: C.milkCoffee });
+        ic.path(
+          [
+            ['M', cx - w, cy - 0.1],
+            ['Q', cx, cy + 0.9, cx + w, cy - 0.1],
+            ['Q', cx, cy + 0.2, cx - w, cy - 0.1],
+            ['Z'],
+          ],
+          { fill: C.milkCoffee },
+        );
       }
     },
   });
@@ -984,7 +1174,16 @@ D['coffee.mocha'] = (ic) => {
         C.foam,
         ic.bw,
       );
-      if (ic.L) ic.path([['M', cx + 1.6, yr + 0.3], ['C', cx + 1.4, yr - 1.2, cx + 1.2, yr - 2.0, cx + 1.25, yr - 2.4], ['C', cx + 2.4, yr - 1.8, cx + r + 0.25, yr - 0.8, cx + r, yr + 0.2], ['Z']], { fill: shade(C.foam) });
+      if (ic.L)
+        ic.path(
+          [
+            ['M', cx + 1.6, yr + 0.3],
+            ['C', cx + 1.4, yr - 1.2, cx + 1.2, yr - 2.0, cx + 1.25, yr - 2.4],
+            ['C', cx + 2.4, yr - 1.8, cx + r + 0.25, yr - 0.8, cx + r, yr + 0.2],
+            ['Z'],
+          ],
+          { fill: shade(C.foam) },
+        );
       ic.path(
         [
           ['M', cx - r + 0.7, yr - 0.6],
@@ -1031,7 +1230,14 @@ D['matcha.latte'] = (ic) => {
         ],
         { fill: C.milk },
       );
-      if (ic.L) ic.path([['M', cx - w * 0.7, cy], ['L', cx + w * 0.8, cy]], ic.line(C.matchaMilk, 0.9));
+      if (ic.L)
+        ic.path(
+          [
+            ['M', cx - w * 0.7, cy],
+            ['L', cx + w * 0.8, cy],
+          ],
+          ic.line(C.matchaMilk, 0.9),
+        );
     },
   });
 };
@@ -1056,10 +1262,27 @@ D['matcha.ceremonial'] = (ic) => {
       ic.solid(C.bamboo, ic.bw * 0.9),
     );
     if (ic.L) {
-      [-0.55, 0, 0.55].forEach((dx) => ic.path([['M', wx + dx * 0.6, tineTop + 1.2], ['Q', wx + dx * 2.6, (tineTop + base) / 2, wx + dx * 1.4, base - 0.3]], ic.line(C.outline, ic.dw * 0.5, { 'stroke-opacity': '0.45' })));
+      [-0.55, 0, 0.55].forEach((dx) =>
+        ic.path(
+          [
+            ['M', wx + dx * 0.6, tineTop + 1.2],
+            ['Q', wx + dx * 2.6, (tineTop + base) / 2, wx + dx * 1.4, base - 0.3],
+          ],
+          ic.line(C.outline, ic.dw * 0.5, { 'stroke-opacity': '0.45' }),
+        ),
+      );
     }
     // handle
-    ic.path([['M', wx - 0.7, handleTop], ['L', wx - 0.7, tineTop + 0.6], ['L', wx + 0.7, tineTop + 0.6], ['L', wx + 0.7, handleTop], ['Z']], ic.solid(C.bamboo, ic.bw * 0.9));
+    ic.path(
+      [
+        ['M', wx - 0.7, handleTop],
+        ['L', wx - 0.7, tineTop + 0.6],
+        ['L', wx + 0.7, tineTop + 0.6],
+        ['L', wx + 0.7, handleTop],
+        ['Z'],
+      ],
+      ic.solid(C.bamboo, ic.bw * 0.9),
+    );
     ic.ellipse(wx, handleTop, 0.7, R * 0.7, ic.solid(C.bamboo, ic.dw * 0.8));
   };
   drawWhisk();
@@ -1074,11 +1297,17 @@ D['matcha.ceremonial'] = (ic) => {
         const u = -1 + (2 * i) / N;
         const x = cx + u * rx * 0.99;
         const yRim = yr + R * rx * Math.sqrt(Math.max(0, 1 - u * u));
-        const tongues = [-0.55, 0.05, 0.6].reduce((m, c) => Math.max(m, Math.exp(-((u - c) ** 2) / 0.012)), 0);
+        const tongues = [-0.55, 0.05, 0.6].reduce(
+          (m, c) => Math.max(m, Math.exp(-((u - c) ** 2) / 0.012)),
+          0,
+        );
         const drop = (0.9 + 1.25 * tongues) * Math.sqrt(Math.max(0, 1 - u * u));
         pts.push([x, yRim + drop]);
       }
-      const cmds = [['M', cx - rx, yr], ['A', rx, R * rx, 0, 0, 0, cx + rx, yr]];
+      const cmds = [
+        ['M', cx - rx, yr],
+        ['A', rx, R * rx, 0, 0, 0, cx + rx, yr],
+      ];
       for (let i = pts.length - 1; i >= 0; i--) cmds.push(['L', ...pts[i]]);
       cmds.push(['Z']);
       ic.path(cmds, { fill: C.drip });
@@ -1090,7 +1319,11 @@ D['matcha.ceremonial'] = (ic) => {
         [-1.5, -0.25, 0.42],
         [0.2, -0.45, 0.34],
         [1.7, -0.2, 0.28],
-      ].forEach(([dx, dy, r]) => ic.circle(cx + dx * (s.rx / 5.9), s.cy + dy * (ic.L ? 1.8 : 1), r * (ic.L ? 1.3 : 1.25), { fill: C.frothBubble }));
+      ].forEach(([dx, dy, r]) =>
+        ic.circle(cx + dx * (s.rx / 5.9), s.cy + dy * (ic.L ? 1.8 : 1), r * (ic.L ? 1.3 : 1.25), {
+          fill: C.frothBubble,
+        }),
+      );
     },
   });
 };
@@ -1116,8 +1349,12 @@ D['matcha.hojicha'] = (ic) => {
   drawOpaque(ic, v, {
     liquid: C.milk,
     flush: true,
-    surface: (ic, v, s) => ic.ellipse(v.cx, s.cy + 0.05, s.rx * 0.66, R * s.rx * 0.66, { fill: C.hojicha }),
-    overRim: (ic, v) => leafShape(ic, v.cx + v.rx - 1.6, v.yr - 0.3, 4.2, 1.35, -38, C.cinnamon, { ribColor: C.hojicha }),
+    surface: (ic, v, s) =>
+      ic.ellipse(v.cx, s.cy + 0.05, s.rx * 0.66, R * s.rx * 0.66, { fill: C.hojicha }),
+    overRim: (ic, v) =>
+      leafShape(ic, v.cx + v.rx - 1.6, v.yr - 0.3, 4.2, 1.35, -38, C.cinnamon, {
+        ribColor: C.hojicha,
+      }),
   });
 };
 D['matcha.coconut'] = (ic) => {
@@ -1182,7 +1419,8 @@ D['tea.english_breakfast'] = (ic) => {
   drawOpaque(ic, v, {
     liquid: C.milkyTea,
     flush: true,
-    overRim: (ic, v) => teaTag(ic, v, { from: [v.cx + 0.8, v.yr + 0.1], tagX: v.cx + 1.9, tagY: v.yr + 4.2 }),
+    overRim: (ic, v) =>
+      teaTag(ic, v, { from: [v.cx + 0.8, v.yr + 0.1], tagX: v.cx + 1.9, tagY: v.yr + 4.2 }),
   });
 };
 D['tea.earl_grey'] = (ic) => {
@@ -1190,21 +1428,26 @@ D['tea.earl_grey'] = (ic) => {
   drawOpaque(ic, v, {
     liquid: C.blackTea,
     flush: true,
-    overRim: (ic, v) => teaTag(ic, v, { from: [v.cx + 1.0, v.yr + 0.1], tagX: v.cx + 2.0, tagY: v.yr + 3.3 }),
+    overRim: (ic, v) =>
+      teaTag(ic, v, { from: [v.cx + 1.0, v.yr + 0.1], tagX: v.cx + 2.0, tagY: v.yr + 3.3 }),
   });
 };
 D['tea.green'] = (ic) => {
   const v = TV(V.V8);
   drawOpaque(ic, v, {
     liquid: C.greenTea,
-    overRim: (ic, v) => leafShape(ic, v.cx + v.rx - 1.4, v.yr - 0.3, 5.2, 1.6, -42, C.leaf, { ribColor: C.peppermint }),
+    overRim: (ic, v) =>
+      leafShape(ic, v.cx + v.rx - 1.4, v.yr - 0.3, 5.2, 1.6, -42, C.leaf, {
+        ribColor: C.peppermint,
+      }),
   });
 };
 D['tea.jasmine'] = (ic) => {
   const v = TV(V.V8);
   drawOpaque(ic, v, {
     liquid: C.jasmine,
-    overRim: (ic, v) => flower(ic, v.cx + v.rx + 0.4, v.yr - 2.0, 5, 2.6, 1.9, C.jasminePetal, C.lemon, 0.6),
+    overRim: (ic, v) =>
+      flower(ic, v.cx + v.rx + 0.4, v.yr - 2.0, 5, 2.6, 1.9, C.jasminePetal, C.lemon, 0.6),
   });
 };
 D['tea.oolong'] = (ic) => drawGaiwan(ic, C.oolong);
@@ -1230,7 +1473,9 @@ D['tea.bubble'] = (ic) => {
         [1.25, -0.25],
         [-1.0, -1.55],
         [0.6, -1.4],
-      ].forEach(([dx, dy]) => ic.circle(v.cx + dx * 0.92, b + dy, r, ic.L ? { fill: C.espresso } : { fill: C.espresso }));
+      ].forEach(([dx, dy]) =>
+        ic.circle(v.cx + dx * 0.92, b + dy, r, ic.L ? { fill: C.espresso } : { fill: C.espresso }),
+      );
     },
   });
 };
@@ -1248,7 +1493,18 @@ D['tea.peppermint'] = (ic) => {
 D['tea.chamomile'] = (ic) => {
   drawGlass(ic, TV(V.V7), {
     layers: [{ color: C.chamomile, to: 0.8 }],
-    overRim: (ic, v) => flower(ic, v.cx + v.rx + 0.2, v.yr - 2.0, ic.L ? 10 : 8, 2.6, ic.L ? 1.0 : 1.1, C.petal, C.petalCentre, 1.0),
+    overRim: (ic, v) =>
+      flower(
+        ic,
+        v.cx + v.rx + 0.2,
+        v.yr - 2.0,
+        ic.L ? 10 : 8,
+        2.6,
+        ic.L ? 1.0 : 1.1,
+        C.petal,
+        C.petalCentre,
+        1.0,
+      ),
   });
 };
 D['tea.ginger_lemon'] = (ic) => {
@@ -1262,7 +1518,10 @@ D['tea.ginger_lemon'] = (ic) => {
 const SV = (f, o = {}) => f({ ink: C.inkSmoothie, ...o });
 
 D['smoothie_juice.orange'] = (ic) => {
-  drawGlass(ic, SV(V.V5), { layers: [{ color: C.orange, to: 0.85 }], overRim: (ic, v) => rimWheel(ic, v, ORANGE) });
+  drawGlass(ic, SV(V.V5), {
+    layers: [{ color: C.orange, to: 0.85 }],
+    overRim: (ic, v) => rimWheel(ic, v, ORANGE),
+  });
 };
 D['smoothie_juice.green_juice'] = (ic) => {
   drawGlass(ic, SV(V.V4), {
@@ -1287,8 +1546,12 @@ D['smoothie_juice.green_juice'] = (ic) => {
       ]);
       g.push(`<path d="${wedge}"${attrStr(ic.solid(C.appleSkin))}/>`);
       g.push(`<path d="${flesh}" fill="${C.pith}"/>`);
-      g.push(`<ellipse cx="${ic.n(cx - 0.55)}" cy="${ic.n(cy - 0.75)}" rx="${ic.n(0.28)}" ry="${ic.n(0.45)}" fill="${C.bean}" transform="rotate(-20 ${ic.n(cx - 0.55)} ${ic.n(cy - 0.75)})"/>`);
-      g.push(`<ellipse cx="${ic.n(cx + 0.55)}" cy="${ic.n(cy - 0.75)}" rx="${ic.n(0.28)}" ry="${ic.n(0.45)}" fill="${C.bean}" transform="rotate(20 ${ic.n(cx + 0.55)} ${ic.n(cy - 0.75)})"/>`);
+      g.push(
+        `<ellipse cx="${ic.n(cx - 0.55)}" cy="${ic.n(cy - 0.75)}" rx="${ic.n(0.28)}" ry="${ic.n(0.45)}" fill="${C.bean}" transform="rotate(-20 ${ic.n(cx - 0.55)} ${ic.n(cy - 0.75)})"/>`,
+      );
+      g.push(
+        `<ellipse cx="${ic.n(cx + 0.55)}" cy="${ic.n(cy - 0.75)}" rx="${ic.n(0.28)}" ry="${ic.n(0.45)}" fill="${C.bean}" transform="rotate(20 ${ic.n(cx + 0.55)} ${ic.n(cy - 0.75)})"/>`,
+      );
       ic.add(`<g transform="rotate(28 ${ic.n(cx)} ${ic.n(cy)})">${g.join('')}</g>`);
     },
   });
@@ -1319,7 +1582,8 @@ D['smoothie_juice.berry'] = (ic) => {
         [0, -1.3],
       ].forEach(([dx, dy]) => {
         ic.circle(x + dx, y + dy, 1.25, ic.solid(C.raspberry));
-        if (ic.L) ic.circle(x + dx - 0.35, y + dy - 0.4, 0.28, { fill: C.white, 'fill-opacity': '0.6' });
+        if (ic.L)
+          ic.circle(x + dx - 0.35, y + dy - 0.4, 0.28, { fill: C.white, 'fill-opacity': '0.6' });
       });
     },
   });
@@ -1367,7 +1631,11 @@ D['smoothie_juice.strawberry_banana'] = (ic) => {
             [0.8, 0.1],
             [0, 1.0],
           ];
-      seeds.forEach(([dx, dy]) => g.push(`<circle cx="${ic.n(x + dx)}" cy="${ic.n(y + dy)}" r="${ic.n(ic.L ? 0.2 : 0.3)}" fill="${C.pith}"/>`));
+      seeds.forEach(([dx, dy]) =>
+        g.push(
+          `<circle cx="${ic.n(x + dx)}" cy="${ic.n(y + dy)}" r="${ic.n(ic.L ? 0.2 : 0.3)}" fill="${C.pith}"/>`,
+        ),
+      );
       ic.add(`<g transform="rotate(18 ${ic.n(x)} ${ic.n(y)})">${g.join('')}</g>`);
     },
   });
@@ -1389,7 +1657,9 @@ D['smoothie_juice.acai'] = (ic) => {
         [-0.55, -0.05],
         [-0.05, 0.3],
         [0.1, -0.4],
-      ].forEach(([u, dy]) => ic.circle(v.cx + u * half, y + dy, 0.62, ic.solid(C.bananaSlice, ic.dw * 0.6)));
+      ].forEach(([u, dy]) =>
+        ic.circle(v.cx + u * half, y + dy, 0.62, ic.solid(C.bananaSlice, ic.dw * 0.6)),
+      );
     },
   });
 };
@@ -1420,13 +1690,21 @@ D['smoothie_juice.watermelon'] = (ic) => {
           ['Z'],
         ]);
       g.push(`<path d="${wedge(r)}"${attrStr(ic.solid(C.melonRind))}/>`);
-      g.push(`<path d="${ic.d([['M', x, y + r * 0.86], ['L', x - r * 0.66, y], ['A', r * 0.78, r * 0.78, 0, 0, 1, x + r * 0.66, y], ['Z']])}" fill="${C.pith}"/>`);
-      g.push(`<path d="${ic.d([['M', x, y + r * 0.8], ['L', x - r * 0.58, y + 0.15], ['A', r * 0.68, r * 0.68, 0, 0, 1, x + r * 0.58, y + 0.15], ['Z']])}" fill="${C.watermelon}"/>`);
+      g.push(
+        `<path d="${ic.d([['M', x, y + r * 0.86], ['L', x - r * 0.66, y], ['A', r * 0.78, r * 0.78, 0, 0, 1, x + r * 0.66, y], ['Z']])}" fill="${C.pith}"/>`,
+      );
+      g.push(
+        `<path d="${ic.d([['M', x, y + r * 0.8], ['L', x - r * 0.58, y + 0.15], ['A', r * 0.68, r * 0.68, 0, 0, 1, x + r * 0.58, y + 0.15], ['Z']])}" fill="${C.watermelon}"/>`,
+      );
       [
         [-0.75, 0.15],
         [0.75, 0.15],
         [0, 0.95],
-      ].forEach(([dx, dy]) => g.push(`<ellipse cx="${ic.n(x + dx)}" cy="${ic.n(y + dy)}" rx="${ic.n(0.24)}" ry="${ic.n(0.4)}" fill="${C.bean}"/>`));
+      ].forEach(([dx, dy]) =>
+        g.push(
+          `<ellipse cx="${ic.n(x + dx)}" cy="${ic.n(y + dy)}" rx="${ic.n(0.24)}" ry="${ic.n(0.4)}" fill="${C.bean}"/>`,
+        ),
+      );
       ic.add(`<g transform="rotate(22 ${ic.n(x)} ${ic.n(y + r)})">${g.join('')}</g>`);
     },
   });
@@ -1441,7 +1719,13 @@ D['water.still'] = (ic) => {
     layers: [{ color: C.water, to: 0.75 }],
     frontMarks: (ic, v, { y, half }) => {
       // the single water line: the front half of the surface
-      ic.path([['M', v.cx + half, y], ['A', half, R * half, 0, 0, 1, v.cx - half, y]], ic.line(C.bubble, ic.dw, { 'stroke-opacity': '0.6' }));
+      ic.path(
+        [
+          ['M', v.cx + half, y],
+          ['A', half, R * half, 0, 0, 1, v.cx - half, y],
+        ],
+        ic.line(C.bubble, ic.dw, { 'stroke-opacity': '0.6' }),
+      );
     },
   });
 };
@@ -1449,7 +1733,13 @@ D['water.sparkling'] = (ic) => {
   drawGlass(ic, WV(), {
     layers: [{ color: C.water, to: 0.75 }],
     frontMarks: (ic, v, { y, half }) => {
-      ic.path([['M', v.cx + half, y], ['A', half, R * half, 0, 0, 1, v.cx - half, y]], ic.line(C.bubble, ic.dw, { 'stroke-opacity': '0.6' }));
+      ic.path(
+        [
+          ['M', v.cx + half, y],
+          ['A', half, R * half, 0, 0, 1, v.cx - half, y],
+        ],
+        ic.line(C.bubble, ic.dw, { 'stroke-opacity': '0.6' }),
+      );
       const b = v.ywb - GLASS_FLOOR;
       bubbles(ic, [
         [v.cx - 1.2, b - 1.3, 0.8],
@@ -1466,7 +1756,9 @@ export const DRINK_IDS = Object.keys(D);
 export function render(id, size) {
   const ic = new Icon(size);
   D[id](ic);
-  return ic.svg(`${id} ${size === 'L' ? '64' : '24'} grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4).`);
+  return ic.svg(
+    `${id} ${size === 'L' ? '64' : '24'} grid. Drawn by _source/draw-icons.mjs (DESIGN.md 3.4).`,
+  );
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

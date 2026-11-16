@@ -94,7 +94,10 @@ export function Wordmark({ width }: { width: number }) {
 
 export function AppIcon({ size }: { size: number }) {
   return (
-    <View {...hidden} style={{ width: size, height: size, borderRadius: size * 0.225, overflow: 'hidden' }}>
+    <View
+      {...hidden}
+      style={{ width: size, height: size, borderRadius: size * 0.225, overflow: 'hidden' }}
+    >
       <SvgXml xml={brandSvg('app-icon', 'light')} width={size} height={size} />
     </View>
   );

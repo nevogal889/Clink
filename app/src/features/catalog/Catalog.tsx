@@ -1,12 +1,6 @@
 // The drink catalog (DESIGN.md 4.14, part 3): category tabs, the category header with its hero,
 // and ten drink rows. Used by the usual 3 editor and by the tracker's "Something else".
-import {
-  FLARE_CATEGORIES,
-  TEXT_LIMITS,
-  drinksIn,
-  t,
-  type FlareCategory,
-} from '@clink/shared';
+import { FLARE_CATEGORIES, TEXT_LIMITS, drinksIn, t, type FlareCategory } from '@clink/shared';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
@@ -32,7 +26,9 @@ export function CategoryTabs({
 }) {
   const theme = useTheme();
   return (
-    <View style={{ backgroundColor: background ?? theme.c.surfaceBase, paddingVertical: spacing.s2 }}>
+    <View
+      style={{ backgroundColor: background ?? theme.c.surfaceBase, paddingVertical: spacing.s2 }}
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -60,8 +56,23 @@ export function CategoryTabs({
 export function CategoryHeader({ category }: { category: FlareCategory }) {
   const n = drinksIn(category).length;
   return (
-    <PourPanel category={category} style={{ marginHorizontal: spacing.gutter, borderRadius: radius.tile, borderCurve: 'continuous' }} testID="category-header">
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', paddingLeft: spacing.s5, minHeight: 176 }}>
+    <PourPanel
+      category={category}
+      style={{
+        marginHorizontal: spacing.gutter,
+        borderRadius: radius.tile,
+        borderCurve: 'continuous',
+      }}
+      testID="category-header"
+    >
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+          paddingLeft: spacing.s5,
+          minHeight: 176,
+        }}
+      >
         <View style={{ flex: 1, paddingBottom: spacing.s5, paddingTop: spacing.s6 }}>
           <Txt variant="displayL" accessibilityRole="header">
             {catName(category)}
@@ -82,7 +93,16 @@ export function CategoryHeader({ category }: { category: FlareCategory }) {
 export function SlotBadge({ n }: { n: number }) {
   const { c } = useTheme();
   return (
-    <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.cobalt, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: c.cobalt,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <Txt variant="numeralS" color={c.onCobalt}>
         {String(n)}
       </Txt>
@@ -140,7 +160,17 @@ export function DrinkRows({
             {slot !== null ? (
               <SlotBadge n={slot} />
             ) : showPlus ? (
-              <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1.5, borderColor: c.lineControl, alignItems: 'center', justifyContent: 'center' }}>
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  borderWidth: 1.5,
+                  borderColor: c.lineControl,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Icon name="plus" size={16} color={c.inkPrimary} />
               </View>
             ) : null}
@@ -163,7 +193,18 @@ export function DrinkRows({
             borderTopColor: c.lineHairline,
           }}
         >
-          <View style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderStyle: 'dashed', borderColor: c.lineControl, alignItems: 'center', justifyContent: 'center' }}>
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              borderWidth: 1.5,
+              borderStyle: 'dashed',
+              borderColor: c.lineControl,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <Icon name="plus" size={18} color={c.cobalt} />
           </View>
           <Txt variant="headline" color={c.cobalt}>
@@ -209,14 +250,23 @@ export function AddOwnSheet({
         />
       }
     >
-      <Field testID="add-own-name" value={name} onChangeText={setName} placeholder={t('custom.field')} maxLength={TEXT_LIMITS.customDrinkName} autoFocus />
+      <Field
+        testID="add-own-name"
+        value={name}
+        onChangeText={setName}
+        placeholder={t('custom.field')}
+        maxLength={TEXT_LIMITS.customDrinkName}
+        autoFocus
+      />
       <Txt variant="headline" style={{ marginTop: spacing.s6 }}>
         {t('custom.cat_label')}
       </Txt>
       <Txt variant="caption" tone="secondary" style={{ marginTop: 2 }}>
         {t('custom.cat_helper')}
       </Txt>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.s2, marginTop: spacing.s3 }}>
+      <View
+        style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.s2, marginTop: spacing.s3 }}
+      >
         {FLARE_CATEGORIES.map((c) => (
           <Chip
             key={c}

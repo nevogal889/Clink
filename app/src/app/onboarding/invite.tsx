@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import type { ContactMatch } from '@/lib/api';
-import { pt } from '@/lib/pendingCopy';
 import { looksLikePhone } from '@/lib/phone';
 import { useData } from '@/lib/store';
 import { InviteMeter, ShareButtons } from '@/features/invite/InviteShare';
@@ -19,7 +18,8 @@ import { spacing } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 import { useTheme } from '@/ui/useTheme';
 
-type ContactsState = { kind: 'unasked' } | { kind: 'denied' } | { kind: 'loaded'; list: ContactMatch[] };
+type ContactsState =
+  { kind: 'unasked' } | { kind: 'denied' } | { kind: 'loaded'; list: ContactMatch[] };
 
 export default function InviteStep() {
   const { c } = useTheme();
@@ -42,7 +42,11 @@ export default function InviteStep() {
 
   async function add(id: string) {
     const updated = await api.addContact(id);
-    setContacts((s) => (s.kind === 'loaded' ? { kind: 'loaded', list: s.list.map((x) => (x.id === id ? updated : x)) } : s));
+    setContacts((s) =>
+      s.kind === 'loaded'
+        ? { kind: 'loaded', list: s.list.map((x) => (x.id === id ? updated : x)) }
+        : s,
+    );
     setFilled((n) => n + 1);
   }
 
@@ -75,7 +79,11 @@ export default function InviteStep() {
       </View>
 
       <View style={{ marginTop: spacing.s8 }}>
-        <Txt variant="headline" accessibilityRole="header" style={{ paddingHorizontal: spacing.gutter, marginBottom: spacing.s2 }}>
+        <Txt
+          variant="headline"
+          accessibilityRole="header"
+          style={{ paddingHorizontal: spacing.gutter, marginBottom: spacing.s2 }}
+        >
           {t('onb.invite.on_clink')}
         </Txt>
         {contacts.kind === 'unasked' ? (
@@ -84,7 +92,16 @@ export default function InviteStep() {
             scaleTo={0.99}
             onPress={() => void findContacts()}
             accessibilityLabel={t('onb.invite.find')}
-            style={{ minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: spacing.s3, paddingHorizontal: spacing.gutter, borderTopWidth: 1, borderBottomWidth: 1, borderColor: c.lineHairline }}
+            style={{
+              minHeight: 56,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.s3,
+              paddingHorizontal: spacing.gutter,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderColor: c.lineHairline,
+            }}
           >
             <Txt variant="headline" color={c.cobalt} style={{ flex: 1 }}>
               {t('onb.invite.find')}
@@ -104,19 +121,38 @@ export default function InviteStep() {
             <View
               key={m.id}
               testID={`contact-${m.id}`}
-              style={{ minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: spacing.s3, paddingHorizontal: spacing.gutter, borderTopWidth: i === 0 ? 1 : 0, borderBottomWidth: 1, borderColor: c.lineHairline }}
+              style={{
+                minHeight: 64,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: spacing.s3,
+                paddingHorizontal: spacing.gutter,
+                borderTopWidth: i === 0 ? 1 : 0,
+                borderBottomWidth: 1,
+                borderColor: c.lineHairline,
+              }}
             >
               <Avatar name={m.name} size={40} />
               <Txt variant="headline" style={{ flex: 1 }}>
                 {m.name}
               </Txt>
               {m.state === 'none' ? (
-                <TonalButton testID={`contact-${m.id}-add`} label={t('invite.fallback.add')} accessibilityLabel={`${t('invite.fallback.add')}, ${m.name}`} onPress={() => void add(m.id)} />
+                <TonalButton
+                  align="center"
+                  testID={`contact-${m.id}-add`}
+                  label={t('invite.fallback.add')}
+                  accessibilityLabel={`${t('invite.fallback.add')}, ${m.name}`}
+                  onPress={() => void add(m.id)}
+                />
               ) : (
-                <View accessible accessibilityLabel={`${m.name}, ${pt('friends.req.sent')}`} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.s1 }}>
+                <View
+                  accessible
+                  accessibilityLabel={`${m.name}, ${t('contact.requested')}`}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.s1 }}
+                >
                   <Icon name="check" size={18} color={c.inkPrimary} />
                   <Txt variant="caption" tone="secondary">
-                    {pt('friends.req.sent')}
+                    {t('contact.requested')}
                   </Txt>
                 </View>
               )}
@@ -162,7 +198,12 @@ export default function InviteStep() {
                 textContentType="telephoneNumber"
                 autoFocus
               />
-              <Txt variant="caption" color={phoneError ? c.danger : undefined} tone="secondary" accessibilityLiveRegion="polite">
+              <Txt
+                variant="caption"
+                color={phoneError ? c.danger : undefined}
+                tone="secondary"
+                accessibilityLiveRegion="polite"
+              >
                 {phoneError ? t('err.phone_invalid') : t('onb.phone.helper')}
               </Txt>
               <View style={{ marginTop: spacing.s2 }}>
@@ -179,10 +220,18 @@ export default function InviteStep() {
           )}
         </View>
       ) : state.me?.hasPhone && state.session?.method !== 'phone' ? (
-        <View style={{ marginTop: spacing.s8, paddingHorizontal: spacing.gutter, flexDirection: 'row', gap: spacing.s2, alignItems: 'center' }}>
+        <View
+          style={{
+            marginTop: spacing.s8,
+            paddingHorizontal: spacing.gutter,
+            flexDirection: 'row',
+            gap: spacing.s2,
+            alignItems: 'center',
+          }}
+        >
           <Icon name="check" size={18} color={c.inkPrimary} />
           <Txt variant="callout" tone="secondary" testID="phone-added">
-            {pt('onb.phone.added')}
+            {t('onb.phone.added')}
           </Txt>
         </View>
       ) : null}

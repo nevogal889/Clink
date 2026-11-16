@@ -12,7 +12,7 @@ import {
   type DrinkDetails,
   type OptionField,
 } from '@clink/shared';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 
 import type { UsualDrink } from '@/lib/api';
@@ -29,7 +29,11 @@ import { useTheme } from '@/ui/useTheme';
 type Values = Record<string, string | string[] | undefined>;
 
 /** Single choice: tap selects, tapping the selected chip clears it. Any: chips toggle. */
-export function toggleValue(details: DrinkDetails, field: OptionField, value: string): DrinkDetails {
+export function toggleValue(
+  details: DrinkDetails,
+  field: OptionField,
+  value: string,
+): DrinkDetails {
   const v = details as Values;
   if (field.multi) {
     const cur = Array.isArray(v[field.key]) ? (v[field.key] as string[]) : [];
@@ -107,20 +111,24 @@ export function DetailsEditor({
 }) {
   const { c } = useTheme();
   const [details, setDetails] = useState<DrinkDetails>(drink?.details ?? {});
-  const target = drink?.drinkId ? { drinkId: drink.drinkId } : { category: drink?.category ?? 'coffee' };
-  const fields = useMemo(() => (drink ? editorFields(target) : { primary: [], more: [] }), [drink?.drinkId, drink?.category]); // eslint-disable-line react-hooks/exhaustive-deps
+  const target = drink?.drinkId
+    ? { drinkId: drink.drinkId }
+    : { category: drink?.category ?? 'coffee' };
+  const fields = drink ? editorFields(target) : { primary: [], more: [] };
   const moreHasValue = fields.more.some((f) => {
     const v = (drink?.details as Values | undefined)?.[f.key];
     return Array.isArray(v) ? v.length > 0 : !!v;
   });
   const [moreOpen, setMoreOpen] = useState(moreHasValue);
-
-  useEffect(() => {
+  // Each time the sheet opens, start from the saved details (state from props, no effect).
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible && drink) {
       setDetails(drink.details);
       setMoreOpen(moreHasValue);
     }
-  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   if (!drink) return null;
   const drinkId = drink.drinkId;
@@ -137,14 +145,29 @@ export function DetailsEditor({
       detent="large"
       testID="sheet-details"
       header={
-        <View style={{ flexDirection: 'row', gap: spacing.s4, alignItems: 'center', paddingHorizontal: spacing.gutter, paddingBottom: spacing.s4, borderBottomWidth: 1, borderBottomColor: c.lineHairline }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: spacing.s4,
+            alignItems: 'center',
+            paddingHorizontal: spacing.gutter,
+            paddingBottom: spacing.s4,
+            borderBottomWidth: 1,
+            borderBottomColor: c.lineHairline,
+          }}
+        >
           <DrinkIcon drinkId={drinkId} category={drink.category} size={64} />
           <View style={{ flex: 1 }}>
             <Txt variant="title" accessibilityRole="header">
               {t('det.title', { drink: name })}
             </Txt>
             {summary ? (
-              <Txt variant="callout" tone="secondary" testID="details-summary" style={{ marginTop: 2 }}>
+              <Txt
+                variant="callout"
+                tone="secondary"
+                testID="details-summary"
+                style={{ marginTop: 2 }}
+              >
                 {summary}
               </Txt>
             ) : null}
@@ -157,13 +180,24 @@ export function DetailsEditor({
       footer={
         <View style={{ gap: spacing.s1 }}>
           <PrimaryButton testID="details-done" label={t('det.save')} onPress={close} />
-          <TextButton testID="details-clear" label={t('det.clear')} align="center" onPress={() => setDetails({})} />
+          <TextButton
+            testID="details-clear"
+            label={t('det.clear')}
+            align="center"
+            onPress={() => setDetails({})}
+          />
         </View>
       }
     >
       <View style={{ marginTop: -spacing.s4 }}>
         {fields.primary.filter(visibleField).map((f) => (
-          <FieldSection key={f.key} field={f} drinkId={drinkId} details={details} onChange={setDetails} />
+          <FieldSection
+            key={f.key}
+            field={f}
+            drinkId={drinkId}
+            details={details}
+            onChange={setDetails}
+          />
         ))}
         {fields.more.length > 0 ? (
           <>
@@ -173,7 +207,16 @@ export function DetailsEditor({
               onPress={() => setMoreOpen((o) => !o)}
               accessibilityLabel={t('det.more')}
               accessibilityState={{ expanded: moreOpen }}
-              style={{ marginTop: spacing.s6, minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderBottomWidth: moreOpen ? 0 : 1, borderColor: c.lineHairline }}
+              style={{
+                marginTop: spacing.s6,
+                minHeight: 52,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderTopWidth: 1,
+                borderBottomWidth: moreOpen ? 0 : 1,
+                borderColor: c.lineHairline,
+              }}
             >
               <Txt variant="headline" color={c.cobalt}>
                 {t('det.more')}
@@ -183,9 +226,17 @@ export function DetailsEditor({
               </View>
             </Press>
             {moreOpen
-              ? fields.more.filter(visibleField).map((f) => (
-                  <FieldSection key={f.key} field={f} drinkId={drinkId} details={details} onChange={setDetails} />
-                ))
+              ? fields.more
+                  .filter(visibleField)
+                  .map((f) => (
+                    <FieldSection
+                      key={f.key}
+                      field={f}
+                      drinkId={drinkId}
+                      details={details}
+                      onChange={setDetails}
+                    />
+                  ))
               : null}
           </>
         ) : null}

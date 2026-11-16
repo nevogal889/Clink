@@ -22,8 +22,18 @@ export function deviceZone(): string {
   }
 }
 
-export function resolveChoice(choice: AudienceChoice, audience: Audience, at: Date, zone = deviceZone()): ResolvedAudience {
-  const everyone: ResolvedAudience = { label: t('aud.everyone'), group: null, count: audience.friendCount, auto: false };
+export function resolveChoice(
+  choice: AudienceChoice,
+  audience: Audience,
+  at: Date,
+  zone = deviceZone(),
+): ResolvedAudience {
+  const everyone: ResolvedAudience = {
+    label: t('aud.everyone'),
+    group: null,
+    count: audience.friendCount,
+    auto: false,
+  };
   if (choice.kind === 'everyone') return everyone;
   if (choice.kind === 'group') {
     const g = audience.groups.find((x) => x.id === choice.id);
@@ -31,5 +41,7 @@ export function resolveChoice(choice: AudienceChoice, audience: Audience, at: Da
   }
   const id = resolveAutomaticAt(at, zone, audience.auto, audience.groups);
   const g = id === EVERYONE ? null : (audience.groups.find((x) => x.id === id) ?? null);
-  return g ? { label: g.name, group: g, count: g.memberCount, auto: true } : { ...everyone, auto: true };
+  return g
+    ? { label: g.name, group: g, count: g.memberCount, auto: true }
+    : { ...everyone, auto: true };
 }

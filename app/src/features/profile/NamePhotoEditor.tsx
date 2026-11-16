@@ -44,7 +44,9 @@ export function NamePhotoEditor({
       exif: false,
     };
     const res =
-      source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync(opts)
+        : await ImagePicker.launchImageLibraryAsync(opts);
     const uri = !res.canceled ? res.assets[0]?.uri : undefined;
     if (uri) onPhoto(uri);
   }
@@ -52,7 +54,13 @@ export function NamePhotoEditor({
   const photoLabel = photoUri ? t('onb.photo.change') : t('onb.photo.add');
 
   return (
-    <View style={{ flexDirection: wide ? 'row' : 'column', gap: spacing.s5, alignItems: wide ? 'center' : 'flex-start' }}>
+    <View
+      style={{
+        flexDirection: wide ? 'row' : 'column',
+        gap: spacing.s5,
+        alignItems: wide ? 'center' : 'flex-start',
+      }}
+    >
       <View style={{ width: 96, height: 96 }}>
         <Avatar name={name} photoUri={photoUri} size={96} />
         <View style={{ position: 'absolute', right: -8, bottom: -8 }}>
@@ -86,7 +94,9 @@ export function NamePhotoEditor({
 
       <Sheet visible={menu} onClose={() => setMenu(false)} detent="small" testID="sheet-photo">
         <View style={{ paddingBottom: spacing.s2 }}>
-          {Platform.OS !== 'web' ? <TextButton label={t('onb.photo.take')} onPress={() => pick('camera')} /> : null}
+          {Platform.OS !== 'web' ? (
+            <TextButton label={t('onb.photo.take')} onPress={() => pick('camera')} />
+          ) : null}
           <TextButton label={t('onb.photo.library')} onPress={() => pick('library')} />
           {photoUri ? (
             <TextButton

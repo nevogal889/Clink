@@ -13,10 +13,19 @@ export interface TxtProps extends TextProps {
   align?: TextStyle['textAlign'];
 }
 
-export function Txt({ variant = 'body', color, tone = 'primary', align, style, ...rest }: TxtProps) {
+export function Txt({
+  variant = 'body',
+  color,
+  tone = 'primary',
+  align,
+  style,
+  ...rest
+}: TxtProps) {
   const { c } = useTheme();
   const { maxFontSizeMultiplier, ...type } = typography[variant];
-  const ink = color ?? (tone === 'secondary' ? c.inkSecondary : tone === 'tertiary' ? c.inkTertiary : c.inkPrimary);
+  const ink =
+    color ??
+    (tone === 'secondary' ? c.inkSecondary : tone === 'tertiary' ? c.inkTertiary : c.inkPrimary);
   return (
     <Text
       maxFontSizeMultiplier={maxFontSizeMultiplier}

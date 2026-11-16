@@ -1,10 +1,18 @@
 // Common frame for onboarding steps 2 to 6 (DESIGN.md 4.3): 6-segment progress, title in
 // display.l, one body line, content, and the bottom action area in thumb reach.
 import { t } from '@clink/shared';
-import type { ReactNode, RefObject } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View, type ScrollViewInstance } from 'react-native';
+import { useIsFocused } from 'expo-router';
+import { useState, type ReactNode, type RefObject } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  View,
+  type ScrollViewInstance,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useSnackbarInset } from '@/ui/Snackbar';
 import { spacing } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 import { useTheme } from '@/ui/useTheme';
@@ -23,7 +31,12 @@ export function Progress({ step }: { step: number }) {
       {[1, 2, 3, 4, 5, 6].map((i) => (
         <View
           key={i}
-          style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i <= step ? c.cobalt : c.lineHairline }}
+          style={{
+            flex: 1,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: i <= step ? c.cobalt : c.lineHairline,
+          }}
         />
       ))}
     </View>
@@ -51,6 +64,8 @@ export function OnboardingFrame({
 }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
+  const [actionsHeight, setActionsHeight] = useState(0);
+  useSnackbarInset(actionsHeight, useIsFocused());
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -77,6 +92,7 @@ export function OnboardingFrame({
         {children}
       </ScrollView>
       <View
+        onLayout={(e) => setActionsHeight(Math.round(e.nativeEvent.layout.height))}
         style={{
           paddingHorizontal: spacing.gutter,
           paddingTop: spacing.s3,

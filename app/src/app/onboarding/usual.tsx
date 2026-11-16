@@ -16,7 +16,11 @@ export default function UsualStep() {
   const advance = useAdvance('usual');
   const [busy, setBusy] = useState(false);
   const list = state.usual;
-  const editor = useUsualEditor({ list, onChange: (next) => void actions.setUsual(next), mode: 'onboarding' });
+  const editor = useUsualEditor({
+    list,
+    onChange: (next) => void actions.setUsual(next),
+    mode: 'onboarding',
+  });
   const ok = list.length > 0;
 
   async function submit() {
@@ -39,9 +43,15 @@ export default function UsualStep() {
         stickyHeaderIndices={[editor.tabsIndex + 1]}
         actions={
           <>
-            <PrimaryButton testID="onb-continue" label={t('onb.cta')} disabled={!ok} busy={busy} onPress={submit} />
+            <PrimaryButton
+              testID="onb-continue"
+              label={t('onb.cta')}
+              disabled={!ok}
+              busy={busy}
+              onPress={submit}
+            />
             {!ok ? (
-              <Txt variant="caption" tone="secondary" style={{ textAlign: 'center' }}>
+              <Txt variant="caption" tone="secondary">
                 {t('empty.usual')}
               </Txt>
             ) : null}

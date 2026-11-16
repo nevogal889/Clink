@@ -36,10 +36,24 @@ export default function NameStep() {
       testID="screen-onb-name"
       step={stepNumber('name')}
       title={t('onb.name.title')}
-      actions={<PrimaryButton testID="onb-continue" label={t('onb.cta')} disabled={!valid} busy={busy} onPress={submit} />}
+      actions={
+        <PrimaryButton
+          testID="onb-continue"
+          label={t('onb.cta')}
+          disabled={!valid}
+          busy={busy}
+          onPress={submit}
+        />
+      }
     >
       <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s8, gap: spacing.s4 }}>
-        <NamePhotoEditor name={name} photoUri={photo} onName={setName} onPhoto={setPhoto} onSubmit={submit} />
+        <NamePhotoEditor
+          name={name}
+          photoUri={photo}
+          onName={setName}
+          onPhoto={setPhoto}
+          onSubmit={submit}
+        />
         <Txt variant="caption" tone="secondary">
           {t('onb.photo.helper')}
         </Txt>

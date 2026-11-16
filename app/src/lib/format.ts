@@ -1,18 +1,27 @@
 // Time and number formats for the {ago}, {mins}, {time} variables (COPY.md 0.2). Clock times use
 // the device's locale and 12/24 h setting (PRD 3.0 "Time").
-import { pt } from './pendingCopy';
+import { t } from '@clink/shared';
 
 const MIN = 60_000;
 
-/** {ago}: "just now", "12m", "1h 42m". Minute precision. */
+/** {ago}: "just now", "12m", "1h 42m". Minute precision. A line that reads "{ago} ago" uses
+ * agoLine instead, so it never says "just now ago". */
 export function formatAgo(ms: number): string {
   const total = Math.max(0, Math.floor(ms / MIN));
-  if (total < 1) return pt('fmt.ago.now');
+  if (total < 1) return t('fmt.ago.now');
   const h = Math.floor(total / 60);
   const m = total % 60;
-  if (h === 0) return pt('fmt.ago.m', { m });
-  if (m === 0) return pt('fmt.ago.h', { h });
-  return pt('fmt.ago.hm', { h, m });
+  if (h === 0) return t('fmt.ago.m', { m });
+  if (m === 0) return t('fmt.ago.h', { h });
+  return t('fmt.ago.hm', { h, m });
+}
+
+type AgoLineKey = 'today.last' | 'friends.last_drink' | 'wm.last';
+
+/** A "{ago} ago" line: its `_now` key under a minute ("Last drink just now"), else with {ago}. */
+export function agoLine(key: AgoLineKey, ms: number): string {
+  if (ms < MIN) return t(`${key}_now`);
+  return t(key, { ago: formatAgo(ms) });
 }
 
 /** {ago_words} / {left_words}: spoken, for screen readers. */
@@ -20,15 +29,15 @@ export function formatDurationWords(ms: number): string {
   const total = Math.max(0, Math.round(ms / MIN));
   const h = Math.floor(total / 60);
   const m = total % 60;
-  if (h === 0) return pt('fmt.words.m', { m });
-  if (m === 0) return pt('fmt.words.h', { h });
-  return pt('fmt.words.hm', { h, m });
+  if (h === 0) return t('fmt.words.m', { m });
+  if (m === 0) return t('fmt.words.h', { h });
+  return t('fmt.words.hm', { h, m });
 }
 
 /** {mins}: "now" or "in 15 min". */
 export function formatMins(minutes: number, capital = false): string {
-  if (minutes <= 0) return pt(capital ? 'fmt.mins_cap.now' : 'fmt.mins.now');
-  return pt(capital ? 'fmt.mins_cap.in' : 'fmt.mins.in', { n: minutes });
+  if (minutes <= 0) return t(capital ? 'fmt.mins_cap.now' : 'fmt.mins.now');
+  return t(capital ? 'fmt.mins_cap.in' : 'fmt.mins.in', { n: minutes });
 }
 
 /** {time}: clock time in the device format, "10:45" or "10:45 AM". */

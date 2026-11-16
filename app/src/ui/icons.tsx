@@ -20,6 +20,7 @@ export const MAPPING = {
   bubble: { sf: 'message', material: 'chat_bubble' },
   camera: { sf: 'camera', material: 'photo_camera' },
   grip: { sf: 'line.3.horizontal', material: 'drag_handle' },
+  lock: { sf: 'lock', material: 'lock' },
   // Our own glyphs (DESIGN.md 2.8), drawn the same on both platforms.
   mug: { sf: null, material: null },
   tumbler: { sf: null, material: null },
@@ -29,7 +30,12 @@ export const MAPPING = {
 
 export type IconName = keyof typeof MAPPING;
 
-const S = { strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round', fill: 'none' } as const;
+const S = {
+  strokeWidth: 1.75,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  fill: 'none',
+} as const;
 
 function gearPath(): string {
   // Eight teeth around a ring, computed so the outline stays even.
@@ -75,7 +81,10 @@ function Shape({ name, color }: { name: IconName; color: string }) {
     case 'flashOff':
       return (
         <>
-          <Path d="M13 2.8 9.6 7.7M8.2 9.7 5.6 13.4h5.6L10.4 21.2l3.4-4.8M15.6 13.1l2.4-2.7h-5.7l.5-4" {...st} />
+          <Path
+            d="M13 2.8 9.6 7.7M8.2 9.7 5.6 13.4h5.6L10.4 21.2l3.4-4.8M15.6 13.1l2.4-2.7h-5.7l.5-4"
+            {...st}
+          />
           <Path d="M4 4l16 16" {...st} />
         </>
       );
@@ -104,16 +113,31 @@ function Shape({ name, color }: { name: IconName; color: string }) {
         </>
       );
     case 'bubble':
-      return <Path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 3.5V17A2.5 2.5 0 0 1 4 14.5z" {...st} />;
+      return (
+        <Path
+          d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 3.5V17A2.5 2.5 0 0 1 4 14.5z"
+          {...st}
+        />
+      );
     case 'camera':
       return (
         <>
-          <Path d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.6l1.6-2.2h5.6L16.4 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z" {...st} />
+          <Path
+            d="M3.5 8.5A1.5 1.5 0 0 1 5 7h2.6l1.6-2.2h5.6L16.4 7H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"
+            {...st}
+          />
           <Circle cx={12} cy={12.8} r={3.4} {...st} />
         </>
       );
     case 'grip':
       return <Path d="M5 8.5h14M5 12h14M5 15.5h14" {...st} />;
+    case 'lock':
+      return (
+        <>
+          <Path d="M6 11h12v9H6z" {...st} />
+          <Path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3" {...st} />
+        </>
+      );
     case 'mug':
       // V3 mug outline: straight walls, rim ellipse at 0.30, D handle.
       return (
@@ -139,7 +163,12 @@ function Shape({ name, color }: { name: IconName; color: string }) {
 
 export function Icon({ name, size = 24, color }: { name: IconName; size?: number; color: string }) {
   return (
-    <View accessible={false} importantForAccessibility="no-hide-descendants" aria-hidden style={{ width: size, height: size }}>
+    <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+      aria-hidden
+      style={{ width: size, height: size }}
+    >
       <Svg width={size} height={size} viewBox="0 0 24 24">
         <Shape name={name} color={color} />
       </Svg>

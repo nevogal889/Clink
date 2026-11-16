@@ -3,7 +3,7 @@
 // and editors save on close (DESIGN.md 8 rule 8). This is the one place to swap in native
 // detent sheets on device builds.
 import { t } from '@clink/shared';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Animated, Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -42,7 +42,8 @@ export function Sheet({
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
-  const rise = useRef(new Animated.Value(0)).current;
+  const rise = useState(() => new Animated.Value(0))[0];
+  const [footerHeight, setFooterHeight] = useState(0);
 
   useEffect(() => {
     if (!visible) return;
@@ -55,7 +56,8 @@ export function Sheet({
     }).start();
   }, [visible, reduced, rise]);
 
-  const max = detent === 'large' ? height * 0.92 : detent === 'medium' ? height * 0.68 : height * 0.5;
+  const max =
+    detent === 'large' ? height * 0.92 : detent === 'medium' ? height * 0.68 : height * 0.5;
   const body = (
     <View style={{ paddingHorizontal: spacing.gutter, paddingBottom: spacing.s4 }}>
       {title ? (
@@ -75,10 +77,23 @@ export function Sheet({
   );
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
       <View style={{ flex: 1, justifyContent: 'flex-end' }} testID={testID}>
         <Pressable
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: c.scrimModal }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: c.scrimModal,
+          }}
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel={t('a11y.w.close')}
@@ -96,14 +111,18 @@ export function Sheet({
               borderCurve: 'continuous',
               paddingBottom: insets.bottom,
               overflow: 'hidden',
-              transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
+              transform: [
+                { translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) },
+              ],
               opacity: rise.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }),
             },
             theme.floating,
           ]}
         >
           <View style={{ alignItems: 'center', paddingTop: spacing.s2, paddingBottom: spacing.s2 }}>
-            <View style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: c.lineHairline }} />
+            <View
+              style={{ width: 36, height: 5, borderRadius: 3, backgroundColor: c.lineHairline }}
+            />
           </View>
           {header}
           {scroll ? (
@@ -115,6 +134,7 @@ export function Sheet({
           )}
           {footer ? (
             <View
+              onLayout={(e) => setFooterHeight(Math.round(e.nativeEvent.layout.height))}
               style={{
                 paddingHorizontal: spacing.gutter,
                 paddingTop: spacing.s2,
@@ -126,7 +146,7 @@ export function Sheet({
               {footer}
             </View>
           ) : null}
-          <SnackbarHost />
+          <SnackbarHost bottom={(footer ? footerHeight : 0) + insets.bottom + spacing.s4} />
         </Animated.View>
       </View>
     </Modal>

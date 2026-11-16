@@ -23,8 +23,18 @@ export function OtherTimeSheet({
 }) {
   const { c } = useTheme();
   return (
-    <Sheet visible={visible} onClose={onClose} detent="medium" title={t('time.other.title')} subtitle={t('time.other.helper')} testID="sheet-other-time">
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.s2 }} accessibilityRole="radiogroup">
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      detent="medium"
+      title={t('time.other.title')}
+      subtitle={t('time.other.helper')}
+      testID="sheet-other-time"
+    >
+      <View
+        style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.s2 }}
+        accessibilityRole="radiogroup"
+      >
         {OTHER_TIMING_VALUES.map((n) => {
           const selected = value === n;
           const label = t('time.other.value', { n });
@@ -53,7 +63,11 @@ export function OtherTimeSheet({
                 gap: 3,
               }}
             >
-              <Txt variant="headline" color={selected ? c.onCobalt : c.inkPrimary} style={{ fontVariant: ['tabular-nums'] }}>
+              <Txt
+                variant="headline"
+                color={selected ? c.onCobalt : c.inkPrimary}
+                style={{ fontVariant: ['tabular-nums'] }}
+              >
                 {num || label}
               </Txt>
               {num ? (

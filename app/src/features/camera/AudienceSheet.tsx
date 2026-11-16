@@ -32,20 +32,38 @@ export function AudienceSheet({
 }) {
   const { c } = useTheme();
   const auto = resolveChoice({ kind: 'auto' }, audience, new Date());
-  const rows: { choice: AudienceChoice; title: string; sub: string; lead?: string; id: string }[] = [
-    { id: 'auto', choice: { kind: 'auto' }, title: t('aud.auto'), sub: t('aud.auto.sub', { audience: auto.label }) },
-    ...audience.groups.map((g) => ({
-      id: g.id,
-      choice: { kind: 'group', id: g.id } as AudienceChoice,
-      lead: g.emoji,
-      title: g.name,
-      sub: g.memberCount > 0 ? t('aud.group.sub', { n: g.memberCount }) : t('aud.group.empty_sub'),
-    })),
-    { id: 'everyone', choice: { kind: 'everyone' }, title: t('aud.everyone'), sub: t('aud.everyone.sub', { n: audience.friendCount }) },
-  ];
+  const rows: { choice: AudienceChoice; title: string; sub: string; lead?: string; id: string }[] =
+    [
+      {
+        id: 'auto',
+        choice: { kind: 'auto' },
+        title: t('aud.auto'),
+        sub: t('aud.auto.sub', { audience: auto.label }),
+      },
+      ...audience.groups.map((g) => ({
+        id: g.id,
+        choice: { kind: 'group', id: g.id } as AudienceChoice,
+        lead: g.emoji,
+        title: g.name,
+        sub:
+          g.memberCount > 0 ? t('aud.group.sub', { n: g.memberCount }) : t('aud.group.empty_sub'),
+      })),
+      {
+        id: 'everyone',
+        choice: { kind: 'everyone' },
+        title: t('aud.everyone'),
+        sub: t('aud.everyone.sub', { n: audience.friendCount }),
+      },
+    ];
 
   return (
-    <Sheet visible={visible} onClose={onClose} detent="medium" title={t('aud.title')} testID="sheet-audience">
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      detent="medium"
+      title={t('aud.title')}
+      testID="sheet-audience"
+    >
       <View accessibilityRole="radiogroup">
         {rows.map((r, i) => {
           const selected = same(r.choice, value);

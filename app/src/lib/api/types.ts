@@ -2,13 +2,7 @@
 // in-memory mock (./mock.ts); the Supabase implementation replaces it behind the same methods
 // (ARCHITECTURE.md 5 and 6). The server owns time and shared truth: the client sends durations
 // and tap times, never a clock time it computed.
-import type {
-  AutoSettings,
-  DrinkDetails,
-  FlareCategory,
-  LogCategory,
-  XpKind,
-} from '@clink/shared';
+import type { AutoSettings, DrinkDetails, FlareCategory, LogCategory, XpKind } from '@clink/shared';
 
 export type AuthMethod = 'apple' | 'google' | 'phone';
 
@@ -86,7 +80,8 @@ export interface Audience {
 }
 
 /** What the To: chip holds. */
-export type AudienceChoice = { kind: 'auto' } | { kind: 'everyone' } | { kind: 'group'; id: string };
+export type AudienceChoice =
+  { kind: 'auto' } | { kind: 'everyone' } | { kind: 'group'; id: string };
 
 export interface FlareRequest {
   category: FlareCategory;

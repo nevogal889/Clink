@@ -15,13 +15,17 @@ const ICONS = join(HERE, '..');
 const ROOT = join(HERE, '../../../../..');
 const OUT = join(ROOT, 'docs/art/icons-sheet.html');
 const theme = JSON.parse(readFileSync(join(ICONS, 'theme.json'), 'utf8'));
-const catalog = JSON.parse(readFileSync(join(ROOT, 'packages/shared/generated/catalog.json'), 'utf8'));
+const catalog = JSON.parse(
+  readFileSync(join(ROOT, 'packages/shared/generated/catalog.json'), 'utf8'),
+);
 const names = Object.fromEntries(catalog.drinks.map((d) => [d.id, d.name]));
 
 export function toDark(svg) {
   let out = svg;
   for (const [from, to] of Object.entries(theme.dark)) out = out.split(from).join(to);
-  return out.split(`stroke-opacity="${theme.gleamOpacity.light}"`).join(`stroke-opacity="${theme.gleamOpacity.dark}"`);
+  return out
+    .split(`stroke-opacity="${theme.gleamOpacity.light}"`)
+    .join(`stroke-opacity="${theme.gleamOpacity.dark}"`);
 }
 const strip = (svg) => svg.replace(/<!--[\s\S]*?-->\n?/g, '').trim();
 const sized = (svg, px) => svg.replace(/width="\d+" height="\d+"/, `width="${px}" height="${px}"`);
@@ -121,7 +125,10 @@ if (pngArg > 0) {
     pw = require(join(process.execPath, '../../lib/node_modules/playwright'));
   }
   const browser = await pw.chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({
+    viewport: { width: 1280, height: 800 },
+    deviceScaleFactor: 1,
+  });
   await page.goto(`file://${OUT}`);
   await page.screenshot({ path: process.argv[pngArg + 1], fullPage: true });
   await browser.close();

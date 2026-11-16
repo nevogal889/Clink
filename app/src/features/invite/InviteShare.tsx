@@ -21,7 +21,7 @@ export function InviteMeter({ filled }: { filled: number }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const n = Math.min(2, filled);
-  const gap = useRef(new Animated.Value(n >= 2 ? -6 : spacing.s2)).current;
+  const gap = useState(() => new Animated.Value(n >= 2 ? -6 : spacing.s2))[0];
   const was = useRef(n);
 
   useEffect(() => {
@@ -30,7 +30,12 @@ export function InviteMeter({ filled }: { filled: number }) {
       if (reduced) gap.setValue(-6);
       else
         Animated.sequence([
-          Animated.timing(gap, { toValue: -9, duration: 240, easing: Easing.bezier(0.3, 0, 0.2, 1), useNativeDriver: false }),
+          Animated.timing(gap, {
+            toValue: -9,
+            duration: 240,
+            easing: Easing.bezier(0.3, 0, 0.2, 1),
+            useNativeDriver: false,
+          }),
           Animated.timing(gap, { toValue: -6, duration: 60, useNativeDriver: false }),
         ]).start();
     }

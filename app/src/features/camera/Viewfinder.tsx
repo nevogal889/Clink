@@ -4,7 +4,7 @@
 // still so the photo-taken state can be reviewed.
 import type { FlareCategory } from '@clink/shared';
 import { t } from '@clink/shared';
-import { useRef } from 'react';
+import { useState } from 'react';
 import { Animated, Pressable, View } from 'react-native';
 
 import { Hero } from '@/ui/Art';
@@ -70,8 +70,13 @@ export function Viewfinder({
 function Shutter({ onPress }: { onPress: () => void }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
-  const scale = useRef(new Animated.Value(1)).current;
-  const to = (v: number) => Animated.timing(scale, { toValue: v, duration: motion.press.duration, useNativeDriver: false }).start();
+  const scale = useState(() => new Animated.Value(1))[0];
+  const to = (v: number) =>
+    Animated.timing(scale, {
+      toValue: v,
+      duration: motion.press.duration,
+      useNativeDriver: false,
+    }).start();
   return (
     <Pressable
       testID="cam-shutter"
@@ -115,20 +120,51 @@ export function ShutterRow({
 }) {
   if (still) {
     return (
-      <View style={{ height: spacing.shutterRow, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.gutter, gap: spacing.s4 }}>
-        <TextButton testID="snap-retake" label={t('snap.retake')} onPress={onRetake} />
+      <View
+        style={{
+          height: spacing.shutterRow,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: spacing.gutter,
+          gap: spacing.s4,
+        }}
+      >
+        <TextButton
+          testID="snap-retake"
+          label={t('snap.retake')}
+          onPress={onRetake}
+          align="center"
+        />
         <View style={{ flex: 1 }} />
-        <PrimaryButton testID="snap-share" label={t('snap.share')} busy={sharing} onPress={onShare} style={{ minWidth: 168 }} />
+        <PrimaryButton
+          testID="snap-share"
+          label={t('snap.share')}
+          busy={sharing}
+          onPress={onShare}
+          style={{ minWidth: 168 }}
+        />
       </View>
     );
   }
   return (
-    <View style={{ height: spacing.shutterRow, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.gutter }}>
+    <View
+      style={{
+        height: spacing.shutterRow,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.gutter,
+      }}
+    >
       {/* Left: the latest friend snap thumbnail. Hidden when there is none (no snaps in this build). */}
       <View style={{ flex: 1 }} />
       <Shutter onPress={onShutter} />
       <View style={{ flex: 1, alignItems: 'flex-end' }}>
-        <IconButton testID="cam-flip" name="flip" accessibilityLabel={t('cam.flip.a11y')} onPress={onFlip} />
+        <IconButton
+          testID="cam-flip"
+          name="flip"
+          accessibilityLabel={t('cam.flip.a11y')}
+          onPress={onFlip}
+        />
       </View>
     </View>
   );

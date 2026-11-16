@@ -216,7 +216,21 @@ describe('copy rules (COPY.md 0.3 and 1.3)', () => {
     'order.label.once::just': '"Just this time" is the COPY.md 1.4 term for a one-time note',
     'n.bring_once.body::just': 'Same 1.4 term, "Just this time: {once}"',
     'perm.notif.again.body::just': '"You just got a flare": recency, not a softener',
+    'fmt.ago.now::just': '"just now" is the {ago} wording in COPY.md 0.2 and PRD F9: recency',
+    'today.last_now::just': 'Same "just now", recency',
+    'friends.last_drink_now::just': 'Same "just now", recency',
+    'wm.last_now::just': 'Same "just now", recency',
   };
+
+  it('every "{ago} ago" line has a _now key, so it never reads "just now ago"', () => {
+    const agoLines = KEYS.filter((k) => /\{ago\} ago/.test(STRINGS[k]));
+    expect(agoLines.length).toBeGreaterThan(0);
+    for (const k of agoLines) {
+      const now = `${k}_now`;
+      expect([k, isStringKey(now)]).toEqual([k, true]);
+      expect([k, /\{ago\}/.test(STRINGS[now as StringKey])]).toEqual([k, false]);
+    }
+  });
 
   it('parses the banned list from COPY.md 1.3', () => {
     const phrases = BANNED_TERMS.map((b) => lower(b.phrase));

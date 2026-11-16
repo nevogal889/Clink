@@ -56,7 +56,12 @@ export async function openShare(channel: ShareChannel, url: string): Promise<boo
 }
 
 /** A system confirm with two buttons. Used only where undo can't reverse (DESIGN.md 8 rule 3). */
-export function confirm(opts: { title: string; body: string; yes: string; no: string }): Promise<boolean> {
+export function confirm(opts: {
+  title: string;
+  body: string;
+  yes: string;
+  no: string;
+}): Promise<boolean> {
   if (Platform.OS === 'web') {
     const fn = typeof window !== 'undefined' ? window.confirm : undefined;
     return Promise.resolve(fn ? fn(`${opts.title}\n\n${opts.body}`) : true);
