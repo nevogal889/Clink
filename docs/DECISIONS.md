@@ -135,3 +135,4 @@ Every decision the CEO has approved so far. When this file and `original-prd.md`
 - **Drink art:** one more pass on all 5 heroes before beta for more character (texture, bolder shapes), keeping the DESIGN.md shape grammar. Redraw the matcha bowl: its glaze streaks read as dirt.
 - **App icon, final touch:** the rim seen from above gets a short handle on the right so it reads as a cup, not a donut or swim ring. The rim stays category-neutral (no drink surface inside).
 - **Next milestone while the Apple account is pending:** connect Supabase (real database and sign-in behind the screens) on the CEO's free Supabase account.
+- **Android testing before store accounts:** the CEO tests on the Android Studio emulator on their Mac. Builds are installed directly (EAS internal distribution or a local APK); Play Console only before external testers.
