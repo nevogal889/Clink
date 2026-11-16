@@ -75,6 +75,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...config,
     name: v.name,
+    // Expo account that owns the EAS project (the CEO's personal account for now).
+    owner: 'nevogal',
     slug: 'clink',
     version: '0.1.0',
     orientation: 'portrait',
