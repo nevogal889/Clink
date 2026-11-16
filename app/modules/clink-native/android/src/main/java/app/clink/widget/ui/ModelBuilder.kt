@@ -84,7 +84,7 @@ class ModelBuilder(private val copy: Copy) {
           ),
         )
       is WidgetView.Picker -> model(idleBg, Tap.Open(AppRoute.HOME), picker(ready!!, layout, overlay))
-      is WidgetView.Idle -> model(idleBg, Tap.Open(AppRoute.HOME), idle(ready!!, view, sized, layout, now, zone, overlay))
+      is WidgetView.Idle -> model(idleBg, Tap.Open(AppRoute.HOME), idle(ready!!, view, sized, layout, fontScale, now, zone, overlay))
       is WidgetView.MyFlareView -> myFlare(ready!!, layout, now, overlay).let { model(it.background, Tap.Open(AppRoute.HOME), it) }
       is WidgetView.Incoming -> incoming(ready!!, view, layout, now, overlay).let { model(it.background, Tap.Open(AppRoute.HOME), it) }
       is WidgetView.BringPicker -> bringPicker(ready!!, view, overlay).let { model(it.background, Tap.Open(AppRoute.HOME), it) }
@@ -126,10 +126,10 @@ class ModelBuilder(private val copy: Copy) {
 
   private fun minutesBetween(a: Instant, b: Instant): Long = Duration.between(a, b).toMinutes()
 
-  private fun tracker(s: WidgetState.Ready, v: WidgetView.Idle, layout: Layout, now: Instant, zone: ZoneId): TrackerModel {
+  private fun tracker(s: WidgetState.Ready, v: WidgetView.Idle, layout: Layout, fontScale: Float, now: Instant, zone: ZoneId): TrackerModel {
     // The full "Last drink … ago" line needs the wide medium; narrower sizes use the small
     // string (COPY.md 6: Android uses the small strings below the medium breakpoint).
-    val small = !layout.wide
+    val small = !layout.wide || fontScale >= COMPACT_FONT_SCALE
     val drinks = copy.t(R.string.clink_ws_drinks, "n" to v.drinks)
     val water = copy.t(R.string.clink_ws_water, "n" to v.water)
     val (dn, dw) = Copy.splitCount(drinks)
@@ -192,6 +192,7 @@ class ModelBuilder(private val copy: Copy) {
     v: WidgetView.Idle,
     config: WidgetConfig,
     layout: Layout,
+    fontScale: Float,
     now: Instant,
     zone: ZoneId,
     overlay: OverlayModel?,
@@ -294,7 +295,7 @@ class ModelBuilder(private val copy: Copy) {
           subLabel = label,
         )
       }
-    return Content.Idle(tracker(s, v, layout, now, zone), usual, snap, log, camera, whoJoins, overlay)
+    return Content.Idle(tracker(s, v, layout, fontScale, now, zone), usual, snap, log, camera, whoJoins, overlay)
   }
 
   private fun picker(s: WidgetState.Ready, layout: Layout, overlay: OverlayModel?): Content.Picker {

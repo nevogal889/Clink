@@ -49,7 +49,7 @@ export const STRINGS = {
   'age.title': 'When were you born?',
   'age.month': 'Month',
   'age.year': 'Year',
-  'age.helper': "Just a quick check. We don't save the date.",
+  'age.helper': "A quick check. We don't save the date.",
   'age.cta': 'Continue',
   'age.too_young.title': "Clink isn't for you yet",
   'age.too_young': 'Clink is for people {min} and over.',
@@ -448,6 +448,8 @@ export const STRINGS = {
   'set.widgets.guide': 'How to add a widget',
   'set.widgets.small_note': 'Small widgets have no Who joins? button.',
   'set.widgets.ios_hint': 'To change one, hold the widget, then tap Edit Widget.',
+  'set.widgets.row_plain': '{size} widget',
+  'set.widgets.auto_now': 'Who joins? goes to {audience} right now',
   'set.sec.notifs': 'Notifications',
   'set.n.flares': 'Friend flares',
   'set.n.flares.sub': '"Maya wants matcha · in 10 min"',
@@ -713,6 +715,16 @@ export const STRINGS = {
   'fmt.words.h': '{h, plural, one {# hour} other {# hours}}',
   'fmt.words.hm':
     '{h, plural, one {# hour} other {# hours}} {m, plural, one {# minute} other {# minutes}}',
+  'dev.ws.row': 'Widget states',
+  'dev.ws.title': 'Widget states',
+  'dev.ws.sub': 'Sends a test state to every Clink widget on this phone. Its times move to now.',
+  'dev.ws.needs_tap': 'Part of this state lives on the widget. Tap the widget to see it.',
+  'dev.ws.sent': '{id} is on the widget',
+  'dev.ws.refused': 'The widget refused {id}',
+  'dev.ws.none': 'No widget on the home screen yet. Add one first.',
+  'dev.ws.unsupported': 'This phone has no Clink widget yet.',
+  'dev.ws.live': 'Back to my data',
+  'dev.ws.live_done': 'Your own data is back on the widget',
   'la.title': 'Your {cat} flare',
   'la.place': '{place}',
   'la.counts': '{in} in · {orders, plural, one {# drink} other {# drinks}}',
@@ -4065,6 +4077,28 @@ export const STRING_META: Record<
     max: 56,
     placeholders: [],
   },
+  'set.widgets.row_plain': {
+    section: '4.17',
+    context: 'Row for a small widget (it has no audience)',
+    max: 16,
+    placeholders: [
+      {
+        name: 'size',
+        type: 'simple',
+      },
+    ],
+  },
+  'set.widgets.auto_now': {
+    section: '4.17',
+    context: 'Sub-line on a medium widget set to Automatic',
+    max: 44,
+    placeholders: [
+      {
+        name: 'audience',
+        type: 'simple',
+      },
+    ],
+  },
   'set.sec.notifs': {
     section: '4.17',
     context: 'Section',
@@ -5931,6 +5965,76 @@ export const STRING_META: Record<
       },
     ],
   },
+  'dev.ws.row': {
+    section: '4.28',
+    context: 'Settings > Widgets row',
+    max: 16,
+    placeholders: [],
+  },
+  'dev.ws.title': {
+    section: '4.28',
+    context: 'Title',
+    max: 16,
+    placeholders: [],
+  },
+  'dev.ws.sub': {
+    section: '4.28',
+    context: 'Sub-line',
+    max: 84,
+    placeholders: [],
+  },
+  'dev.ws.needs_tap': {
+    section: '4.28',
+    context: 'Row sub-line, fixture with widget-local parts',
+    max: 70,
+    placeholders: [],
+  },
+  'dev.ws.sent': {
+    section: '4.28',
+    context: 'Snackbar',
+    max: 32,
+    placeholders: [
+      {
+        name: 'id',
+        type: 'simple',
+      },
+    ],
+  },
+  'dev.ws.refused': {
+    section: '4.28',
+    context: 'Snackbar',
+    max: 32,
+    placeholders: [
+      {
+        name: 'id',
+        type: 'simple',
+      },
+    ],
+  },
+  'dev.ws.none': {
+    section: '4.28',
+    context: 'Line when no widget is on the home screen',
+    max: 52,
+    placeholders: [],
+  },
+  'dev.ws.unsupported': {
+    section: '4.28',
+    context: 'Line where the platform has no widget yet (iOS until the Apple account)',
+    max: 40,
+    placeholders: [],
+  },
+  'dev.ws.live': {
+    section: '4.28',
+    context: 'Button',
+    max: 18,
+    placeholders: [],
+  },
+  'dev.ws.live_done': {
+    section: '4.28',
+    context: 'Snackbar',
+    max: 40,
+    placeholders: [],
+  },
   'la.title': {
     section: '5.3',
     context: 'Lock screen title',
@@ -7673,6 +7777,8 @@ export interface StringParams {
   'set.widgets.guide': Record<string, never>;
   'set.widgets.small_note': Record<string, never>;
   'set.widgets.ios_hint': Record<string, never>;
+  'set.widgets.row_plain': { size: string | number };
+  'set.widgets.auto_now': { audience: string | number };
   'set.sec.notifs': Record<string, never>;
   'set.n.flares': Record<string, never>;
   'set.n.flares.sub': Record<string, never>;
@@ -7947,6 +8053,16 @@ export interface StringParams {
   'fmt.words.m': { m: number };
   'fmt.words.h': { h: number };
   'fmt.words.hm': { h: number; m: number };
+  'dev.ws.row': Record<string, never>;
+  'dev.ws.title': Record<string, never>;
+  'dev.ws.sub': Record<string, never>;
+  'dev.ws.needs_tap': Record<string, never>;
+  'dev.ws.sent': { id: string | number };
+  'dev.ws.refused': { id: string | number };
+  'dev.ws.none': Record<string, never>;
+  'dev.ws.unsupported': Record<string, never>;
+  'dev.ws.live': Record<string, never>;
+  'dev.ws.live_done': Record<string, never>;
   'la.title': { cat: string | number };
   'la.place': { place: string | number };
   'la.counts': { in: string | number; orders: number };
@@ -8099,17 +8215,17 @@ export const STRING_REFERENCES = [
   {
     key: 'empty.requests',
     note: '(section hidden)',
-    line: 1066,
+    line: 1068,
   },
   {
     key: 'a11y.w.confirm',
     note: 'the visible confirmation text ("Logged {drink}", "Sent to {audience}")',
-    line: 1219,
+    line: 1221,
   },
   {
     key: 'a11y.react',
     note: 'uses `snapv.react.a11y`',
-    line: 1247,
+    line: 1249,
   },
 ] as const;
 

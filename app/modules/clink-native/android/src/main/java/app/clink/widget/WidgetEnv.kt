@@ -12,13 +12,20 @@ import app.clink.widget.store.TokenCipher
 import app.clink.widget.store.TokenVault
 import app.clink.widget.store.WidgetStore
 import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 
 // The widget's few dependencies in one place, so tests can swap the clock, the Keystore cipher
 // and the network without a DI framework.
 
 object WidgetEnv {
-  /** The device clock and zone. Tests set a fixed clock (java.time.Clock.fixed / offset). */
-  @Volatile var clock: Clock = Clock.systemDefaultZone()
+  /**
+   * The device clock and zone. Tests set a fixed clock (java.time.Clock.fixed / offset). The
+   * default reads the zone on every call: Clock.systemDefaultZone() would freeze the zone the
+   * process started with, so after a time zone change the midnight reset and today's date would
+   * keep the old zone until the process died.
+   */
+  @Volatile var clock: Clock = DeviceZoneClock
 
   /** null = the Android Keystore. Robolectric has no Keystore, so tests set a fake. */
   @Volatile var cipherOverride: TokenCipher? = null
@@ -33,6 +40,15 @@ object WidgetEnv {
 
   fun api(context: Context): WidgetApi? =
     apiOverride ?: AppConfig.read(context).let { c -> c.functionsUrl?.let { HttpWidgetApi(it, c.region) } }
+}
+
+/** System time in whatever the device's zone is now (TimeZone.getDefault() follows changes). */
+object DeviceZoneClock : Clock() {
+  override fun getZone(): ZoneId = ZoneId.systemDefault()
+
+  override fun withZone(zone: ZoneId): Clock = Clock.system(zone)
+
+  override fun instant(): Instant = Instant.now()
 }
 
 /**

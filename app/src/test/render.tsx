@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { createMockApi } from '@/lib/api';
 import type { MockOptions } from '@/lib/api/mock';
 import { DataProvider } from '@/lib/store';
+import { createPreviewHost, type WidgetHost } from '@/lib/widget/host';
 import { SnackbarHost, SnackbarProvider } from '@/ui/Snackbar';
 
 const metrics = {
@@ -14,11 +15,15 @@ const metrics = {
   insets: { top: 0, left: 0, right: 0, bottom: 0 },
 };
 
-export async function renderWithData(ui: ReactElement, opts: MockOptions = {}) {
-  const api = createMockApi({ latencyMs: 0, ...opts });
+export async function renderWithData(
+  ui: ReactElement,
+  opts: MockOptions & { widgets?: WidgetHost } = {},
+) {
+  const { widgets = createPreviewHost(), ...mockOpts } = opts;
+  const api = createMockApi({ latencyMs: 0, ...mockOpts });
   const utils = await render(
     <SafeAreaProvider initialMetrics={metrics}>
-      <DataProvider api={api}>
+      <DataProvider api={api} widgets={widgets} widgetDebounceMs={0}>
         <SnackbarProvider>
           {ui}
           <SnackbarHost />
@@ -26,5 +31,5 @@ export async function renderWithData(ui: ReactElement, opts: MockOptions = {}) {
       </DataProvider>
     </SafeAreaProvider>,
   );
-  return { ...utils, api };
+  return { ...utils, api, widgets };
 }

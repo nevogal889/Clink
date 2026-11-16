@@ -3,7 +3,14 @@
 // ./mock.ts (in memory, for unit tests and the offline review build). The server owns time and
 // shared truth: the client sends durations and tap times, never a clock time it computed.
 // Every failure is thrown as an ApiError (./errors.ts) so screens map codes to COPY.md words.
-import type { AutoSettings, DrinkDetails, FlareCategory, LogCategory, XpKind } from '@clink/shared';
+import type {
+  AutoSettings,
+  DrinkDetails,
+  FlareCategory,
+  LogCategory,
+  WidgetState,
+  XpKind,
+} from '@clink/shared';
 
 export type AuthMethod = 'apple' | 'google' | 'phone';
 
@@ -128,6 +135,12 @@ export interface ContactMatch {
 }
 
 export type ShareChannel = 'whatsapp' | 'messages' | 'more';
+
+/** What register-device hands the app for the widget (ARCHITECTURE.md 3.1, 4.4). */
+export interface DeviceRegistration {
+  /** 43 base64url characters. Goes straight to the widget; never logged or shown. */
+  widgetToken: string;
+}
 export type PermissionResult = 'granted' | 'denied';
 
 export interface ClinkApi {
@@ -180,5 +193,17 @@ export interface ClinkApi {
   addContact(id: string): Promise<ContactMatch>;
 
   requestNotifications(): Promise<PermissionResult>;
-  isWidgetInstalled(): Promise<boolean>;
+
+  /**
+   * register-device for this install (native only; ARCHITECTURE.md 4.4 "every launch"). Every
+   * call issues a new widget token and revokes the last one. Null on the web, before the account
+   * exists (404) and when the call fails; the widget then keeps the token it has.
+   */
+  registerDevice(): Promise<DeviceRegistration | null>;
+  /**
+   * GET widget-api/state with this install's widget token, decoded with the shared schema.
+   * Null when the install has no token yet. Throws ApiError `unauthorized` when the token was
+   * rotated or revoked (it is forgotten), `network` offline.
+   */
+  getWidgetState(timeZone: string): Promise<WidgetState | null>;
 }

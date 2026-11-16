@@ -1,13 +1,13 @@
-// "Add the widget" from the camera notice (DESIGN.md 4.4 state "Widget not added"). The same guide
-// as onboarding step 6, outside onboarding: no progress bar, and it closes back to the camera.
+// "Add the widget" from the camera notice and from Settings > Widgets (DESIGN.md 4.4 state "Widget
+// not added", 4.17). The same guide as onboarding step 6, outside onboarding: no progress bar, and
+// it closes back to where it came from once a widget is found.
 import { t } from '@clink/shared';
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useData } from '@/lib/store';
-import { WidgetSteps } from '@/features/onboarding/WidgetSteps';
+import { AddWidgetGuide } from '@/features/widgets/AddWidgetGuide';
+import { useAddWidget } from '@/features/widgets/useAddWidget';
 import { PrimaryButton } from '@/ui/controls';
 import { spacing } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
@@ -15,21 +15,12 @@ import { useTheme } from '@/ui/useTheme';
 
 export default function WidgetGuide() {
   const router = useRouter();
-  const { api } = useData();
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const [missing, setMissing] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  async function check() {
-    setBusy(true);
-    try {
-      if (await api.isWidgetInstalled()) router.back();
-      else setMissing(true);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const add = useAddWidget(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/camera');
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: c.surfaceBase }} testID="screen-widget-guide">
@@ -52,26 +43,12 @@ export default function WidgetGuide() {
             {t('onb.widget.sub')}
           </Txt>
         </View>
-        {missing ? (
-          <View
-            accessibilityLiveRegion="polite"
-            style={{
-              marginHorizontal: spacing.gutter,
-              marginTop: spacing.s6,
-              paddingLeft: spacing.s3,
-              borderLeftWidth: 4,
-              borderLeftColor: c.cobalt,
-            }}
-          >
-            <Txt variant="headline">{t('onb.widget.retry.title')}</Txt>
-            <Txt variant="callout" tone="secondary">
-              {t('onb.widget.retry.body')}
-            </Txt>
-          </View>
-        ) : null}
-        <View style={{ marginTop: spacing.s6 }}>
-          <WidgetSteps />
-        </View>
+        <AddWidgetGuide
+          missing={add.missing}
+          canPin={add.canPin}
+          pinning={add.pinning}
+          onPin={() => void add.pin()}
+        />
       </ScrollView>
       <View
         style={{
@@ -84,9 +61,9 @@ export default function WidgetGuide() {
       >
         <PrimaryButton
           testID="guide-done"
-          label={missing ? t('onb.widget.retry.again') : t('onb.widget.done')}
-          busy={busy}
-          onPress={check}
+          label={add.missing ? t('onb.widget.retry.again') : t('onb.widget.done')}
+          busy={add.busy}
+          onPress={add.check}
         />
       </View>
     </View>

@@ -86,3 +86,43 @@ jobs:
           deno lint
           deno check */index.ts
           deno test --allow-env --allow-net tests/
+
+  android:
+    name: Android widget (generators, Kotlin tests, module compile)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - name: Generated Android strings, colours and drawables match their sources
+        run: |
+          node scripts/gen-android-strings.mjs --check
+          node scripts/gen-android-colors.mjs --check
+          node scripts/gen-drink-assets.mjs --check
+      - name: Generator and config plugin checks
+        run: node --test scripts/gen-android.test.mjs
+      - name: clink-native types
+        run: npx tsc --noEmit -p app/modules/clink-native/tsconfig.json
+      - name: Prebuild (android/ is generated, never committed)
+        working-directory: app
+        run: npx expo prebuild -p android --no-install
+      - name: Widget unit, Glance and render tests (standalone harness)
+        working-directory: app/android
+        run: ./gradlew -p ../modules/clink-native/android/standalone testDebugUnitTest --console=plain
+      - name: The Expo module compiles inside the app (bridge included)
+        working-directory: app/android
+        run: ./gradlew :clink-native:compileDebugKotlin --console=plain
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: widget-test-reports
+          path: app/modules/clink-native/android/standalone/build/reports/tests

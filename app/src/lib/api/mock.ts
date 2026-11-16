@@ -10,6 +10,7 @@ import {
   type FlareCategory,
 } from '@clink/shared';
 
+import { buildWidgetState } from '../widget/state';
 import { ApiError } from './errors';
 import type {
   AgeAnswer,
@@ -37,7 +38,6 @@ export interface MockOptions {
   /** Artificial latency in ms, so loading states show. 0 in tests. */
   latencyMs?: number;
   now?: () => Date;
-  widgetInstalled?: boolean;
 }
 
 interface MockState {
@@ -53,7 +53,8 @@ interface MockState {
   contacts: ContactMatch[];
   shares: number;
   notifications: PermissionResult | null;
-  widgetInstalled: boolean;
+  /** register-device calls that issued a token. */
+  registrations: number;
   snapsShared: number;
 }
 
@@ -90,7 +91,7 @@ function seed(scenario: MockScenario, now: Date): MockState {
     ],
     shares: 0,
     notifications: null,
-    widgetInstalled: false,
+    registrations: 0,
     snapsShared: 0,
   };
   if (scenario === 'new') return base;
@@ -164,7 +165,6 @@ function seed(scenario: MockScenario, now: Date): MockState {
       auto: { daytimeGroupId: 'g_work', otherGroupId: 'g_home' },
     },
     lastPlace: 'Kaffa Roastery',
-    widgetInstalled: true,
   };
 }
 
@@ -172,7 +172,6 @@ export function createMockApi(opts: MockOptions = {}): ClinkApi & { state: MockS
   const now = opts.now ?? (() => new Date());
   const latency = opts.latencyMs ?? 0;
   const state = seed(opts.scenario ?? 'new', now());
-  if (opts.widgetInstalled !== undefined) state.widgetInstalled = opts.widgetInstalled;
 
   const wait = <T>(v: T, ms = latency): Promise<T> =>
     ms > 0 ? new Promise((r) => setTimeout(() => r(v), ms)) : Promise.resolve(v);
@@ -312,7 +311,29 @@ export function createMockApi(opts: MockOptions = {}): ClinkApi & { state: MockS
       state.notifications = 'granted';
       return wait<PermissionResult>('granted');
     },
-    isWidgetInstalled: () => wait(state.widgetInstalled),
+
+    async registerDevice() {
+      // The real token is 32 random bytes; this one only has the same shape.
+      if (!state.session || state.me.needsSignup) return null;
+      state.registrations += 1;
+      const n = String(state.registrations);
+      return wait({ widgetToken: 'mock_widget_token_'.padEnd(43 - n.length, 'x') + n });
+    },
+    async getWidgetState() {
+      if (!state.session) throw new ApiError('unauthorized');
+      return wait(
+        buildWidgetState(
+          {
+            me: state.me,
+            usual: state.usual,
+            today: todayLogs(),
+            audience: state.audience,
+            lastPlace: state.lastPlace,
+          },
+          now(),
+        ),
+      );
+    },
   };
   return api;
 }

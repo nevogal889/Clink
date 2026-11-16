@@ -164,6 +164,9 @@ class SyncTest {
     WidgetEnv.vault(context).put(token)
     val raw = env.store.snapshot().hasToken
     assertTrue(raw)
+    // What DataStore holds went through the cipher: the token itself is not in it.
+    val stored = env.store.prefs()[app.clink.widget.store.WidgetStore.TOKEN]!!
+    assertFalse(stored.contains(token))
     assertEquals(token, WidgetEnv.vault(context).get())
     WidgetEnv.vault(context).put(null)
     assertNull(WidgetEnv.vault(context).get())

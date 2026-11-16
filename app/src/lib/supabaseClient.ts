@@ -12,13 +12,19 @@ export interface PublicSupabase {
   publishableKey: string;
 }
 
-type Extra = { api?: 'supabase' | 'mock'; supabase?: PublicSupabase };
+type Extra = { api?: 'supabase' | 'mock'; supabase?: PublicSupabase; supabaseRegion?: string };
 
 export function publicSupabase(): PublicSupabase | null {
   const extra = (Constants.expoConfig?.extra ?? {}) as Extra;
   if (extra.api === 'mock') return null;
   const sb = extra.supabase;
   return sb?.url && sb.publishableKey ? sb : null;
+}
+
+/** The project's region (widget-api's x-region header), or null. Public, like the URL. */
+export function publicRegion(): string | null {
+  const extra = (Constants.expoConfig?.extra ?? {}) as Extra;
+  return extra.supabaseRegion ?? null;
 }
 
 export function createSupabaseClient(cfg: PublicSupabase, storage: KeyValue): SupabaseClient {

@@ -202,10 +202,12 @@ describe('sign-in with phone', () => {
     expect(await api.getSession()).toMatchObject({ userId: UID, phone: PHONE });
   });
 
-  it('registers the device after sign-in on native, never on the web build', async () => {
+  it('registers the device on native when asked, never on the web build', async () => {
     const native = setup({ platform: 'android' });
     await native.api.verifyPhoneCode(PHONE, '755243');
-    await new Promise((r) => setTimeout(r, 0));
+    // Sign-in itself no longer registers: the store does, once the account exists.
+    expect(native.fake.invokes.some((i) => i.name === 'register-device')).toBe(false);
+    await native.api.registerDevice();
     const reg = native.fake.invokes.find((i) => i.name === 'register-device');
     expect(reg?.body).toMatchObject({
       action: 'register',
@@ -216,6 +218,7 @@ describe('sign-in with phone', () => {
     expect(reg?.body).not.toHaveProperty('userId');
     const web = setup({ platform: 'web' });
     await web.api.verifyPhoneCode(PHONE, '755243');
+    expect(await web.api.registerDevice()).toBeNull();
     expect(web.fake.invokes.some((i) => i.name === 'register-device')).toBe(false);
   });
 
@@ -825,7 +828,6 @@ describe('camera data', () => {
     expect(await api.requestNotifications()).toBe('denied');
     expect(await api.requestContacts()).toBe('denied');
     expect(await api.getContactMatches()).toEqual([]);
-    expect(await api.isWidgetInstalled()).toBe(false);
   });
 });
 
@@ -849,5 +851,140 @@ describe('invites', () => {
       name: 'invite_share_tapped',
       props: { channel: 'whatsapp', surface: 'onboarding' },
     });
+  });
+});
+
+describe('widget token and widget-api/state', () => {
+  const TOKEN = 'Ab3_-'.repeat(8) + 'xyz'; // 43 base64url characters, test value
+  const TOKEN2 = 'Zz9-_'.repeat(8) + 'abc';
+  const URL_BASE = 'https://proj.supabase.test';
+  const registered = (token: string) => ({
+    status: 200,
+    body: {
+      status: 'registered',
+      deviceId: '20000000-0000-4000-8000-000000000001',
+      widgetToken: token,
+      inviteCode: 'K7Q2M9XD',
+      minIosBuild: 0,
+      minAndroidBuild: 0,
+    },
+  });
+  const readyState = {
+    v: 1,
+    state: 'ready',
+    updatedAt: '2026-11-16T09:30:00Z',
+    me: { initial: 'D', friendsCount: 0 },
+    usual: [],
+    today: { localDate: '2026-11-16', drinks: 0, water: 0, caffeinated: 0, lastDrinkAt: null },
+    groups: [],
+    auto: { daytimeGroupId: null, otherGroupId: null },
+    lastPlace: null,
+    myFlare: null,
+    incoming: [],
+    snaps: [],
+    outbox: [],
+  };
+
+  function widgetSetup(answer: (url: string, init: RequestInit) => Response | 'offline') {
+    const fake = new FakeSupabase(UID).signedIn();
+    const sealed = memoryStore();
+    const calls: { url: string; headers: Record<string, string> }[] = [];
+    const fetchFn = (async (url: string, init: RequestInit) => {
+      calls.push({ url, headers: { ...(init.headers as Record<string, string>) } });
+      const r = answer(url, init);
+      if (r === 'offline') throw new TypeError('Network request failed');
+      return r;
+    }) as unknown as typeof fetch;
+    const api = createSupabaseApi({
+      client: fake.asClient(),
+      sealed,
+      plain: memoryStore(),
+      platform: 'android',
+      appVersion: '0.1.0',
+      now: () => NOW,
+      uuid: () => '10000000-0000-4000-8000-000000000009',
+      timezone: () => 'Europe/Dublin',
+      widgetApi: { url: URL_BASE, region: 'eu-west-1' },
+      fetch: fetchFn,
+    });
+    return { api, fake, sealed, calls };
+  }
+  const json = (status: number, body: unknown) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    });
+
+  it('returns the widget token from register-device and keeps it sealed per user', async () => {
+    const { api, fake, sealed } = widgetSetup(() => json(200, readyState));
+    fake.onInvoke = () => registered(TOKEN);
+    expect(await api.registerDevice()).toEqual({ widgetToken: TOKEN });
+    expect(await sealed.getItem(`widget_token.${UID}`)).toBe(TOKEN);
+  });
+
+  it('answers null when register-device fails or answers something else', async () => {
+    const { api, fake } = widgetSetup(() => json(200, readyState));
+    fake.onInvoke = () => 'offline';
+    expect(await api.registerDevice()).toBeNull();
+    fake.onInvoke = () => ({ status: 404, body: { error: 'not_found' } });
+    expect(await api.registerDevice()).toBeNull();
+    fake.onInvoke = () => ({ status: 200, body: { status: 'registered', widgetToken: 'short' } });
+    expect(await api.registerDevice()).toBeNull();
+  });
+
+  it('reads widget-api/state with the widget token, the region and the zone only', async () => {
+    const { api, fake, calls } = widgetSetup(() => json(200, readyState));
+    expect(await api.getWidgetState('Europe/Dublin')).toBeNull(); // no token yet: no call
+    expect(calls).toHaveLength(0);
+    fake.onInvoke = () => registered(TOKEN);
+    await api.registerDevice();
+    expect(await api.getWidgetState('Europe/Dublin')).toEqual(readyState);
+    expect(calls[0]!.url).toBe(`${URL_BASE}/functions/v1/widget-api/state?tz=Europe%2FDublin`);
+    expect(calls[0]!.headers).toEqual({
+      Authorization: `Bearer ${TOKEN}`,
+      Accept: 'application/json',
+      'x-region': 'eu-west-1',
+    });
+    // Never the user id, never the publishable key.
+    expect(JSON.stringify(calls)).not.toContain(UID);
+    expect(calls[0]!.headers).not.toHaveProperty('apikey');
+  });
+
+  it('forgets a rotated token on 401 and maps the other failures', async () => {
+    let next: Response | 'offline' = json(401, { error: 'unauthorized' });
+    const { api, fake, sealed } = widgetSetup(() => next);
+    fake.onInvoke = () => registered(TOKEN);
+    await api.registerDevice();
+    expect(await codeOf(api.getWidgetState('UTC'))).toBe('unauthorized');
+    expect(await sealed.getItem(`widget_token.${UID}`)).toBeNull();
+    expect(await api.getWidgetState('UTC')).toBeNull();
+    fake.onInvoke = () => registered(TOKEN2);
+    await api.registerDevice();
+    next = 'offline';
+    expect(await codeOf(api.getWidgetState('UTC'))).toBe('network');
+    next = json(429, { error: 'rate_limited', retryAfter: 120 });
+    const e = await api.getWidgetState('UTC').catch((x: unknown) => x);
+    expect(e).toMatchObject({ code: 'rate_limited', retryAfterSec: 120 });
+    next = json(500, { error: 'internal' });
+    expect(await codeOf(api.getWidgetState('UTC'))).toBe('server');
+    next = json(200, { ...readyState, extra: 1 });
+    expect(await codeOf(api.getWidgetState('UTC'))).toBe('server');
+  });
+
+  it('drops the widget token on sign-out and on account deletion', async () => {
+    const a = widgetSetup(() => json(200, readyState));
+    a.fake.onInvoke = () => registered(TOKEN);
+    await a.api.registerDevice();
+    a.fake.onInvoke = () => ({ status: 200, body: { status: 'signed_out', removed: true } });
+    await a.api.signOut();
+    expect(await a.sealed.getItem(`widget_token.${UID}`)).toBeNull();
+
+    const b = widgetSetup(() => json(200, readyState));
+    b.fake.onInvoke = () => registered(TOKEN);
+    await b.api.registerDevice();
+    b.fake.onInvoke = () => ({ status: 200, body: { status: 'deleted' } });
+    await b.api.deleteAccount();
+    expect(await b.sealed.getItem(`widget_token.${UID}`)).toBeNull();
+    expect(await b.api.getWidgetState('UTC').catch(() => 'threw')).not.toEqual(readyState);
   });
 });

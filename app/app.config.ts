@@ -94,6 +94,24 @@ export function publicSupabase(
   return { url: url.replace(/\/$/, ''), publishableKey };
 }
 
+/**
+ * The project's region for widget-api's x-region header (public, supabase/projects.json). It is
+ * only taken from projects.json when the URL is that project's, so a SUPABASE_URL override never
+ * gets another project's region; SUPABASE_REGION sets it directly.
+ */
+export function publicRegion(
+  variant: Variant,
+  env: Record<string, string | undefined>,
+  projects: Record<string, { url?: string; region?: string } | undefined>,
+  sb: PublicSupabase | null,
+): string | null {
+  if (!sb) return null;
+  const p = projects[variant];
+  const raw =
+    env.SUPABASE_REGION || (p?.url && p.url.replace(/\/$/, '') === sb.url ? (p.region ?? '') : '');
+  return /^[a-z]{2}-[a-z]+-\d$/.test(raw) ? raw : null;
+}
+
 /** CLINK_API=mock forces the in-memory data layer; otherwise Supabase when it is configured. */
 export function apiChoice(
   env: Record<string, string | undefined>,
@@ -110,7 +128,10 @@ export function apiChoice(
   return sb ? 'supabase' : 'mock';
 }
 
-function readProjects(): Record<string, { url?: string; publishableKey?: string }> {
+function readProjects(): Record<
+  string,
+  { url?: string; publishableKey?: string; region?: string }
+> {
   try {
     return JSON.parse(readFileSync(join(__dirname, '..', 'supabase', 'projects.json'), 'utf8'));
   } catch {
@@ -129,7 +150,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const variant = resolveVariant(process.env.APP_VARIANT);
   assertShippable(variant, process.env);
   const v = variantSettings(variant);
-  const supabase = publicSupabase(variant, process.env, readProjects());
+  const projects = readProjects();
+  const supabase = publicSupabase(variant, process.env, projects);
+  const supabaseRegion = publicRegion(variant, process.env, projects, supabase);
   const api = apiChoice(process.env, supabase);
 
   // EAS project @clinknew/clink (docs/ARCHITECTURE.md 12). Public by design.
@@ -175,6 +198,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       appGroup: v.appGroup,
       api,
       ...(supabase ? { supabase } : {}),
+      ...(supabaseRegion ? { supabaseRegion } : {}),
       ...(easProjectId ? { eas: { projectId: easProjectId } } : {}),
     },
   };

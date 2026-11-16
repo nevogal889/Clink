@@ -12,5 +12,5 @@
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/glance_default_loading_layout"
-    android:previewImage="@drawable/clink_mark"
+    android:previewImage="@drawable/clink_widget_preview_small"
     android:widgetCategory="home_screen" />

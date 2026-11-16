@@ -1,36 +1,30 @@
-// Onboarding step 6: add the widget (DESIGN.md 4.3, PRD 3.2 rule 5). A 3-step guide for this
-// platform. "I added it" checks for an installed widget; without one the guide stays with a
-// "can't see it yet" line and the text button becomes "Skip for now".
+// Onboarding step 6: add the widget (DESIGN.md 4.3, PRD 3.2 rule 5, F8). A 3-step guide for this
+// platform, plus "Add it for me" where the Android launcher can pin. "I added it" checks for an
+// installed widget; without one the guide stays with a "can't see it yet" line and the text
+// button becomes "Skip for now". Where the platform has no widget yet (iOS until the Swift widget
+// ships) the step passes straight on: there is nothing to add.
 import { t } from '@clink/shared';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { useEffect } from 'react';
 
 import { useData } from '@/lib/store';
 import { OnboardingFrame } from '@/features/onboarding/OnboardingFrame';
 import { stepNumber } from '@/features/onboarding/steps';
 import { useAdvance } from '@/features/onboarding/useAdvance';
-import { WidgetSteps } from '@/features/onboarding/WidgetSteps';
+import { AddWidgetGuide } from '@/features/widgets/AddWidgetGuide';
+import { useAddWidget } from '@/features/widgets/useAddWidget';
 import { PrimaryButton, TextButton } from '@/ui/controls';
-import { spacing } from '@/ui/theme';
-import { Txt } from '@/ui/Txt';
-import { useTheme } from '@/ui/useTheme';
 
 export default function WidgetStep() {
-  const { api } = useData();
-  const { c } = useTheme();
+  const { state } = useData();
   const advance = useAdvance('widget');
-  const [missing, setMissing] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const add = useAddWidget(advance);
+  const supported = state.widgets.supported;
 
-  async function check() {
-    setBusy(true);
-    try {
-      if (await api.isWidgetInstalled()) await advance();
-      else setMissing(true);
-    } finally {
-      setBusy(false);
-    }
-  }
+  useEffect(() => {
+    if (!supported) void advance();
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supported]);
 
   return (
     <OnboardingFrame
@@ -42,40 +36,25 @@ export default function WidgetStep() {
         <>
           <PrimaryButton
             testID="widget-done"
-            label={missing ? t('onb.widget.retry.again') : t('onb.widget.done')}
-            busy={busy}
-            onPress={check}
+            label={add.missing ? t('onb.widget.retry.again') : t('onb.widget.done')}
+            busy={add.busy}
+            onPress={add.check}
           />
           <TextButton
             testID="widget-later"
-            label={missing ? t('onb.widget.retry.skip') : t('onb.widget.later')}
+            label={add.missing ? t('onb.widget.retry.skip') : t('onb.widget.later')}
             align="center"
             onPress={() => void advance()}
           />
         </>
       }
     >
-      {missing ? (
-        <View
-          testID="widget-missing"
-          accessibilityLiveRegion="polite"
-          style={{
-            marginHorizontal: spacing.gutter,
-            marginTop: spacing.s6,
-            paddingLeft: spacing.s3,
-            borderLeftWidth: 4,
-            borderLeftColor: c.cobalt,
-          }}
-        >
-          <Txt variant="headline">{t('onb.widget.retry.title')}</Txt>
-          <Txt variant="callout" tone="secondary">
-            {t('onb.widget.retry.body')}
-          </Txt>
-        </View>
-      ) : null}
-      <View style={{ marginTop: spacing.s6 }}>
-        <WidgetSteps />
-      </View>
+      <AddWidgetGuide
+        missing={add.missing}
+        canPin={add.canPin}
+        pinning={add.pinning}
+        onPin={() => void add.pin()}
+      />
     </OnboardingFrame>
   );
 }

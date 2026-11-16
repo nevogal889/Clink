@@ -4,6 +4,11 @@
 // Loading (PRD 3.20, DESIGN.md 4.21): the last good state is kept on the device (sealed store).
 // If a refresh fails and a copy exists, the app shows it with `loadError: 'stale'` (the small
 // retry line). With nothing cached it is `'full'` (the full-screen retry).
+//
+// The home-screen widget (lib/widget): register-device hands the widget its token once the
+// account exists; every foreground and every change to the usual 3 or the tracker pushes a fresh
+// widget state; sign-out and deletion clear the widget. Logs the widget hasn't sent yet are merged
+// into Today by id, so a widget log shows once in the app (ARCHITECTURE.md 3.1, 3.2, 3.6).
 import {
   createContext,
   useCallback,
@@ -14,6 +19,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { AppState as RNAppState } from 'react-native';
 
 import {
   ApiError,
@@ -43,6 +49,15 @@ import {
   type KeyValue,
 } from './storage';
 import { lastEntry } from './tracker';
+import {
+  createPreviewHost,
+  defaultWidgetHost,
+  type InstalledWidget,
+  type WidgetHost,
+  type WidgetSize,
+} from './widget/host';
+import { mergeToday, widgetPendingLogs } from './widget/state';
+import { createWidgetSync, type PushResult } from './widget/sync';
 
 /** The refused age screen stays for 24 hours on this device (PRD 3.1 rule 10, M-05). */
 export const AGE_REFUSED_MS = 24 * 60 * 60_000;
@@ -72,6 +87,14 @@ export interface AppState {
   ageRefusedUntil: number | null;
   ageMin: number;
   notice: Notice | null;
+  widgets: WidgetsState;
+}
+
+export interface WidgetsState {
+  /** False where this platform has no widget yet (iOS until the Swift widget ships). */
+  supported: boolean;
+  /** Widgets on the home screen, or null until the first check. */
+  installed: InstalledWidget[] | null;
 }
 
 export interface Actions {
@@ -100,10 +123,18 @@ export interface Actions {
   addPhone(e164: string): Promise<void>;
   retryLoad(): Promise<void>;
   clearNotice(): void;
+  /** Reads which widgets are on the home screen (F8, ARCHITECTURE.md 3.5). */
+  checkWidgets(): Promise<InstalledWidget[]>;
+  /** Asks the launcher to add a widget. False where it can't (then the guide's steps). */
+  pinWidget(size: WidgetSize): Promise<boolean>;
+  /** Pushes this account's widget state now (after the debug screen's test states). */
+  refreshWidget(): Promise<PushResult>;
 }
 
 interface Ctx {
   api: ClinkApi;
+  /** The widget bridge. Screens use `state.widgets` and the actions; the debug screen this. */
+  widgetHost: WidgetHost;
   state: AppState;
   actions: Actions;
 }
@@ -122,6 +153,7 @@ const empty: AppState = {
   ageRefusedUntil: null,
   ageMin: DEFAULT_MIN_AGE,
   notice: null,
+  widgets: { supported: false, installed: null },
 };
 
 interface Snapshot {
@@ -144,12 +176,15 @@ const signedOut = (s: AppState): AppState => ({
   ageRefusedUntil: s.ageRefusedUntil,
   ageMin: s.ageMin,
   notice: s.notice,
+  widgets: s.widgets,
 });
 
 export function DataProvider({
   api: given,
   cache: givenCache,
   device: givenDevice,
+  widgets: givenWidgets,
+  widgetDebounceMs = 600,
   now = Date.now,
   children,
 }: {
@@ -158,15 +193,28 @@ export function DataProvider({
   cache?: KeyValue;
   /** Device flags (the age refusal). */
   device?: KeyValue;
+  /** The widget bridge. Tests get the preview host; the app the native module. */
+  widgets?: WidgetHost;
+  /** Changes within this window go to the widget as one state (it counts toward 120 an hour). */
+  widgetDebounceMs?: number;
   now?: () => number;
   children: ReactNode;
 }) {
   const [api] = useState<ClinkApi>(() => given ?? createDefaultApi());
   const [cache] = useState<KeyValue>(() => givenCache ?? (given ? memoryStore() : sealedStore()));
   const [device] = useState<KeyValue>(() => givenDevice ?? (given ? memoryStore() : plainStore()));
-  const [state, setState] = useState<AppState>(empty);
+  const [host] = useState<WidgetHost>(
+    () => givenWidgets ?? (given ? createPreviewHost() : defaultWidgetHost()),
+  );
+  const [sync] = useState(() => createWidgetSync({ host, api, now: () => new Date(now()) }));
+  const [state, setState] = useState<AppState>(() => ({
+    ...empty,
+    widgets: { supported: host.widgetsSupported, installed: null },
+  }));
   const stateRef = useRef(state);
   const ageRef = useRef<AgeAnswer | null>(null);
+  /** The widget's unsent logs, as tracker entries (merged into `today` by id). */
+  const widgetPendingRef = useRef<LogEntry[]>([]);
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
@@ -234,7 +282,7 @@ export function DataProvider({
         session,
         me,
         usual,
-        today,
+        today: mergeToday(today, widgetPendingRef.current, new Date(now())),
         xp,
         audience,
         lastPlace,
@@ -260,11 +308,83 @@ export function DataProvider({
     loadAll().catch(() => patch({ ready: true, loadError: 'full' }));
   }, [loadAll, patch]);
 
-  // A session that ends on its own (revoked, refresh refused) signs the app out.
+  // A session that ends on its own (revoked, refresh refused) signs the app out, and the widget.
   useEffect(() => {
     if (!api.onSessionEnd) return;
-    return api.onSessionEnd(() => setState((s) => (s.session ? signedOut(s) : s)));
-  }, [api]);
+    return api.onSessionEnd(() => {
+      if (stateRef.current.session) void sync.signedOut();
+      setState((s) => (s.session ? signedOut(s) : s));
+    });
+  }, [api, sync]);
+
+  // Widget: register-device once per launch and account, which hands the widget its token.
+  const accountId =
+    state.ready && state.session && state.me && !state.me.needsSignup ? state.session.userId : null;
+  useEffect(() => {
+    if (accountId) void sync.register(accountId);
+  }, [accountId, sync]);
+
+  // Widget: every change the widget shows goes out as one state, shortly after it settles.
+  useEffect(() => {
+    if (!accountId || !sync.supported) return;
+    const timer = setTimeout(() => {
+      const s = stateRef.current;
+      const pending = new Set(widgetPendingRef.current.map((e) => e.id));
+      void sync.push({
+        me: s.me,
+        usual: s.usual,
+        // The widget adds its own unsent logs; sending them too would count them twice.
+        today: s.today.filter((e) => !pending.has(e.id)),
+        audience: s.audience,
+        lastPlace: s.lastPlace,
+      });
+    }, widgetDebounceMs);
+    return () => clearTimeout(timer);
+  }, [
+    accountId,
+    sync,
+    widgetDebounceMs,
+    state.me,
+    state.usual,
+    state.today,
+    state.audience,
+    state.lastPlace,
+  ]);
+
+  // Widget: on every foreground, hand over drops, read the installed widgets, and pick up the
+  // widget's logs (unsent ones from its outbox, sent ones with a fresh tracker read).
+  const foreground = useCallback(
+    async (reread: boolean) => {
+      if (!sync.supported) return;
+      const fg = await sync.foreground();
+      widgetPendingRef.current = widgetPendingLogs(fg.pending, stateRef.current.usual);
+      const at = new Date(now());
+      setState((s) => ({
+        ...s,
+        widgets: { supported: true, installed: fg.installed },
+        today: s.session ? mergeToday(s.today, widgetPendingRef.current, at) : s.today,
+      }));
+      const s = stateRef.current;
+      if (!reread || !s.session || !s.me || s.me.needsSignup) return;
+      try {
+        const today = await api.getToday();
+        setState((st) =>
+          st.session ? { ...st, today: mergeToday(today, widgetPendingRef.current, at) } : st,
+        );
+      } catch {
+        // Offline: Today keeps what it has; the next foreground reads again.
+      }
+    },
+    [api, now, sync],
+  );
+  useEffect(() => {
+    if (!state.ready) return;
+    void foreground(false);
+    const sub = RNAppState.addEventListener('change', (next) => {
+      if (next === 'active') void foreground(true);
+    });
+    return () => sub.remove();
+  }, [state.ready, foreground]);
 
   // Keep the last good state for offline launches. Only a finished, freshly loaded state is kept.
   useEffect(() => {
@@ -407,11 +527,13 @@ export function DataProvider({
       async signOut() {
         await api.signOut();
         await forget();
+        await sync.signedOut();
         setState((s) => signedOut(s));
       },
       async deleteAccount() {
         await api.deleteAccount();
         await forget();
+        await sync.signedOut();
         setState((s) => ({ ...signedOut(s), notice: { text: 'deleted', on: '/sign-in' } }));
       },
       async markLevelSeen(level) {
@@ -429,10 +551,37 @@ export function DataProvider({
       clearNotice() {
         patch({ notice: null });
       },
+      async checkWidgets() {
+        const installed = await sync.installed();
+        setState((s) => ({ ...s, widgets: { ...s.widgets, installed } }));
+        return installed;
+      },
+      async pinWidget(size) {
+        if (!sync.supported) return false;
+        try {
+          return await host.requestPinWidget(size);
+        } catch {
+          return false;
+        }
+      },
+      async refreshWidget() {
+        const s = stateRef.current;
+        const pending = new Set(widgetPendingRef.current.map((e) => e.id));
+        return sync.push({
+          me: s.me,
+          usual: s.usual,
+          today: s.today.filter((e) => !pending.has(e.id)),
+          audience: s.audience,
+          lastPlace: s.lastPlace,
+        });
+      },
     };
-  }, [api, cache, device, loadAll, now, patch]);
+  }, [api, cache, device, host, loadAll, now, patch, sync]);
 
-  const value = useMemo(() => ({ api, state, actions }), [api, state, actions]);
+  const value = useMemo(
+    () => ({ api, widgetHost: host, state, actions }),
+    [api, host, state, actions],
+  );
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
 

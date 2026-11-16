@@ -14,18 +14,31 @@ import {
   isCaffeinated,
   isFlareDrink,
   LOG_CATEGORIES,
+  widgetStateSchema,
   xpKindSchema,
   type DrinkDetails,
   type FlareCategory,
   type LogCategory,
+  type WidgetState,
 } from '@clink/shared';
 import type { Session as AuthSession, SupabaseClient } from '@supabase/supabase-js';
+
+// The widget-api and register-device schemas. @clink/shared doesn't export its api module from
+// the package entry yet (docs/build-notes/widget-app.md, for the Shared owner); until it does the
+// app reads the same file directly.
+import {
+  registerDeviceResponse,
+  WIDGET_API_PATHS,
+  WIDGET_API_REGION_HEADER,
+  WIDGET_API_TIMEOUT_MS,
+} from '../../../../packages/shared/src/api';
 
 import { readJson, writeJson, type KeyValue } from '../kv';
 import { ApiError, type ApiErrorCode } from './errors';
 import type {
   AuthMethod,
   ClinkApi,
+  DeviceRegistration,
   LogEntry,
   Me,
   OnboardingStep,
@@ -52,6 +65,9 @@ export interface SupabaseApiDeps {
   prepareAvatar?: (uri: string) => Promise<Uint8Array>;
   /** https origin for invite URLs; null until the domain exists (PRD 8 question 4). */
   inviteBase?: string | null;
+  /** Where widget-api lives: the project URL and its region (supabase/projects.json). */
+  widgetApi?: { url: string; region: string | null };
+  fetch?: typeof fetch;
 }
 
 /** A code is valid 10 minutes; 5 wrong codes lock the number for 15 (ARCHITECTURE.md 5). */
@@ -369,11 +385,33 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
     return id;
   }
 
-  /** register-device, best effort, native only (its schema takes ios or android). */
-  async function registerDevice(): Promise<void> {
-    if (deps.platform === 'web') return;
+  // The widget token from the last register-device (ARCHITECTURE.md 3.1). The app uses it only
+  // to read widget-api/state for the widget; the widget keeps its own sealed copy. Kept sealed
+  // per user so a launch whose register-device failed can still refresh the widget.
+  let widgetToken: { userId: string; token: string } | null = null;
+  const tokenKey = (u: string) => `widget_token.${u}`;
+
+  async function forgetWidgetToken(u: string): Promise<void> {
+    widgetToken = null;
+    await deps.sealed.removeItem(tokenKey(u));
+  }
+
+  async function currentWidgetToken(u: string): Promise<string | null> {
+    if (widgetToken?.userId === u) return widgetToken.token;
+    const stored = await deps.sealed.getItem(tokenKey(u));
+    if (stored && /^[A-Za-z0-9_-]{43}$/.test(stored)) {
+      widgetToken = { userId: u, token: stored };
+      return stored;
+    }
+    return null;
+  }
+
+  /** register-device, native only (its schema takes ios or android). Never throws. */
+  async function registerDevice(): Promise<DeviceRegistration | null> {
+    if (deps.platform === 'web') return null;
     try {
-      await invoke('register-device', {
+      const u = await uid();
+      const res = await invoke<unknown>('register-device', {
         action: 'register',
         installId: await installId(),
         platform: deps.platform,
@@ -382,9 +420,64 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
         locale: deps.locale?.() ?? null,
         notifPermission: false,
       });
+      const parsed = registerDeviceResponse.safeParse(res);
+      if (!parsed.success || parsed.data.status !== 'registered') return null;
+      widgetToken = { userId: u, token: parsed.data.widgetToken };
+      await deps.sealed.setItem(tokenKey(u), parsed.data.widgetToken);
+      return { widgetToken: parsed.data.widgetToken };
     } catch {
-      // Retried on the next launch. Nothing on screen depends on it in M1.
+      // Offline, no account yet (404), rate limited or suspended: retried on the next launch.
+      return null;
     }
+  }
+
+  async function getWidgetState(tz: string): Promise<WidgetState | null> {
+    const cfg = deps.widgetApi;
+    if (!cfg || deps.platform === 'web') return null;
+    const u = await uid();
+    const token = await currentWidgetToken(u);
+    if (!token) return null;
+    const doFetch = deps.fetch ?? globalThis.fetch;
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), WIDGET_API_TIMEOUT_MS) : null;
+    let res: Response;
+    try {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      };
+      if (cfg.region) headers[WIDGET_API_REGION_HEADER] = cfg.region;
+      res = await doFetch(`${cfg.url}${WIDGET_API_PATHS.state}?tz=${encodeURIComponent(tz)}`, {
+        method: 'GET',
+        headers,
+        ...(controller ? { signal: controller.signal } : {}),
+      });
+    } catch {
+      throw new ApiError('network');
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+    if (res.status === 401) {
+      // Rotated by another register-device, or revoked. Never reused.
+      await forgetWidgetToken(u);
+      throw new ApiError('unauthorized');
+    }
+    let body: unknown = null;
+    try {
+      body = await res.json();
+    } catch {
+      body = null;
+    }
+    if (res.status === 429) {
+      const sec = Number((body as { retryAfter?: number } | null)?.retryAfter);
+      throw new ApiError('rate_limited', Number.isFinite(sec) ? { retryAfterSec: sec } : {});
+    }
+    if (res.status === 403) throw new ApiError('suspended');
+    if (res.status >= 502 && res.status <= 504) throw new ApiError('network');
+    if (!res.ok) throw new ApiError('server');
+    const parsed = widgetStateSchema.safeParse(body);
+    if (!parsed.success) throw new ApiError('server');
+    return parsed.data;
   }
 
   // Outbox: drink logs never fail visibly (PRD 3.20). Ops replay in order.
@@ -561,6 +654,7 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
     },
 
     async signOut() {
+      const s = await authSession().catch(() => null);
       if (deps.platform !== 'web') {
         try {
           await invoke('register-device', { action: 'signout', installId: await installId() });
@@ -568,6 +662,7 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
           // Signing out still works offline; the device row ages out (4.8).
         }
       }
+      if (s) await forgetWidgetToken(s.user.id);
       await signOutLocal();
     },
 
@@ -613,7 +708,7 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
       }
       await deps.plain.removeItem(key);
       codeSentAt.delete(e164);
-      void registerDevice();
+      // register-device runs from the store once the account exists (lib/widget/sync.ts).
       return toSession(data.session);
     },
 
@@ -631,13 +726,13 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
         if (e instanceof ApiError && e.code === 'under_age') await signOutLocal();
         throw e;
       }
-      void registerDevice();
     },
 
     async deleteAccount() {
       const u = await uid();
       await invoke('delete-account', {});
       await deps.sealed.removeItem(outboxKey(u));
+      await forgetWidgetToken(u);
       await deps.plain.removeItem(`level_seen.${u}`);
       await signOutLocal();
     },
@@ -965,9 +1060,9 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
       // once expo-notifications ships with push (M4).
       return 'denied';
     },
-    async isWidgetInstalled() {
-      return false;
-    },
+
+    registerDevice,
+    getWidgetState,
   };
   return api;
 }

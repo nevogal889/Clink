@@ -13,3 +13,9 @@ export function legalUrl(page: LegalPage): string | null {
   const base = webBase();
   return base ? `${base}/${page}` : null;
 }
+
+/** The `dev` variant (app.config.ts): local, development and preview builds. Debug screens. */
+export function isDevVariant(): boolean {
+  const extra = (Constants.expoConfig?.extra ?? {}) as { variant?: string };
+  return extra.variant === 'dev';
+}

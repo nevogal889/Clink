@@ -557,7 +557,11 @@ private fun Incoming(model: WidgetModel, s: Scale, c: Content.Incoming) {
           }
           Spacer(GlanceModifier.width(6.dp))
           Text(c.name, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1, modifier = if (small) GlanceModifier.defaultWeight() else GlanceModifier)
-          if (small) Image(ImageProvider(c.hero), contentDescription = null, modifier = GlanceModifier.size(28.dp))
+          // Small: the countdown takes the hero's corner; a countdown is never dropped (DESIGN.md 5.1).
+          if (small) {
+            Spacer(GlanceModifier.width(4.dp))
+            Chrono(R.layout.clink_chrono_secondary, SECONDARY * s.m.textScale, "%s", c.expiresAt, countDown = true)
+          }
           c.more?.let { more ->
             Spacer(GlanceModifier.width(6.dp))
             Box(modifier = GlanceModifier.background(ImageProvider(R.drawable.clink_bg_pill_ink)).padding(horizontal = 6.dp, vertical = 1.dp).semantics { contentDescription = c.moreA11y ?: more }) {
@@ -576,7 +580,6 @@ private fun Incoming(model: WidgetModel, s: Scale, c: Content.Incoming) {
             Chrono(R.layout.clink_chrono_secondary, SECONDARY * s.m.textScale, "%s", c.expiresAt, countDown = true)
           }
         }
-        if (small) Chrono(R.layout.clink_chrono_secondary, SECONDARY * s.m.textScale, "%s", c.expiresAt, countDown = true)
       }
       if (!small) Image(ImageProvider(c.hero), contentDescription = null, modifier = GlanceModifier.size(if (model.layout.wide) 72.dp else 56.dp))
     }

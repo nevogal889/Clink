@@ -133,7 +133,7 @@ export default function Camera() {
 
 function CameraScreen() {
   const router = useRouter();
-  const { api, state, actions } = useData();
+  const { state, actions } = useData();
   const theme = useTheme();
   const { c } = theme;
   const snack = useSnackbar();
@@ -150,21 +150,25 @@ function CameraScreen() {
   const [sending, setSending] = useState(false);
   const [sendFailed, setSendFailed] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const [widgetMissing, setWidgetMissing] = useState(false);
+  const [widgetNoticeClosed, setWidgetNoticeClosed] = useState(false);
   const [invites, setInvites] = useState(0);
   const [panelH, setPanelH] = useState(260);
   const [barH, setBarH] = useState(72);
-  useSnackbarInset(panelH + barH + insets.bottom, useIsFocused());
 
   const now = useNow(!!state.live);
 
+  // "Add the widget" stays until a widget is detected (PRD F8). The installed list is read on
+  // every foreground (lib/store.tsx) and again here, so coming back from the guide updates it.
+  const focused = useIsFocused();
+  useSnackbarInset(panelH + barH + insets.bottom, focused);
   useEffect(() => {
-    let alive = true;
-    api.isWidgetInstalled().then((ok) => alive && setWidgetMissing(!ok));
-    return () => {
-      alive = false;
-    };
-  }, [api]);
+    if (focused) void actions.checkWidgets();
+  }, [focused, actions]);
+  const widgetMissing =
+    state.widgets.supported &&
+    state.widgets.installed !== null &&
+    state.widgets.installed.length === 0 &&
+    !widgetNoticeClosed;
 
   // A live flare that has closed leaves the bar quietly (PRD 3.5 rules 12 and 13).
   const live = state.live && msLeft(new Date(state.live.expiresAt), now) > 0 ? state.live : null;
@@ -265,7 +269,7 @@ function CameraScreen() {
         {widgetMissing && !live ? (
           <WidgetNotice
             onOpen={() => router.push('/widget-guide')}
-            onClose={() => setWidgetMissing(false)}
+            onClose={() => setWidgetNoticeClosed(true)}
           />
         ) : null}
         <Viewfinder

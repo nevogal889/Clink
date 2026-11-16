@@ -403,7 +403,7 @@ Grouped by screen. Inputs list their character limit as "input N" (limits from `
 | `age.title` | Title | When were you born? | 22 |
 | `age.month` | Picker label | Month | 8 |
 | `age.year` | Picker label | Year | 6 |
-| `age.helper` | Helper. Never names the minimum age (neutral age screen). | Just a quick check. We don't save the date. | 50 |
+| `age.helper` | Helper. Never names the minimum age (neutral age screen). | A quick check. We don't save the date. | 50 |
 | `age.cta` | Button | Continue | 12 |
 | `age.too_young.title` | Refused screen title | Clink isn't for you yet | 26 |
 | `age.too_young` | Refused screen body | Clink is for people {min} and over. | 40 |
@@ -908,6 +908,8 @@ No quiet hours, no time windows, no do-not-disturb option (`PRD.md` 3.14).
 | `set.widgets.guide` | Row | How to add a widget | 22 |
 | `set.widgets.small_note` | Sub-line on a small widget | Small widgets have no Who joins? button. | 42 |
 | `set.widgets.ios_hint` | Footer on iOS (the list is read-only) | To change one, hold the widget, then tap Edit Widget. | 56 |
+| `set.widgets.row_plain` | Row for a small widget (it has no audience) | {size} widget | 16 |
+| `set.widgets.auto_now` | Sub-line on a medium widget set to Automatic | Who joins? goes to {audience} right now | 44 |
 | `set.sec.notifs` | Section | Notifications | 14 |
 | `set.n.flares` | Toggle | Friend flares | 16 |
 | `set.n.flares.sub` | Sub-line | "Maya wants matcha · in 10 min" | 34 |
@@ -1268,6 +1270,23 @@ Used to build the time variables in 0.2 (`app/src/lib/format.ts`).
 | `fmt.words.hm` | `{ago_words}` and `{left_words}`, hours and minutes | {h, plural, one {# hour} other {# hours}} {m, plural, one {# minute} other {# minutes}} | n/a |
 
 ---
+
+### 4.28 Developer screens (dev builds only)
+
+Shown only in the `dev` variant (`app.config.ts`), never in a store build. The same voice rules apply. Fixture ids and titles on the "Widget states" list come from `packages/shared/fixtures/widget-states` and are test data, not copy.
+
+| Key | Element | Text | Max |
+|---|---|---|---|
+| `dev.ws.row` | Settings > Widgets row | Widget states | 16 |
+| `dev.ws.title` | Title | Widget states | 16 |
+| `dev.ws.sub` | Sub-line | Sends a test state to every Clink widget on this phone. Its times move to now. | 84 |
+| `dev.ws.needs_tap` | Row sub-line, fixture with widget-local parts | Part of this state lives on the widget. Tap the widget to see it. | 70 |
+| `dev.ws.sent` | Snackbar | {id} is on the widget | 32 |
+| `dev.ws.refused` | Snackbar | The widget refused {id} | 32 |
+| `dev.ws.none` | Line when no widget is on the home screen | No widget on the home screen yet. Add one first. | 52 |
+| `dev.ws.unsupported` | Line where the platform has no widget yet (iOS until the Apple account) | This phone has no Clink widget yet. | 40 |
+| `dev.ws.live` | Button | Back to my data | 18 |
+| `dev.ws.live_done` | Snackbar | Your own data is back on the widget | 40 |
 
 ## 5. Notifications
 

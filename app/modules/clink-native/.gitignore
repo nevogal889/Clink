@@ -1,0 +1,7 @@
+# Gradle state of the standalone widget harness (android/standalone). Never committed.
+android/standalone/.gradle/
+android/standalone/.kotlin/
+android/standalone/build/
+android/build/
+android/.gradle/
+android/.kotlin/

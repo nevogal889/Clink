@@ -211,4 +211,18 @@ class OutboxAndTimersTest {
     // A queued log needs no timer: it never shows Failed.
     assertNull(Deadlines.nextUiChange(snap(emptyMap(), OutboxLogic.enqueue(OutboxState(), log(uuid(17), t0))), t0, london))
   }
+
+  @Test
+  fun theDefaultClockFollowsATimeZoneChange() {
+    // A travelling phone: today's date and the midnight job must use the zone it is in now.
+    val before = java.util.TimeZone.getDefault()
+    try {
+      java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Europe/London"))
+      assertEquals(london, DeviceZoneClock.zone)
+      java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("America/New_York"))
+      assertEquals(ZoneId.of("America/New_York"), DeviceZoneClock.zone)
+    } finally {
+      java.util.TimeZone.setDefault(before)
+    }
+  }
 }

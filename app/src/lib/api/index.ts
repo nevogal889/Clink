@@ -9,7 +9,7 @@ import { Platform } from 'react-native';
 import { webBase } from '../config';
 import { prepareAvatar } from '../avatar';
 import { plainStore, sealedStore } from '../storage';
-import { createSupabaseClient, publicSupabase } from '../supabaseClient';
+import { createSupabaseClient, publicRegion, publicSupabase } from '../supabaseClient';
 import { createMockApi, type MockScenario } from './mock';
 import { createSupabaseApi } from './supabase';
 import type { ClinkApi } from './types';
@@ -38,6 +38,7 @@ export function createDefaultApi(): ClinkApi {
     uuid: randomUUID,
     prepareAvatar,
     inviteBase: webBase(),
+    widgetApi: { url: cfg.url, region: publicRegion() },
     locale: () => Intl.DateTimeFormat().resolvedOptions().locale ?? null,
   });
 }
