@@ -17,10 +17,14 @@ import { useReducedMotion, useTheme } from '@/ui/useTheme';
 const RING = 40;
 
 /** Two rim rings with "{n} of 2". At 2 of 2 the rings slide together and touch (the clink). */
+// The rings fill at 2 (the widget comes alive), then the count keeps going with no ceiling
+// (DECISIONS.md, "Invite goal"). It counts invites sent, never friends who joined.
 export function InviteMeter({ filled }: { filled: number }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const n = Math.min(2, filled);
+  const label =
+    filled > 2 ? t('onb.invite.meter_more', { n: filled }) : t('onb.invite.meter', { n });
   const gap = useState(() => new Animated.Value(n >= 2 ? -6 : spacing.s2))[0];
   const was = useRef(n);
 
@@ -61,8 +65,8 @@ export function InviteMeter({ filled }: { filled: number }) {
       testID="invite-meter"
       accessible
       accessibilityRole="progressbar"
-      accessibilityLabel={t('onb.invite.meter', { n })}
-      accessibilityValue={{ min: 0, max: 2, now: n }}
+      accessibilityLabel={label}
+      accessibilityValue={filled > 2 ? { text: label } : { min: 0, max: 2, now: n }}
       style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.s4 }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -70,7 +74,7 @@ export function InviteMeter({ filled }: { filled: number }) {
         <Animated.View style={{ width: gap }} />
         {ring(n >= 2, 1)}
       </View>
-      <Txt variant="headline">{t('onb.invite.meter', { n })}</Txt>
+      <Txt variant="headline">{label}</Txt>
     </View>
   );
 }

@@ -705,7 +705,7 @@ Killing the app resumes on the same step (PRD 3.2).
 
 **Step 4: invite friends.**
 - Title "Invite your people", one line of why.
-- **Meter:** two empty rim rings, 40 pt, side by side, with "0 of 2" in `headline` beside them. Each share-button tap or contact Add fills one ring in cobalt. At 2 of 2 the rings clink (2.9) and the haptic plays.
+- **Meter:** two empty rim rings, 40 pt, side by side, with "0 of 2" in `headline` beside them. Each share-button tap or contact Add fills one ring in cobalt. At 2 of 2 the rings clink (2.9) and the haptic plays. Past 2 the rings stay joined and the label counts on ("3 invited") with no ceiling (DECISIONS.md).
 - **Share buttons:** three buttons in one row, equal width, 72 pt high, icon above label:
   - WhatsApp: the official WhatsApp glyph, unmodified, per WhatsApp's brand rules. Hidden if WhatsApp isn't installed; the other two then share the row.
   - Messages: a speech-bubble glyph, label "Messages". Not Apple's or Google's app icon, because their brand rules don't allow it.

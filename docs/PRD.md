@@ -162,7 +162,7 @@ Every spec decision below follows these. When a case is not covered, pick the op
 **Behaviour rules.**
 1. Step 2: name is 1 to 30 characters. Apple/Google name pre-fills if given. Photo from camera or gallery; initials are the fallback.
 2. Step 3: user picks up to 3 drinks from the catalog (`COPY.md`) or a preset, or adds their own. #1 is the widget default and the quick-flare drink. Each slot has a "Make it yours" button for order details (3.7). Continue needs at least 1 drink.
-3. Step 4: share buttons (WhatsApp, Messages, More) and a list of contacts already on Clink with an Add button. A progress meter shows "0 of 2". Details in 3.15. Apple and Google users also see an optional phone-number field here.
+3. Step 4: share buttons (WhatsApp, Messages, More) and a list of contacts already on Clink with an Add button. A progress meter fills to 2, then keeps counting with no ceiling (DECISIONS.md, "Invite goal"). Details in 3.15. Apple and Google users also see an optional phone-number field here.
 4. Step 5: our own explainer screen first, then the system permission dialog only if the user taps the positive button. Reason: the system dialog can be shown once. The positive button never says "Allow" (App Review 5.1.1(iv)); wording in `COPY.md`.
 5. Step 6: a short illustrated guide per platform. "I added it" checks for an installed widget. "Remind me later" moves on.
 6. If the user arrived from an invite, step 1 shows who invited them (first name and initials; no photo before sign-in), and they are already friends with the inviter after sign-in. The welcome banner has a "Not someone you know?" button that removes and blocks the inviter in one tap (M-04).
@@ -603,7 +603,7 @@ Sections, in order:
 5. **Deferred deep link.** Tapping the link without the app goes to the store; after install and sign-in, the new user is already friends with the inviter and sees "Maya invited you". With the app installed, the link opens the app directly. Mechanism in `ARCHITECTURE.md` 6. On iOS the new user taps Paste once (3.2 rule 9).
 6. Fallback when attribution fails after install: after sign-in, show "Did someone invite you?" with people in their contacts who are on Clink (contacts pre-prompt first if not granted).
 7. Link opened on a computer: a small web page with a QR code and store badges.
-8. **Progress meter.** Onboarding shows "0 of 2". It counts share-button taps and contact Adds in this session, max one per button. Reason: share apps don't reliably report a sent message, so the meter tracks what the user did. It is a nudge, never a gate. In the friends sheet the meter shows real friends ("3 of 20").
+8. **Progress meter.** Onboarding shows "0 of 2", fills at 2, then keeps counting ("3 invited") with no ceiling (DECISIONS.md, "Invite goal"). It counts every share-button tap and contact Add in this session. Reason: share apps don't reliably report a sent message, so the meter tracks what the user did. It is a nudge, never a gate. In the friends sheet the meter shows real friends ("3 of 20").
 9. Share buttons also appear in the friends sheet, on the no-friends widget state's landing screen, and on the "Who joins?" no-friends screen.
 10. **Existing Clink users who open an invite see a confirm card: "Add Maya as a friend?" with Add and Not now.** Nothing is written before Add. Add creates the friendship, because both have now agreed. Reason: display names are free text, so a stranger could name themselves "Mom"; one tap on a link must not make them a friend (M-04).
 11. New users (arriving through the invite during onboarding) keep the automatic friendship (`DECISIONS.md`). The welcome banner offers "Not someone you know?", which removes and blocks the inviter in one tap.
@@ -623,7 +623,7 @@ Sections, in order:
 3. More opens the system share sheet with the message and URL.
 4. Fresh install from the link, then sign-in: friends with the inviter, with "invited you" shown. Passes in at least 9 of 10 test installs on each platform.
 5. When attribution fails, the "Did someone invite you?" screen appears.
-6. The onboarding meter reaches "2 of 2" after two different share-button taps or contact Adds.
+6. The onboarding meter reaches "2 of 2" after two share-button taps or contact Adds, and shows "3 invited" after a third.
 7. The link opened on a desktop browser shows the QR page.
 8. An existing user who opens an invite gets no friendship until they tap Add on the confirm card; Not now leaves nothing behind.
 9. A code redeemed 20 times, or older than 30 days, is refused with the same message as an unknown code.
@@ -846,7 +846,7 @@ Updated from the prototype for these decisions: no quiet hours, Smoothie & Juice
 
 **F4 Set your usual 3.** Trigger: onboarding step 3. Steps: preset, or pick up to 3 across Coffee, Matcha, Tea, Smoothie & Juice (10 each) → #1 is the widget default → optional "Make it yours" → Continue (needs 1). Edge: drink not listed → Add your own; a 4th replaces #3; water never takes a slot.
 
-**F5 Invite friends.** Trigger: onboarding step 4. Steps: meter "0 of 2" → WhatsApp / Messages / More, or Add contacts already on Clink → meter fills → Continue, or Later. Edge: contacts denied, share buttons still work; Apple/Google users see the optional phone field; skipped → the widget's no-friends state keeps an Invite button. No URL or "Invite link" text anywhere.
+**F5 Invite friends.** Trigger: onboarding step 4. Steps: meter "0 of 2" (keeps counting past 2) → WhatsApp / Messages / More, or Add contacts already on Clink → meter fills → Continue, or Later. Edge: contacts denied, share buttons still work; Apple/Google users see the optional phone field; skipped → the widget's no-friends state keeps an Invite button. No URL or "Invite link" text anywhere.
 
 **F6 Accept a friend request.** Trigger: someone added you from contacts. Steps: notification → Accept (from the notification without opening the app, or in the friends sheet) → you see each other's snaps and flares. XP: +10 to both (once per pair). Edge: ignored requests stay pending and expire after 30 days, never "declined"; at 20, remove someone first.
 

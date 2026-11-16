@@ -140,3 +140,8 @@ Every decision the CEO has approved so far. When this file and `original-prd.md`
 - **Supabase projects:** development uses `clink-dev` in West EU (Ireland, eu-west-1). It was created there by accident; it stays, because the region only matters for real users. Production is a separate project created at the Pro upgrade before beta, with its region chosen then (recommendation: East US, the largest launch market).
 - **Expo home:** Clink's EAS project is `@clinknew/clink`, in its own Expo organization `clinknew` (not the CEO's other organizations), so build quota and access stay separate. Builds use a robot token with the Developer role.
 - **Next milestone while the Apple account is pending:** the first Android build on the CEO's emulator, then the Android home-screen widget.
+
+## CEO answers after the first Android build
+- **Age step:** stays before name and photo, month and year only, nothing saved, so an under-16 never gives us a name or photo. The helper never names the minimum age (a neutral age screen), and its wording is softer.
+- **Invite goal:** the sub-line reads "Clink gets better when at least 2 friends are on it." The meter fills at 2, then keeps counting invites sent with no ceiling ("3 invited"). The share buttons always stay. Every user is encouraged to invite as many of their break people as they like.
+- **Already on Clink:** after contacts permission, people from your contacts who are on Clink are listed on the invite screen, each with an Add button. Built in M3 with contact matching.

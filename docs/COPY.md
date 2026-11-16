@@ -403,7 +403,7 @@ Grouped by screen. Inputs list their character limit as "input N" (limits from `
 | `age.title` | Title | When were you born? | 22 |
 | `age.month` | Picker label | Month | 8 |
 | `age.year` | Picker label | Year | 6 |
-| `age.helper` | Helper | Used only for this check. The date isn't saved. | 50 |
+| `age.helper` | Helper. Never names the minimum age (neutral age screen). | Just a quick check. We don't save the date. | 50 |
 | `age.cta` | Button | Continue | 12 |
 | `age.too_young.title` | Refused screen title | Clink isn't for you yet | 26 |
 | `age.too_young` | Refused screen body | Clink is for people {min} and over. | 40 |
@@ -492,8 +492,9 @@ Progress label on steps 2 to 6: `onb.progress` = "{n} of 6" (max 8). Back button
 | Key | Element | Text | Max |
 |---|---|---|---|
 | `onb.invite.title` | Title | Who do you take breaks with? | 30 |
-| `onb.invite.sub` | Sub-line | Clink gets good once two friends are on it. | 48 |
-| `onb.invite.meter` | Progress meter | {n} of 2 | 8 |
+| `onb.invite.sub` | Sub-line | Clink gets better when at least 2 friends are on it. | 54 |
+| `onb.invite.meter` | Progress meter, 0 to 2 invites | {n} of 2 | 8 |
+| `onb.invite.meter_more` | Progress meter after 2 invites; keeps counting with no ceiling (DECISIONS.md) | {n} invited | 12 |
 | `share.whatsapp` | Button | WhatsApp | 10 |
 | `share.messages` | Button | Messages | 10 |
 | `share.more` | Button (system share sheet) | More | 8 |

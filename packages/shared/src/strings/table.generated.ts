@@ -49,7 +49,7 @@ export const STRINGS = {
   'age.title': 'When were you born?',
   'age.month': 'Month',
   'age.year': 'Year',
-  'age.helper': "Used only for this check. The date isn't saved.",
+  'age.helper': "Just a quick check. We don't save the date.",
   'age.cta': 'Continue',
   'age.too_young.title': "Clink isn't for you yet",
   'age.too_young': 'Clink is for people {min} and over.',
@@ -113,8 +113,9 @@ export const STRINGS = {
   'custom.cat_helper': 'This picks the picture and the options.',
   'custom.cta': 'Add',
   'onb.invite.title': 'Who do you take breaks with?',
-  'onb.invite.sub': 'Clink gets good once two friends are on it.',
+  'onb.invite.sub': 'Clink gets better when at least 2 friends are on it.',
   'onb.invite.meter': '{n} of 2',
+  'onb.invite.meter_more': '{n} invited',
   'share.whatsapp': 'WhatsApp',
   'share.messages': 'Messages',
   'share.more': 'More',
@@ -1165,7 +1166,7 @@ export const STRING_META: Record<
   },
   'age.helper': {
     section: '4.1',
-    context: 'Helper',
+    context: 'Helper. Never names the minimum age (neutral age screen).',
     max: 50,
     placeholders: [],
   },
@@ -1574,13 +1575,24 @@ export const STRING_META: Record<
   'onb.invite.sub': {
     section: '4.3',
     context: 'Sub-line',
-    max: 48,
+    max: 54,
     placeholders: [],
   },
   'onb.invite.meter': {
     section: '4.3',
-    context: 'Progress meter',
+    context: 'Progress meter, 0 to 2 invites',
     max: 8,
+    placeholders: [
+      {
+        name: 'n',
+        type: 'simple',
+      },
+    ],
+  },
+  'onb.invite.meter_more': {
+    section: '4.3',
+    context: 'Progress meter after 2 invites; keeps counting with no ceiling (DECISIONS.md)',
+    max: 12,
     placeholders: [
       {
         name: 'n',
@@ -7335,6 +7347,7 @@ export interface StringParams {
   'onb.invite.title': Record<string, never>;
   'onb.invite.sub': Record<string, never>;
   'onb.invite.meter': { n: string | number };
+  'onb.invite.meter_more': { n: string | number };
   'share.whatsapp': Record<string, never>;
   'share.messages': Record<string, never>;
   'share.more': Record<string, never>;
@@ -8081,22 +8094,22 @@ export const STRING_REFERENCES = [
   {
     key: 'profile.level_desc',
     note: '(from section 3)',
-    line: 850,
+    line: 851,
   },
   {
     key: 'empty.requests',
     note: '(section hidden)',
-    line: 1065,
+    line: 1066,
   },
   {
     key: 'a11y.w.confirm',
     note: 'the visible confirmation text ("Logged {drink}", "Sent to {audience}")',
-    line: 1218,
+    line: 1219,
   },
   {
     key: 'a11y.react',
     note: 'uses `snapv.react.a11y`',
-    line: 1246,
+    line: 1247,
   },
 ] as const;
 
