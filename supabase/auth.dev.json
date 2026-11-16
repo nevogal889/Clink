@@ -1,0 +1,38 @@
+{
+  "$comment": "Supabase Auth settings for clink-dev (ARCHITECTURE.md 5, RISK_REVIEW.md S-14). Applied by scripts/supabase-auth-dev.mjs through PATCH /v1/projects/{ref}/config/auth. Development only: the test phone numbers and fixed codes below must never be copied to clink-prod, which gets only the one rotated App Review number (ARCHITECTURE.md 5, M-15). No secret belongs in this file.",
+  "settings": {
+    "site_url": "http://localhost:8081",
+    "uri_allow_list": "http://localhost:8081/**",
+
+    "disable_signup": false,
+    "external_email_enabled": false,
+    "external_anonymous_users_enabled": false,
+    "external_apple_enabled": false,
+    "external_google_enabled": false,
+    "external_phone_enabled": true,
+
+    "sms_otp_exp": 600,
+    "sms_otp_length": 6,
+    "sms_max_frequency": 30,
+
+    "jwt_exp": 3600,
+    "refresh_token_rotation_enabled": true,
+    "security_refresh_token_reuse_interval": 10,
+    "security_manual_linking_enabled": true,
+
+    "mfa_totp_enroll_enabled": false,
+    "mfa_totp_verify_enabled": false
+  },
+  "testPhones": {
+    "$comment": "Supabase test OTPs: these numbers sign in with the fixed code and no SMS is sent. 555-0100 to 555-0199 is the NANP range reserved for fiction. Codes are not secret (dev project, no real users).",
+    "validDays": 180,
+    "numbers": {
+      "12015550101": "482910",
+      "12015550102": "573021",
+      "12015550103": "664132",
+      "12015550104": "755243",
+      "12015550105": "846354",
+      "12015550106": "937465"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$comment": "Supabase advisor findings we accept, with the reason. scripts/supabase-advisors.mjs fails on any ERROR or WARN not listed here. Match on lint name plus a substring of its detail. Owner: CTO.",
+  "accepted": [
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "detail": "public.flare_view(",
+      "reason": "Intended API (ARCHITECTURE.md 0 rule 3 and 4.4): the one way a recipient reads a flare with mutual-friend names only. search_path is empty, execute is granted to authenticated only, the caller comes from auth.uid(), and 00_security and 05_flares test it."
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "detail": "public.incoming_flares(",
+      "reason": "Intended API (ARCHITECTURE.md 4.4): lists the caller's incoming flares without group fields. Same controls as flare_view."
+    },
+    {
+      "name": "unused_index",
+      "detail": "",
+      "reason": "INFO only. clink-dev has no traffic yet, so every index reads as unused. Re-check on clink-prod after beta."
+    }
+  ]
+}

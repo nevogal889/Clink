@@ -32,7 +32,9 @@ insert into public.moderation_notices (user_id, kind, reason) values (tests.id('
 select is(tests.affected('a', 'update public.moderation_notices set seen_at = now()'), 1::bigint, 'the owner marks a notice seen');
 select is(tests.affected('b', 'update public.moderation_notices set seen_at = now()'), 0::bigint, 'b cannot touch a''s notices');
 
--- storage deletes: own folder only
+-- storage deletes: own folder only. The Storage API sets this flag for its deletes; hosted
+-- Supabase refuses direct deletes from storage tables without it (storage.protect_delete).
+set local storage.allow_delete_query = 'true';
 select is(tests.affected('b', format($q$delete from storage.objects where bucket_id = 'avatars' and name = %L$q$, tests.id('a') || '/1.jpg')),
           0::bigint, 'b cannot delete a''s avatar');
 select is(tests.affected('a', format($q$delete from storage.objects where bucket_id = 'avatars' and name = %L$q$, tests.id('a') || '/1.jpg')),

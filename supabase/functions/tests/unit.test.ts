@@ -1,7 +1,14 @@
 // Pure helpers: age rule, error mapping, crypto, schemas, session freshness. No database needed.
-import { assert, assertEquals, assertFalse } from '@std/assert';
+import { assert, assertEquals, assertFalse, assertRejects } from '@std/assert';
+import { generateKeyPair, SignJWT } from 'jose';
 import { isOldEnough, todayUtc } from '../_shared/age.ts';
-import { isFreshSession, signInMethod } from '../_shared/auth.ts';
+import {
+  headerRoutedVerifier,
+  isFreshSession,
+  secretVerifier,
+  signInMethod,
+  type Verifier,
+} from '../_shared/auth.ts';
 import { base64url, decrypt, encrypt, phoneHmac, sha256, toBase64 } from '../_shared/crypto.ts';
 import { errorResponse, fromDbError, HttpError } from '../_shared/http.ts';
 import {
@@ -113,3 +120,36 @@ Deno.test('auth: fresh session and sign-in method', () => {
   }
   assert(threw, 'email sign-in is refused');
 });
+
+Deno.test(
+  'auth: the token header picks the verifier, and HS256 needs a configured secret',
+  async () => {
+    const secret = 'test-secret-at-least-32-characters-long';
+    const claims = { sub: '00000000-0000-0000-0000-000000000001', role: 'authenticated' };
+    const hsToken = await new SignJWT(claims)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setAudience('authenticated')
+      .setExpirationTime('5m')
+      .sign(new TextEncoder().encode(secret));
+    const { privateKey } = await generateKeyPair('ES256');
+    const esToken = await new SignJWT(claims)
+      .setProtectedHeader({ alg: 'ES256', kid: 'k1' })
+      .setAudience('authenticated')
+      .setExpirationTime('5m')
+      .sign(privateKey);
+    const seen: string[] = [];
+    const fakeJwks: Verifier = {
+      verify(token) {
+        seen.push(token === esToken ? 'es' : 'other');
+        return Promise.resolve({ sub: claims.sub, role: 'authenticated' });
+      },
+    };
+    const both = headerRoutedVerifier(fakeJwks, secretVerifier(secret));
+    assertEquals((await both.verify(hsToken)).sub, claims.sub, 'HS256 goes to the secret');
+    await both.verify(esToken);
+    assertEquals(seen, ['es'], 'ES256 goes to the JWKS');
+    const jwksOnly = headerRoutedVerifier(fakeJwks, null);
+    await assertRejects(() => jwksOnly.verify(hsToken), Error, 'HS256 not accepted');
+    await assertRejects(() => jwksOnly.verify('not-a-jwt'), Error, 'malformed');
+  },
+);

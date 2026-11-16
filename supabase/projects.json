@@ -1,0 +1,10 @@
+{
+  "$comment": "Public facts about the Supabase projects. Everything here is public by design and ships in the app (ARCHITECTURE.md 8.5: the project URL and the publishable key go in app config). Never add a secret key, service role key, JWT secret or database password here.",
+  "dev": {
+    "name": "clink-dev",
+    "ref": "tppolgvuckjtxsheskat",
+    "region": "eu-west-1",
+    "url": "https://tppolgvuckjtxsheskat.supabase.co",
+    "publishableKey": "sb_publishable_Y55XViUV9bpFHhVdxmrI1A_AfaZX-7l"
+  }
+}

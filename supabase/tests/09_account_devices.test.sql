@@ -112,6 +112,9 @@ select is((select total from public.xp_totals where user_id = tests.id('b')), 0,
           'invite XP the deleted user gave in the last 7 days is reversed (PRD 4.6 AC 3)');
 select is((select count(*)::int from public.push_devices where user_id = tests.id('x')), 0, 'push devices are deleted');
 -- The edge function deletes the files through the Storage API; the test does the same with SQL.
+-- Hosted Supabase refuses direct deletes from storage tables unless this flag is set, which the
+-- Storage API does for its own deletes (storage.protect_delete). Plain Postgres ignores it.
+set local storage.allow_delete_query = 'true';
 delete from storage.objects where name like tests.id('x') || '/%';
 select ok(private.purge_auth_audit(tests.id('x')) = 1, 'audit log rows naming the user are deleted');
 delete from auth.users where id = tests.id('x');

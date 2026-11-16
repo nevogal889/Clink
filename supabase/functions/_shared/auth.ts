@@ -1,7 +1,9 @@
 // Verifies the caller's Supabase access token (ARCHITECTURE.md 4.4: "checks the user JWT").
-// Asymmetric project keys are verified against the project's JWKS; a project that still uses the
-// legacy shared secret sets SUPABASE_JWT_SECRET (local `supabase start` and the tests do).
-import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose';
+// Hosted projects sign access tokens with an asymmetric key (clink-dev: ES256), verified against
+// the project's JWKS. Local `supabase start` and the tests sign with the legacy shared secret
+// (SUPABASE_JWT_SECRET). With both available, the token's header picks the path, and each path
+// accepts only its own algorithms, so a token can't choose a weaker check.
+import { createRemoteJWKSet, decodeProtectedHeader, jwtVerify, type JWTVerifyGetKey } from 'jose';
 import { HttpError } from './http.ts';
 
 export type AuthMethod = 'apple' | 'google' | 'phone';
@@ -43,6 +45,7 @@ export function jwksVerifier(supabaseUrl: string): Verifier {
   return {
     async verify(token) {
       const { payload } = await jwtVerify(token, jwks, {
+        algorithms: ASYMMETRIC_ALGS,
         audience: 'authenticated',
         issuer: `${supabaseUrl}/auth/v1`,
       });
@@ -51,12 +54,36 @@ export function jwksVerifier(supabaseUrl: string): Verifier {
   };
 }
 
+// Signing algorithms Supabase offers for asymmetric JWT signing keys.
+const ASYMMETRIC_ALGS = ['ES256', 'RS256', 'EdDSA'];
+
+// HS256 tokens go to `hs` (when a shared secret is configured), everything else to `jwks`.
+export function headerRoutedVerifier(jwks: Verifier, hs: Verifier | null): Verifier {
+  return {
+    verify(token) {
+      let alg: string | undefined;
+      try {
+        alg = decodeProtectedHeader(token).alg;
+      } catch {
+        return Promise.reject(new Error('malformed token'));
+      }
+      if (alg === 'HS256') {
+        return hs ? hs.verify(token) : Promise.reject(new Error('HS256 not accepted'));
+      }
+      return jwks.verify(token);
+    },
+  };
+}
+
 export function verifierFromEnv(): Verifier {
   const url = Deno.env.get('SUPABASE_URL');
   const secret = Deno.env.get('SUPABASE_JWT_SECRET');
-  if (secret) return secretVerifier(secret, url ? `${url}/auth/v1` : undefined);
-  if (!url) throw new Error('SUPABASE_URL is not set');
-  return jwksVerifier(url);
+  if (!url) {
+    if (secret) return secretVerifier(secret);
+    throw new Error('SUPABASE_URL is not set');
+  }
+  const issuer = `${url}/auth/v1`;
+  return headerRoutedVerifier(jwksVerifier(url), secret ? secretVerifier(secret, issuer) : null);
 }
 
 export async function requireUser(req: Request, verifier: Verifier): Promise<Claims> {
