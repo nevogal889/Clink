@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Clink small widget (DESIGN.md 5.3 / 5.2, 5.5). Resizable; ClinkWidget picks the layout from the
+     size. No updatePeriodMillis: the app and WorkManager drive every update (ARCHITECTURE.md 3.3).
+     No configuration activity yet: the Who joins? audience screen comes with groups (M3). -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewImage="@drawable/clink_mark"
+    android:widgetCategory="home_screen" />

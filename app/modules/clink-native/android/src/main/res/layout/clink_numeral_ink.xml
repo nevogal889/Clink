@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A count in numeral.l (DESIGN.md 2.4): condensed bold, tabular, no font padding, so the count
+     line is as tall as its digits. Glance Text can't turn off font padding, and the small widget
+     needs that room. The size is set per render (text scale cap). -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clink_text"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="sans-serif-condensed"
+    android:textStyle="bold"
+    android:textColor="@color/clink_ink_primary"
+    android:textSize="34sp"
+    android:fontFeatureSettings="tnum"
+    android:includeFontPadding="false"
+    android:lineSpacingMultiplier="1"
+    android:importantForAccessibility="no"
+    android:maxLines="1" />

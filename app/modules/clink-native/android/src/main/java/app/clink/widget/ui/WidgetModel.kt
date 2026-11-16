@@ -13,11 +13,16 @@ enum class Layout {
   SMALL_TALL,
   /** 4x2 under 150 dp high. */
   MEDIUM_SHORT,
-  /** 4x2. */
-  MEDIUM;
+  /** 4x2 at about 250 dp wide (DESIGN.md 5.5): compact strings and buttons. */
+  MEDIUM,
+  /** 4x2 at 300 dp wide and up: the full DESIGN.md 5.2 layout. */
+  MEDIUM_WIDE;
 
   val small: Boolean
     get() = this == SMALL || this == SMALL_TALL
+
+  val wide: Boolean
+    get() = this == MEDIUM_WIDE
 }
 
 /** Where a tap goes. */
@@ -39,6 +44,8 @@ data class TrackerModel(
   val drinksWord: String,
   val waterNum: String,
   val waterWord: String,
+  /** The whole water count as COPY.md writes it ("4 waters"). */
+  val waterText: String,
   /** null: nothing today, `noneText` is shown instead. */
   val lastDrinkAt: Instant?,
   /** The Chronometer format: the COPY.md line with {ago} as %s. */
@@ -170,6 +177,8 @@ data class WidgetModel(
   val textScale: Float,
   /** Android font scale 1.3 and up drops secondary lines (DESIGN.md 2.4). */
   val compactText: Boolean,
+  /** The system font scale, to size the RemoteViews numerals in dp. */
+  val fontScale: Float,
   val background: Int,
   val tap: Tap,
   val content: Content,

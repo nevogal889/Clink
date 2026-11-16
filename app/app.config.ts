@@ -164,6 +164,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       'expo-status-bar',
       'expo-secure-store',
       ['expo-build-properties', { android: { minSdkVersion: ANDROID_MIN_SDK } }],
+      // The Android widget's public settings (functions URL, region, scheme) as manifest meta-data.
+      './modules/clink-native/app.plugin.js',
     ],
     experiments: {
       reactCompiler: true,

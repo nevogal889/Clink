@@ -37,7 +37,7 @@ export const ClinkNative: ClinkNativeApi = {
   },
 
   async setWidgetToken(token: string | null) {
-    if (token !== null && !/^[A-Za-z0-9_-]{16,256}$/.test(token)) {
+    if (token !== null && !/^[A-Za-z0-9_-]{43}$/.test(token)) {
       throw new Error('setWidgetToken: the token has an unexpected format');
     }
     if (!native) return;

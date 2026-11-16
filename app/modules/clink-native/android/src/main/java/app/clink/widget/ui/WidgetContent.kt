@@ -31,6 +31,7 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
+import androidx.glance.layout.wrapContentWidth
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
 import androidx.glance.text.FontFamily
@@ -131,27 +132,29 @@ private fun Prompt(model: WidgetModel, s: Scale, c: Content.Prompt) {
 // ---------------------------------------------------------------------------------------------
 // Idle
 
+
+/**
+ * A count in numeral.l through RemoteViews, so the line has no font padding (clink_numeral_*).
+ * The box is sized explicitly: one line of the condensed face is about 1.2 em, and each digit
+ * about 0.5 em wide, at the scaled size.
+ */
 @Composable
-private fun Counts(s: Scale, t: TrackerModel, small: Boolean, dropWaterWord: Boolean) {
-  Row(verticalAlignment = Alignment.Bottom) {
-    if (t.drinksNum.isNotEmpty()) {
-      Text(t.drinksNum, style = s.style(NUMERAL, R.color.clink_ink_primary, FontWeight.Bold, condensed = true), maxLines = 1)
-      Spacer(GlanceModifier.width(4.dp))
-    }
-    Text(t.drinksWord, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.padding(bottom = 5.dp))
-    Spacer(GlanceModifier.width(if (small) 8.dp else 12.dp))
-    Image(ImageProvider(R.drawable.clink_ui_tumbler_water_ink), contentDescription = null, modifier = GlanceModifier.size(16.dp))
+private fun Numeral(s: Scale, layout: Int, text: String, sizeSp: Float) {
+  val context = LocalContext.current
+  val rv = RemoteViews(context.packageName, layout)
+  rv.setTextViewText(R.id.clink_text, text)
+  rv.setTextViewTextSize(R.id.clink_text, TypedValue.COMPLEX_UNIT_SP, sizeSp)
+  val em = sizeSp * s.m.fontScale
+  AndroidRemoteViews(rv, GlanceModifier.width((em * 0.52f * text.length + 2f).dp).height((em * 1.2f).dp))
+}
+
+@Composable
+private fun WaterCount(s: Scale, t: TrackerModel, withWord: Boolean) {
+  Row(verticalAlignment = Alignment.CenterVertically) {
+    Image(ImageProvider(R.drawable.clink_ui_tumbler_water_ink), contentDescription = null, modifier = GlanceModifier.size(14.dp))
     Spacer(GlanceModifier.width(2.dp))
-    Text(
-      t.waterNum.ifEmpty { t.waterWord },
-      style = s.style(if (small) PRIMARY else 22f, R.color.clink_water_ink, FontWeight.Bold, condensed = true),
-      maxLines = 1,
-      modifier = GlanceModifier.padding(bottom = if (small) 4.dp else 3.dp),
-    )
-    if (!dropWaterWord && t.waterNum.isNotEmpty()) {
-      Spacer(GlanceModifier.width(3.dp))
-      Text(t.waterWord, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.padding(bottom = 5.dp))
-    }
+    val text = if (withWord) t.waterText else t.waterNum.ifEmpty { t.waterText }
+    Text(text, style = s.style(SECONDARY, R.color.clink_water_ink, FontWeight.Medium), maxLines = 1)
   }
 }
 
@@ -170,66 +173,114 @@ private fun LastLine(s: Scale, t: TrackerModel) {
 private fun Chrono(layout: Int, sizeSp: Float, format: String, at: Instant, countDown: Boolean) {
   val context = LocalContext.current
   val rv = RemoteViews(context.packageName, layout)
-  val now = UiClock.elapsedRealtime()
   val nowWall = Instant.now(app.clink.widget.WidgetEnv.clock)
   val offset = Duration.between(nowWall, at).toMillis()
   // Up: base is the event in the elapsed-realtime clock. Down: base is the end time.
-  rv.setChronometer(R.id.clink_chrono, now + offset, format, true)
+  rv.setChronometer(R.id.clink_chrono, UiClock.elapsedRealtime() + offset, format, true)
   rv.setChronometerCountDown(R.id.clink_chrono, countDown)
   rv.setTextViewTextSize(R.id.clink_chrono, TypedValue.COMPLEX_UNIT_SP, sizeSp)
-  AndroidRemoteViews(rv)
+  AndroidRemoteViews(rv, GlanceModifier.wrapContentWidth().height((sizeSp * fontScaleOf(context) * 1.25f).dp))
 }
 
+private fun fontScaleOf(context: Context) = context.resources.configuration.fontScale
+
+/**
+ * Small (DESIGN.md 5.3), fitted into 96 x 96 dp:
+ *   3 | drinks  ◦ 4
+ *     | Last 1:42:07
+ *   [    +1 Drink    ]
+ */
 @Composable
 private fun IdleSmall(model: WidgetModel, s: Scale, c: Content.Idle) {
   val context = LocalContext.current
-  val tall = model.layout == Layout.SMALL_TALL
+  val t = c.tracker
   Column(modifier = GlanceModifier.fillMaxSize()) {
-    Column(modifier = GlanceModifier.fillMaxWidth().defaultWeight().semantics { contentDescription = c.tracker.a11y }) {
-      Counts(s, c.tracker, small = true, dropWaterWord = true)
-      // What drops first (DESIGN.md 5.1): the last-drink line goes before counts and buttons.
-      if (tall || !model.compactText) LastLine(s, c.tracker)
+    Row(
+      modifier = GlanceModifier.fillMaxWidth().defaultWeight().semantics { contentDescription = t.a11y },
+      verticalAlignment = Alignment.Top,
+    ) {
+      Numeral(s, R.layout.clink_numeral_ink, t.drinksNum.ifEmpty { "0" }, NUMERAL * s.m.textScale)
+      Spacer(GlanceModifier.width(4.dp))
+      Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Text(t.drinksWord, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+          if (!model.compactText) {
+            Spacer(GlanceModifier.width(6.dp))
+            WaterCount(s, t, withWord = false)
+          }
+        }
+        // At large text the water count takes the second line and the last-drink line drops
+        // (DESIGN.md 5.1: the last-drink line goes before counts and buttons).
+        if (model.compactText) WaterCount(s, t, withWord = false) else LastLine(s, t)
+      }
     }
     ActionRow(s, c.overlay) {
-      PillButton(s, c.log, GlanceModifier.fillMaxWidth().height(BUTTON), context)
+      PillButton(s, c.log, GlanceModifier.fillMaxWidth().height(BUTTON), context, PRIMARY)
     }
   }
 }
 
+/**
+ * Medium (DESIGN.md 5.2). The wide layout is the design as drawn; at about 250 dp the water
+ * count takes its own line, the usual #1 line drops (DESIGN.md 5.1 order) and labels are 13.
+ */
 @Composable
 private fun IdleMedium(model: WidgetModel, s: Scale, c: Content.Idle) {
   val context = LocalContext.current
+  val t = c.tracker
   val short = model.layout == Layout.MEDIUM_SHORT
+  val wide = model.layout.wide
+  val label = if (wide) PRIMARY else SECONDARY
   Column(modifier = GlanceModifier.fillMaxSize()) {
     Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-      Column(modifier = GlanceModifier.defaultWeight().fillMaxHeight().semantics { contentDescription = c.tracker.a11y }) {
-        Counts(s, c.tracker, small = false, dropWaterWord = model.compactText)
-        if (!short) {
-          LastLine(s, c.tracker)
-          val u = c.usual
-          if (u != null && !model.compactText) {
-            Spacer(GlanceModifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Image(ImageProvider(u.icon), contentDescription = null, modifier = GlanceModifier.size(16.dp))
-              Spacer(GlanceModifier.width(4.dp))
-              Text(u.text, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+      Column(modifier = GlanceModifier.defaultWeight().fillMaxHeight().semantics { contentDescription = t.a11y }) {
+        Row(verticalAlignment = Alignment.Bottom) {
+          Numeral(s, R.layout.clink_numeral_ink, t.drinksNum.ifEmpty { "0" }, NUMERAL * s.m.textScale)
+          Spacer(GlanceModifier.width(4.dp))
+          Text(t.drinksWord, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+          if (wide || short) {
+            Spacer(GlanceModifier.width(10.dp))
+            if (wide) {
+              Image(ImageProvider(R.drawable.clink_ui_tumbler_water_ink), contentDescription = null, modifier = GlanceModifier.size(16.dp))
+              Spacer(GlanceModifier.width(2.dp))
+              Numeral(s, R.layout.clink_numeral_water, t.waterNum.ifEmpty { "0" }, 22f * s.m.textScale)
+              if (!model.compactText) {
+                Spacer(GlanceModifier.width(3.dp))
+                Text(t.waterWord, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+              }
+            } else {
+              WaterCount(s, t, withWord = false)
             }
           }
-        } else if (!model.compactText) {
-          LastLine(s, c.tracker)
+        }
+        if (!wide && !short) WaterCount(s, t, withWord = !model.compactText)
+        if (!short) LastLine(s, t)
+        val u = c.usual
+        if (u != null && !model.compactText && !short) {
+          Spacer(GlanceModifier.height(2.dp))
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(ImageProvider(u.icon), contentDescription = null, modifier = GlanceModifier.size(16.dp))
+            Spacer(GlanceModifier.width(4.dp))
+            Text(u.text, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+          }
         }
       }
       Spacer(GlanceModifier.width(8.dp))
-      SnapTile(s, c.snap, if (short) GlanceModifier.size(56.dp) else GlanceModifier.width(112.dp).fillMaxHeight(), context, short)
+      // Under 150 dp high the snap tile becomes a thumbnail beside the counts (DESIGN.md 5.2).
+      val tile = if (short) GlanceModifier.size(40.dp) else GlanceModifier.width(if (wide) 112.dp else 88.dp).fillMaxHeight()
+      SnapTile(s, c.snap, tile, context, thumb = short)
     }
-    Spacer(GlanceModifier.height(8.dp))
+    Spacer(GlanceModifier.height(if (short) 6.dp else 8.dp))
     ActionRow(s, c.overlay) {
       Row(modifier = GlanceModifier.fillMaxWidth().height(BUTTON), verticalAlignment = Alignment.CenterVertically) {
-        PillButton(s, c.log, GlanceModifier.defaultWeight().height(BUTTON), context)
-        Spacer(GlanceModifier.width(8.dp))
+        // About 250 dp leaves 218 dp for three buttons: tighter padding and gaps keep every
+        // label whole, the Who joins? glyph included (DESIGN.md 7: never colour alone).
+        val gap = if (wide) 8.dp else 4.dp
+        PillButton(s, c.log, GlanceModifier.height(BUTTON), context, label, padDp = if (wide) 14 else 8)
+        Spacer(GlanceModifier.width(gap))
         IconButton(c.camera, context)
-        Spacer(GlanceModifier.width(8.dp))
-        PillButton(s, c.whoJoins, GlanceModifier.defaultWeight().height(BUTTON), context)
+        Spacer(GlanceModifier.width(gap))
+        PillButton(s, c.whoJoins, GlanceModifier.defaultWeight().height(BUTTON), context, label, padDp = if (wide) 10 else 6)
       }
     }
   }
@@ -245,14 +296,20 @@ private fun SnapTile(s: Scale, t: SnapTileModel, modifier: GlanceModifier, conte
         if (bmp != null) {
           Image(ImageProvider(bmp), contentDescription = null, modifier = GlanceModifier.fillMaxSize(), contentScale = androidx.glance.layout.ContentScale.Crop)
         } else {
+          // The thumbnail isn't cached yet: the tile keeps its place with the camera glyph.
           Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Image(ImageProvider(R.drawable.clink_ui_camera_ink_secondary), contentDescription = null, modifier = GlanceModifier.size(24.dp))
+            Image(ImageProvider(R.drawable.clink_ui_camera_ink_secondary), contentDescription = null, modifier = GlanceModifier.size(20.dp))
           }
         }
         if (!thumb) {
-          // The snap's name label sits on the photo scrim (DESIGN.md 3.6).
+          // The snap's name label sits on the photo scrim (DESIGN.md 3.6), white, 13 minimum.
           Box(modifier = GlanceModifier.fillMaxSize().background(ImageProvider(R.drawable.clink_bg_scrim)), contentAlignment = Alignment.BottomStart) {
-            Text(t.caption, style = TextStyle(color = ColorProvider(android.R.color.white), fontSize = s.sp(SECONDARY), fontWeight = FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.padding(8.dp))
+            Text(
+              t.caption,
+              style = TextStyle(color = ColorProvider(android.R.color.white), fontSize = s.sp(SECONDARY), fontWeight = FontWeight.Medium),
+              maxLines = 1,
+              modifier = GlanceModifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            )
           }
         }
       }
@@ -262,14 +319,14 @@ private fun SnapTile(s: Scale, t: SnapTileModel, modifier: GlanceModifier, conte
       val icon = if (t is SnapTileModel.Invite) R.drawable.clink_ui_share else R.drawable.clink_ui_camera_ink_secondary
       val text = if (t is SnapTileModel.Invite) t.text else (t as SnapTileModel.Empty).text
       Column(
-        modifier = base.background(ImageProvider(R.drawable.clink_bg_tile_sunk)).padding(8.dp),
+        modifier = base.background(ImageProvider(R.drawable.clink_bg_tile_sunk)).padding(6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalAlignment = Alignment.CenterHorizontally,
       ) {
-        Image(ImageProvider(icon), contentDescription = null, modifier = GlanceModifier.size(if (thumb) 20.dp else 24.dp))
+        Image(ImageProvider(icon), contentDescription = null, modifier = GlanceModifier.size(20.dp))
         if (!thumb) {
-          Spacer(GlanceModifier.height(4.dp))
-          Text(text, style = s.style(SECONDARY, R.color.clink_ink_secondary, FontWeight.Medium, align = TextAlign.Center), maxLines = 3)
+          Spacer(GlanceModifier.height(2.dp))
+          Text(text, style = s.style(MICRO, R.color.clink_ink_secondary, FontWeight.Medium, align = TextAlign.Center), maxLines = 3)
         }
       }
     }
@@ -277,24 +334,25 @@ private fun SnapTile(s: Scale, t: SnapTileModel, modifier: GlanceModifier, conte
 }
 
 @Composable
-private fun PillButton(s: Scale, b: ButtonModel, modifier: GlanceModifier, context: Context) {
+private fun PillButton(s: Scale, b: ButtonModel, modifier: GlanceModifier, context: Context, labelSize: Float = PRIMARY, padDp: Int = 10) {
   Row(
     modifier =
       modifier
         .background(ImageProvider(b.background))
         .clickable(tapAction(context, b.tap))
         .semantics { contentDescription = b.a11y }
-        .padding(horizontal = 12.dp),
+        .padding(horizontal = padDp.dp),
     verticalAlignment = Alignment.CenterVertically,
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
     b.icon?.let {
-      Image(ImageProvider(it), contentDescription = null, modifier = GlanceModifier.size(18.dp))
-      Spacer(GlanceModifier.width(6.dp))
+      Image(ImageProvider(it), contentDescription = null, modifier = GlanceModifier.size(if (labelSize < PRIMARY) 14.dp else 16.dp))
+      Spacer(GlanceModifier.width(if (labelSize < PRIMARY) 3.dp else 4.dp))
     }
     Column(verticalAlignment = Alignment.CenterVertically) {
-      Text(b.label, style = s.style(PRIMARY, b.textColor, FontWeight.Medium), maxLines = 1)
-      b.subLabel?.let { Text(it, style = s.style(MICRO, b.textColor, FontWeight.Medium), maxLines = 1) }
+      Text(b.label, style = s.style(labelSize, b.textColor, FontWeight.Medium), maxLines = 1)
+      // The audience line inside Who joins? is the first thing to drop at large text (DESIGN.md 5.1).
+      if (!s.m.compactText) b.subLabel?.let { Text(it, style = s.style(MICRO, b.textColor, FontWeight.Medium), maxLines = 1) }
     }
   }
 }
@@ -317,6 +375,8 @@ private fun IconButton(b: ButtonModel, context: Context) {
 @Composable
 private fun ActionRow(s: Scale, overlay: OverlayModel?, actions: @Composable () -> Unit) {
   val context = LocalContext.current
+  val small = s.m.layout.small
+  val main = if (small) SECONDARY else PRIMARY
   if (overlay == null) {
     actions()
     return
@@ -329,15 +389,15 @@ private fun ActionRow(s: Scale, overlay: OverlayModel?, actions: @Composable () 
         .background(ImageProvider(R.drawable.clink_bg_pill_raised))
         .let { m -> tap?.let { m.clickable(it) } ?: m }
         .semantics { contentDescription = overlay.a11y }
-        .padding(horizontal = 14.dp),
+        .padding(horizontal = if (small) 8.dp else 12.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     when (overlay) {
       is OverlayModel.Confirm -> {
-        Image(ImageProvider(R.drawable.clink_ui_check), contentDescription = null, modifier = GlanceModifier.size(18.dp))
-        Spacer(GlanceModifier.width(6.dp))
-        Text(overlay.text, style = s.style(PRIMARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
-        overlay.detail?.let {
+        Image(ImageProvider(R.drawable.clink_ui_check), contentDescription = null, modifier = GlanceModifier.size(if (small) 14.dp else 18.dp))
+        Spacer(GlanceModifier.width(if (small) 3.dp else 6.dp))
+        Text(overlay.text, style = s.style(main, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+        if (!small) overlay.detail?.let {
           Spacer(GlanceModifier.width(6.dp))
           Text(it, style = s.style(SECONDARY, R.color.clink_ink_secondary), maxLines = 1)
         }
@@ -361,15 +421,14 @@ private fun Picker(model: WidgetModel, s: Scale, title: String, cells: List<Pick
   val context = LocalContext.current
   val small = model.layout.small
   // A short 2x2 has no room for a header: the 30 s timeout is the cancel (DESIGN.md 5.3).
-  val header = !(model.layout == Layout.SMALL)
+  val header = model.layout != Layout.SMALL
   Column(modifier = GlanceModifier.fillMaxSize()) {
     if (header) {
-      Row(modifier = GlanceModifier.fillMaxWidth().height(BUTTON), verticalAlignment = Alignment.CenterVertically) {
+      Row(modifier = GlanceModifier.fillMaxWidth().height(if (small) 40.dp else BUTTON), verticalAlignment = Alignment.CenterVertically) {
         if (!small) Text(title, style = s.style(PRIMARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1, modifier = GlanceModifier.defaultWeight())
         else Spacer(GlanceModifier.defaultWeight())
         Box(
-          modifier =
-            GlanceModifier.size(BUTTON).clickable(tapAction(context, Tap.ClosePicker)).semantics { contentDescription = closeA11y },
+          modifier = GlanceModifier.size(BUTTON).clickable(tapAction(context, Tap.ClosePicker)).semantics { contentDescription = closeA11y },
           contentAlignment = Alignment.Center,
         ) {
           Image(ImageProvider(R.drawable.clink_ui_close), contentDescription = null, modifier = GlanceModifier.size(22.dp))
@@ -382,22 +441,32 @@ private fun Picker(model: WidgetModel, s: Scale, title: String, cells: List<Pick
       return@Column
     }
     if (small) {
-      // 2 x 2 grid, each cell at least 48 dp.
-      for (row in cells.chunked(2)) {
+      // 2 x 2 grid of 48 dp cells (DESIGN.md 5.3).
+      val rows = cells.chunked(2)
+      rows.forEachIndexed { r, row ->
+        if (r > 0) Spacer(GlanceModifier.height(4.dp))
         Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
           row.forEachIndexed { i, cell ->
             if (i > 0) Spacer(GlanceModifier.width(4.dp))
-            Cell(s, cell, GlanceModifier.defaultWeight().fillMaxHeight(), context, iconDp = 24, textSize = MICRO, lines = 1)
+            Cell(s, cell, GlanceModifier.defaultWeight().fillMaxHeight(), context, iconDp = 22, textSize = MICRO, lines = 1)
           }
         }
-        if (row !== cells.chunked(2).last()) Spacer(GlanceModifier.height(4.dp))
       }
     } else {
-      val tall = model.layout == Layout.MEDIUM
+      val roomy = model.layout == Layout.MEDIUM || model.layout.wide
       Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
         cells.forEachIndexed { i, cell ->
           if (i > 0) Spacer(GlanceModifier.width(6.dp))
-          Cell(s, cell, GlanceModifier.defaultWeight().fillMaxHeight(), context, iconDp = if (tall) 28 else 24, textSize = if (tall) SECONDARY else MICRO, lines = if (tall) 2 else 1)
+          Cell(
+            s,
+            cell,
+            GlanceModifier.defaultWeight().fillMaxHeight(),
+            context,
+            iconDp = if (roomy) 28 else 24,
+            textSize = MICRO,
+            // Long one-word names would break mid-word in a narrow cell; they end in "…" instead.
+            lines = if (model.layout.wide && !model.compactText) 2 else 1,
+          )
         }
       }
     }
@@ -412,7 +481,7 @@ private fun Cell(s: Scale, cell: PickerCell, modifier: GlanceModifier, context: 
         .background(ImageProvider(cell.background))
         .clickable(tapAction(context, cell.tap))
         .semantics { contentDescription = cell.a11y }
-        .padding(horizontal = 4.dp, vertical = 4.dp),
+        .padding(horizontal = 2.dp, vertical = 3.dp),
     verticalAlignment = Alignment.CenterVertically,
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
@@ -424,6 +493,7 @@ private fun Cell(s: Scale, cell: PickerCell, modifier: GlanceModifier, context: 
 
 // ---------------------------------------------------------------------------------------------
 // Flares (rendered from the state; their buttons arrive with M4)
+
 
 private fun chronoLayoutFor(textColor: Int): Int =
   when (textColor) {
@@ -446,9 +516,15 @@ private fun MyFlare(model: WidgetModel, s: Scale, c: Content.MyFlare) {
         }
         if (!small && c.place != null) Text(c.place, style = s.style(SECONDARY, c.textColor), maxLines = 1)
         Chrono(chronoLayoutFor(c.textColor), NUMERAL * s.m.textScale, "%s", c.expiresAt, countDown = true)
-        if (small) Text(c.counts, style = s.style(SECONDARY, c.textColor), maxLines = 1)
+        if (small) {
+          // Small (DESIGN.md 5.3): counts, then the hero at the bottom right.
+          Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Text(c.counts, style = s.style(SECONDARY, c.textColor), maxLines = 1, modifier = GlanceModifier.defaultWeight())
+            Image(ImageProvider(c.hero), contentDescription = null, modifier = GlanceModifier.size(40.dp))
+          }
+        }
       }
-      Image(ImageProvider(c.hero), contentDescription = null, modifier = GlanceModifier.size(if (small) 48.dp else heroDp(model)))
+      if (!small) Image(ImageProvider(c.hero), contentDescription = null, modifier = GlanceModifier.size(heroDp(model)))
     }
     if (!small) {
       Spacer(GlanceModifier.height(4.dp))
@@ -466,7 +542,7 @@ private fun MyFlare(model: WidgetModel, s: Scale, c: Content.MyFlare) {
   }
 }
 
-private fun heroDp(model: WidgetModel): Dp = if (model.layout == Layout.MEDIUM) 96.dp else 64.dp
+private fun heroDp(model: WidgetModel): Dp = if (model.layout.wide) 96.dp else 64.dp
 
 @Composable
 private fun Incoming(model: WidgetModel, s: Scale, c: Content.Incoming) {
@@ -480,7 +556,8 @@ private fun Incoming(model: WidgetModel, s: Scale, c: Content.Incoming) {
             Text(c.initial, style = s.style(MICRO, R.color.clink_ink_primary, FontWeight.Bold), maxLines = 1)
           }
           Spacer(GlanceModifier.width(6.dp))
-          Text(c.name, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+          Text(c.name, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1, modifier = if (small) GlanceModifier.defaultWeight() else GlanceModifier)
+          if (small) Image(ImageProvider(c.hero), contentDescription = null, modifier = GlanceModifier.size(28.dp))
           c.more?.let { more ->
             Spacer(GlanceModifier.width(6.dp))
             Box(modifier = GlanceModifier.background(ImageProvider(R.drawable.clink_bg_pill_ink)).padding(horizontal = 6.dp, vertical = 1.dp).semantics { contentDescription = c.moreA11y ?: more }) {
@@ -491,31 +568,35 @@ private fun Incoming(model: WidgetModel, s: Scale, c: Content.Incoming) {
         if (small) {
           Text(c.subTitle, style = s.style(PRIMARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
         } else {
-          Text(c.title, style = s.style(17f, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+          // COPY.md 6.2: the title may wrap to two lines (name, then "wants …").
+          Text(c.title, style = s.style(if (model.layout.wide) 17f else PRIMARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 2)
           Row(verticalAlignment = Alignment.CenterVertically) {
             Text(c.meta, style = s.style(SECONDARY, R.color.clink_ink_secondary), maxLines = 1)
+            Spacer(GlanceModifier.width(6.dp))
+            Chrono(R.layout.clink_chrono_secondary, SECONDARY * s.m.textScale, "%s", c.expiresAt, countDown = true)
           }
         }
-        Chrono(R.layout.clink_chrono_secondary, SECONDARY * s.m.textScale, "%s", c.expiresAt, countDown = true)
+        if (small) Chrono(R.layout.clink_chrono_secondary, SECONDARY * s.m.textScale, "%s", c.expiresAt, countDown = true)
       }
-      Image(ImageProvider(c.hero), contentDescription = null, modifier = GlanceModifier.size(if (small) 48.dp else 72.dp))
+      if (!small) Image(ImageProvider(c.hero), contentDescription = null, modifier = GlanceModifier.size(if (model.layout.wide) 72.dp else 56.dp))
     }
     ActionRow(s, c.overlay) {
       if (c.replied != null) {
         Row(
-          modifier = GlanceModifier.fillMaxWidth().height(BUTTON).background(ImageProvider(R.drawable.clink_bg_pill_raised)).semantics { contentDescription = c.repliedA11y ?: c.replied }.padding(horizontal = 14.dp),
+          modifier = GlanceModifier.fillMaxWidth().height(BUTTON).background(ImageProvider(R.drawable.clink_bg_pill_raised)).semantics { contentDescription = c.repliedA11y ?: c.replied }.padding(horizontal = if (small) 8.dp else 14.dp),
           verticalAlignment = Alignment.CenterVertically,
         ) {
-          Image(ImageProvider(R.drawable.clink_ui_check), contentDescription = null, modifier = GlanceModifier.size(18.dp))
-          Spacer(GlanceModifier.width(6.dp))
-          Text(c.replied, style = s.style(PRIMARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+          Image(ImageProvider(R.drawable.clink_ui_check), contentDescription = null, modifier = GlanceModifier.size(if (small) 14.dp else 18.dp))
+          Spacer(GlanceModifier.width(if (small) 3.dp else 6.dp))
+          Text(c.replied, style = s.style(if (small) SECONDARY else PRIMARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
         }
       } else {
         Row(modifier = GlanceModifier.fillMaxWidth().height(BUTTON)) {
-          c.join?.let { PillButton(s, it, GlanceModifier.defaultWeight().height(BUTTON), context) }
+          val label = if (model.layout.wide) PRIMARY else SECONDARY
+          c.join?.let { PillButton(s, it, GlanceModifier.defaultWeight().height(BUTTON), context, label) }
           c.bring?.let {
             Spacer(GlanceModifier.width(8.dp))
-            PillButton(s, it, GlanceModifier.defaultWeight().height(BUTTON), context)
+            PillButton(s, it, GlanceModifier.defaultWeight().height(BUTTON), context, label)
           }
         }
       }

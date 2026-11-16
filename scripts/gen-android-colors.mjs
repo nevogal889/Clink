@@ -112,6 +112,9 @@ const RADIUS = {
   container: { base: '16dp', v31: '@android:dimen/system_app_widget_background_radius' },
   inner: { base: '8dp', v31: '@android:dimen/system_app_widget_inner_radius' },
   pill: { base: '999dp', v31: null },
+  // Picker cells: a fixed 12 dp, because the system inner radius turns a 48 dp cell into a circle
+  // that clips its label.
+  cell: { base: '12dp', v31: null },
 };
 
 function rimmed(body, rim, rimDp, radius) {
@@ -170,14 +173,14 @@ export function shapeList() {
     list.push([`clink_bg_pill_outline_${cat}`, 'pill', (r) => plain(null, r, `${cat}_ink`)]);
     list.push([
       `clink_bg_cell_raised_${cat}`,
-      'inner',
+      'cell',
       (r) => rimmed('surfaceRaised', `${cat}_ink`, '2dp', r),
     ]);
   }
   for (const cat of CATEGORIES) {
     list.push([
       `clink_bg_cell_${cat}`,
-      'inner',
+      'cell',
       (r) => rimmed(`${cat}_tint`, `${cat}_ink`, '2dp', r),
     ]);
   }

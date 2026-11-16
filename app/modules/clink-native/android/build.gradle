@@ -1,0 +1,37 @@
+// clink-native: Clink's Android widget (Jetpack Glance) and its Expo module bridge
+// (ARCHITECTURE.md 1.1). Autolinked from app/modules by Expo.
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    // Glance is Compose: the Compose compiler plugin matches the template's Kotlin version.
+    classpath("org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:${kotlinVersion}")
+  }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'expo-module-gradle-plugin'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+
+group = 'app.clink'
+version = '0.1.0'
+
+android {
+  namespace 'app.clink.nativemodule'
+  defaultConfig {
+    versionCode 1
+    versionName '0.1.0'
+  }
+  buildFeatures {
+    compose true
+  }
+  sourceSets {
+    main {
+      // The Expo bridge lives apart so the standalone harness builds the widget without React Native.
+      java.srcDirs += ['src/expo/java']
+    }
+  }
+}
+
+apply from: 'clink-widget.gradle'

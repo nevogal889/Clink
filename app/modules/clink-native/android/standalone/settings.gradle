@@ -1,0 +1,17 @@
+// Standalone harness: builds and tests the widget code (src/main, src/test) without React Native or
+// a prebuild, for fast local runs. The real build is the Expo module in ../build.gradle.
+//   ../../../../android/gradlew -p app/modules/clink-native/android/standalone testDebugUnitTest
+pluginManagement {
+  repositories {
+    google()
+    mavenCentral()
+    gradlePluginPortal()
+  }
+}
+dependencyResolutionManagement {
+  repositories {
+    google()
+    mavenCentral()
+  }
+}
+rootProject.name = 'clink-widget-standalone'

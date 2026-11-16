@@ -35,6 +35,7 @@ class ModelBuilder(private val copy: Copy) {
         // Widgets under 230 dp wide use the small layout (DESIGN.md 5.5).
         widthDp < 230f -> if (heightDp >= 150f) Layout.SMALL_TALL else Layout.SMALL
         heightDp < 150f -> Layout.MEDIUM_SHORT
+        widthDp >= 300f -> Layout.MEDIUM_WIDE
         else -> Layout.MEDIUM
       }
 
@@ -60,7 +61,7 @@ class ModelBuilder(private val copy: Copy) {
     val compact = fontScale >= COMPACT_FONT_SCALE
     val scale = textScale(fontScale)
     val idleBg = R.drawable.clink_bg_widget_idle
-    fun model(bg: Int, tap: Tap, content: Content) = WidgetModel(layout, scale, compact, bg, tap, content)
+    fun model(bg: Int, tap: Tap, content: Content) = WidgetModel(layout, scale, compact, fontScale, bg, tap, content)
     val overlay = overlay(view.overlay, local.confirmation, layout)
 
     return when (view) {
@@ -125,7 +126,10 @@ class ModelBuilder(private val copy: Copy) {
 
   private fun minutesBetween(a: Instant, b: Instant): Long = Duration.between(a, b).toMinutes()
 
-  private fun tracker(s: WidgetState.Ready, v: WidgetView.Idle, small: Boolean, now: Instant, zone: ZoneId): TrackerModel {
+  private fun tracker(s: WidgetState.Ready, v: WidgetView.Idle, layout: Layout, now: Instant, zone: ZoneId): TrackerModel {
+    // The full "Last drink … ago" line needs the wide medium; narrower sizes use the small
+    // string (COPY.md 6: Android uses the small strings below the medium breakpoint).
+    val small = !layout.wide
     val drinks = copy.t(R.string.clink_ws_drinks, "n" to v.drinks)
     val water = copy.t(R.string.clink_ws_water, "n" to v.water)
     val (dn, dw) = Copy.splitCount(drinks)
@@ -157,6 +161,7 @@ class ModelBuilder(private val copy: Copy) {
       drinksWord = dw,
       waterNum = wn,
       waterWord = ww,
+      waterText = water,
       lastDrinkAt = last,
       lastFormat = copy.raw(lineKey).replace("{ago}", "%s"),
       lastText = lastText,
@@ -195,7 +200,8 @@ class ModelBuilder(private val copy: Copy) {
     val first = s.usual.firstOrNull()
     val usual =
       when {
-        small -> null
+        // The usual #1 line drops second (DESIGN.md 5.1); only the wide medium has room for it.
+        !layout.wide -> null
         v.caffeineNote -> UsualLine(R.drawable.clink_glyph_tea_ink, copy.t(R.string.clink_wm_caff))
         first != null ->
           UsualLine(
@@ -223,7 +229,8 @@ class ModelBuilder(private val copy: Copy) {
     val log =
       ButtonModel(
         label = copy.t(if (small) R.string.clink_ws_log else R.string.clink_wm_log),
-        icon = R.drawable.clink_ui_plus,
+        // "+1" already carries the plus, so no glyph beside it.
+        icon = null,
         background = R.drawable.clink_bg_pill_tonal,
         textColor = R.color.clink_ink_primary,
         // No usual 3: +1 Drink opens the app on the usual 3 editor (PRD 3.3).
@@ -287,7 +294,7 @@ class ModelBuilder(private val copy: Copy) {
           subLabel = label,
         )
       }
-    return Content.Idle(tracker(s, v, small, now, zone), usual, snap, log, camera, whoJoins, overlay)
+    return Content.Idle(tracker(s, v, layout, now, zone), usual, snap, log, camera, whoJoins, overlay)
   }
 
   private fun picker(s: WidgetState.Ready, layout: Layout, overlay: OverlayModel?): Content.Picker {

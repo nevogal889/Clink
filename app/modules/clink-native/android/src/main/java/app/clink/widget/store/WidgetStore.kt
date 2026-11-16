@@ -85,6 +85,11 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
           instance ?: WidgetStore(context.applicationContext.clinkWidgetStore).also { instance = it }
         }
 
+    /** Tests give each case its own DataStore file. */
+    internal fun setInstanceForTests(store: WidgetStore?) {
+      instance = store
+    }
+
     fun snapshotOf(p: Preferences): Snapshot =
       Snapshot(
         state = p[STATE]?.let { WidgetStateDecoder.decodeOrNull(it) } ?: INITIAL_STATE,

@@ -1,0 +1,45 @@
+// Versions match the app template: React Native 0.88 (AGP 9.2.1, compileSdk 37) and Expo SDK 58
+// (Kotlin 2.2.10). Keep them in step when the SDK moves.
+plugins {
+  id 'com.android.library' version '9.2.1'
+  id 'org.jetbrains.kotlin.android' version '2.2.10'
+  id 'org.jetbrains.kotlin.plugin.compose' version '2.2.10'
+}
+
+ext.clinkModuleDir = file("${projectDir}/..").absolutePath
+
+android {
+  namespace 'app.clink.nativemodule'
+  compileSdk 37
+  defaultConfig {
+    minSdk 26
+  }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+  buildFeatures {
+    compose true
+  }
+  sourceSets {
+    main {
+      manifest.srcFile '../src/main/AndroidManifest.xml'
+      java.srcDirs = ['../src/main/java']
+      res.srcDirs = ['../src/main/res']
+    }
+    test {
+      java.srcDirs = ['../src/test/java']
+      resources.srcDirs = ['../src/test/resources']
+    }
+  }
+}
+
+kotlin {
+  jvmToolchain(17)
+}
+
+dependencies {
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2'
+}
+
+apply from: '../clink-widget.gradle'
