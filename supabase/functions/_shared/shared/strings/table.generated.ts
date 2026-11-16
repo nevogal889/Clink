@@ -5457,7 +5457,7 @@ export const STRING_META: Record<
   },
   'a11y.w.plate': {
     section: '4.26',
-    context: 'Usual #1 tile on the idle widget (opens the picker)',
+    context: "Usual #1 on the idle widget's drink panel (opens the picker)",
     max: null,
     placeholders: [
       {
@@ -6289,8 +6289,8 @@ export const STRING_META: Record<
   'ws.last_at': {
     section: '6.1',
     context:
-      'Idle, last drink as a time of day. The small widget writes `{time}` without AM/PM ("Last 7:30")',
-    max: 10,
+      'Idle, last drink as a time of day. The small widget writes `{time}` without AM/PM ("Last 7:30"); a narrow 4x2 uses this key with the full time ("Last 7:30 AM") when `wm.last_at` doesn\'t fit',
+    max: 13,
     placeholders: [
       {
         name: 'time',
@@ -6379,7 +6379,7 @@ export const STRING_META: Record<
   'ws.in.left': {
     section: '6.1',
     context:
-      'Friend\'s flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS',
+      'Friend\'s flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS. Where the line has no room for "left", the countdown shows alone (a number, no words)',
     max: 10,
     placeholders: [
       {
@@ -6493,7 +6493,8 @@ export const STRING_META: Record<
   },
   'wm.usual': {
     section: '6.2',
-    context: 'Idle sub-line',
+    context:
+      "Idle, the usual #1's name on the drink panel (Android 4x2) or beside its picture (tall 2x2)",
     max: 15,
     placeholders: [
       {
@@ -6510,7 +6511,8 @@ export const STRING_META: Record<
   },
   'wm.caff': {
     section: '6.2',
-    context: 'Idle sub-line after 4 caffeinated',
+    context:
+      "Idle, in place of the usual #1's name after 4 caffeinated drinks (Android: on the drink panel, with a chamomile)",
     max: 18,
     placeholders: [],
   },
@@ -6599,7 +6601,7 @@ export const STRING_META: Record<
   },
   'wm.pick.title': {
     section: '6.2',
-    context: '+1 picker',
+    context: '+1 picker (iOS; the Android picker has no header: its cells fill the widget)',
     max: 16,
     placeholders: [],
   },
@@ -6741,7 +6743,7 @@ export const STRING_META: Record<
   'wm.in.left': {
     section: '6.2',
     context:
-      'Friend\'s flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS',
+      'Friend\'s flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS. Where the line has no room for "left", the countdown shows alone',
     max: 16,
     placeholders: [
       {

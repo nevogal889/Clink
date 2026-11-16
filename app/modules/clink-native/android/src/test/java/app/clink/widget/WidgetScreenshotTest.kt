@@ -150,7 +150,7 @@ class WidgetScreenshotTest {
     view.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
     view.layout(0, 0, w, h)
     lastCut = cutTexts(view)
-    if (System.getenv("CLINK_DUMP") == "$fixture-$layout-$night-$fontScale") dump(view, 0)
+    if (System.getProperty("clink.dump") == "$fixture-$layout-$night-$fontScale") dump(view, 0)
     val bmp = Bitmap.createBitmap(w + 2 * margin, h + 2 * margin, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bmp)
     canvas.drawColor(if (night) Color.rgb(0x2B, 0x2F, 0x36) else Color.rgb(0xC9, 0xD1, 0xD8))
@@ -266,6 +266,46 @@ class WidgetScreenshotTest {
     val goldenNames = goldens.size
     assertTrue("$goldenNames goldens", goldenNames >= 20)
     assertTrue(problems.joinToString("\n"), problems.isEmpty())
+  }
+
+  /** Every drink picture as the widget draws it (cropped, capped at 1.5x), on its picker cell. */
+  @Test
+  fun drinkArtSheet() {
+    val dir = outDir ?: return
+    val catalog = org.json.JSONObject(File(Fixtures.dir, "../generated/catalog.json").readText()).getJSONArray("drinks")
+    for (night in listOf(false, true)) {
+      RuntimeEnvironment.setQualifiers(if (night) "+night" else "+notnight")
+      val context: Context = ApplicationProvider.getApplicationContext()
+      val d = context.resources.displayMetrics.density
+      val cols = 7
+      val cell = 96f
+      val gap = 6f
+      val rows = (catalog.length() + cols - 1) / cols
+      val bmp = Bitmap.createBitmap(((cols * (cell + gap) + gap) * d).toInt(), ((rows * (cell + gap) + gap) * d).toInt(), Bitmap.Config.ARGB_8888)
+      val canvas = Canvas(bmp)
+      canvas.drawColor(context.getColor(app.clink.nativemodule.R.color.clink_surface_base))
+      val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = 12f * d
+        typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+        color = context.getColor(app.clink.nativemodule.R.color.clink_ink_primary)
+        textAlign = android.graphics.Paint.Align.CENTER
+      }
+      for (i in 0 until catalog.length()) {
+        val drink = catalog.getJSONObject(i)
+        val x = gap + (i % cols) * (cell + gap)
+        val y = gap + (i / cols) * (cell + gap)
+        val cat = drink.getString("category")
+        val bg = context.resources.getIdentifier("clink_bg_cell_$cat", "drawable", context.packageName)
+        context.getDrawable(bg)!!.apply { setBounds((x * d).toInt(), (y * d).toInt(), ((x + cell) * d).toInt(), ((y + cell) * d).toInt()) }.draw(canvas)
+        val res = app.clink.widget.ui.DrinkIcons.iconL(drink.getString("id"))!!
+        val (w, h) = app.clink.widget.ui.ArtAspect.box(context, res, cell - 12f, cell - 30f)
+        val left = x + (cell - w) / 2
+        val top = y + 6f + (cell - 30f - h)
+        context.getDrawable(res)!!.apply { setBounds((left * d).toInt(), (top * d).toInt(), ((left + w) * d).toInt(), ((top + h) * d).toInt()) }.draw(canvas)
+        canvas.drawText(drink.getString("widgetName"), (x + cell / 2) * d, (y + cell - 9f) * d, paint)
+      }
+      save(bmp, dir, "art-sheet-${if (night) "dark" else "light"}.png")
+    }
   }
 
   @Test

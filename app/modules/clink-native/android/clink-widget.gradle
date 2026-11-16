@@ -20,6 +20,7 @@ android {
         systemProperty 'clink.fixtures', file("${moduleDir}/../../../../packages/shared/fixtures").absolutePath
         // Where the render test writes PNGs; unset means "don't write".
         if (project.hasProperty('clinkScreens')) systemProperty 'clink.screens', project.property('clinkScreens')
+        if (project.hasProperty('clinkDump')) systemProperty 'clink.dump', project.property('clinkDump')
         if (project.hasProperty('clinkPreviews')) systemProperty 'clink.previews', project.property('clinkPreviews')
         // Rewrites the golden PNGs the render test compares with (look at each one before committing).
         if (project.hasProperty('clinkUpdateGoldens')) systemProperty 'clink.goldens.out', file("${moduleDir}/src/test/resources/goldens").absolutePath

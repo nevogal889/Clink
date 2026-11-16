@@ -38,4 +38,4 @@ All through the Management API (`https://api.supabase.com`), no database connect
 | `supabase-deploy-functions.mjs` | Deploys `supabase/functions` with the pinned CLI, sets `CLINK_ENV` and `CLINK_CORS_ORIGINS` (from `supabase/projects.json` `corsOrigins`) |
 | `supabase-smoke.mjs` | Calls the deployed functions as test users (0101 to 0103), including a real CORS preflight and the log-time clamp, then deletes them (dev only) |
 
-The live widget run is `npm run test:e2e:widget` (`e2e/widget-api/widget.e2e.test.ts`, test number 0105; needs `NODE_USE_ENV_PROXY=1 SUPABASE_ACCESS_TOKEN=proxy-injected`).
+The live widget run is `npm run test:e2e:widget` (`e2e/widget-api/widget.e2e.test.ts`, test number 0105; needs `SUPABASE_ACCESS_TOKEN=proxy-injected`; the script sets `NODE_USE_ENV_PROXY=1` itself, so Node's `fetch` goes through the agent proxy, and it is a no-op without one).

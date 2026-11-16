@@ -29,12 +29,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 // Glance composition tests (glance-appwidget-testing) for the M2 states at small and medium:
 // idle, +1 picker, failed, signed out and setup. Every string comes from the generated COPY.md
 // resources, and every button has its COPY.md 4.26 label and the right action.
 
+// Native graphics, like the renders, so text is measured the way a launcher measures it and the
+// layouts drop the same things.
 @RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(qualifiers = "w411dp-h891dp-xxhdpi")
 class GlanceRenderTest {
   private val context: Context = ApplicationProvider.getApplicationContext()
   private val copy = Copy(context)
@@ -89,16 +95,20 @@ class GlanceRenderTest {
     render(model("W4", Layout.MEDIUM)) {
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_flare))).assertExists()
       onNode(hasTextEqualTo("4 waters")).assertExists()
-      // About 250 dp wide: the usual #1 line is the first text line to go (DESIGN.md 5.1).
-      onNode(hasTextEqualTo("Flat White")).assertDoesNotExist()
+      // The drink panel shows the usual #1 by name (polish pass); about 250 dp wide, the camera
+      // is the first control to go (DESIGN.md 5.1).
+      onNode(hasTextEqualTo("Flat White")).assertExists()
+      onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_camera))).assertDoesNotExist()
+      onNode(hasContentDescriptionEqualTo("Flat White, your usual. Log a drink")).assertHasRunCallbackClickAction<OpenPickerAction>()
     }
     val m = model("W4", Layout.MEDIUM_WIDE)
     render(m) {
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_flare))).assertExists()
       onNode(hasTextEqualTo("Flat White")).assertExists()
-      onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_snap_none))).assertExists()
       onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_camera))).assertExists()
-      onNode(hasContentDescriptionEqualTo("3 drinks and 4 waters today. Last drink 1 hour 42 minutes ago.")).assertExists()
+      // The last drink as a time of day (Head of Product, polish pass), never a ticking timer.
+      onNode(hasTextEqualTo("Last drink 7:30 AM")).assertExists()
+      onNode(hasContentDescriptionEqualTo("3 drinks and 4 waters today. Last drink at 7:30 AM.")).assertExists()
       onNode(hasContentDescriptionEqualTo("Send a coffee flare to Work, now")).assertExists()
     }
   }
@@ -107,7 +117,10 @@ class GlanceRenderTest {
   fun pickerMediumLogsEachUsualAndWater() {
     val m = model("W8", Layout.MEDIUM)
     render(m) {
-      onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_pick_title))).assertExists()
+      // Names whole, on up to 2 lines (DESIGN.md 5.2), from drinkShort.
+      onNode(hasTextEqualTo("Flat White")).assertExists()
+      onNode(hasTextEqualTo("Ceremonial")).assertExists()
+      onNode(hasTextEqualTo("Jasmine Tea")).assertExists()
       onNode(hasContentDescriptionEqualTo("Log Flat White"))
         .assertHasRunCallbackClickAction<LogDrinkAction>(actionParametersOf(LogDrinkAction.SLOT to 1))
       onNode(hasContentDescriptionEqualTo("Log Ceremonial Matcha"))
@@ -123,13 +136,16 @@ class GlanceRenderTest {
   fun pickerSmallIsAGridWithNoHeader() {
     val m = model("W8", Layout.SMALL)
     render(m) {
-      onNode(hasText(s(app.clink.nativemodule.R.string.clink_ws_pick_water))).assertExists()
-      onAllNodes(hasText("Flat White")).assertCountEquals(1)
-      // A short 2x2 drops the header and close button; the 30 s timeout is the cancel (DESIGN.md 5.3).
-      onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_close))).assertDoesNotExist()
-    }
-    render(model("W8", Layout.SMALL_TALL)) {
-      onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_close))).assertExists()
+      // 50 dp cells can't hold "Ceremonial" whole, so on the 2x2 the pictures carry the cells and
+      // the names are spoken only: a name is dropped, never cut (DESIGN.md 5.1, 5.3).
+      onNode(hasTextEqualTo("Flat White")).assertDoesNotExist()
+      onNode(hasContentDescriptionEqualTo("Log Flat White"))
+        .assertHasRunCallbackClickAction<LogDrinkAction>(actionParametersOf(LogDrinkAction.SLOT to 1))
+      onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_pick_water)))
+        .assertHasRunCallbackClickAction<LogDrinkAction>(actionParametersOf(LogDrinkAction.SLOT to 0))
+      // No ✕ on the 2x2: a tap beside the cells and the 30 s timeout close it (DESIGN.md 5.3).
+      onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_close)))
+        .assertHasRunCallbackClickAction<ClosePickerAction>()
     }
   }
 
@@ -165,7 +181,10 @@ class GlanceRenderTest {
     render(model("W17", Layout.MEDIUM)) {
       onNode(hasTextEqualTo(s(app.clink.nativemodule.R.string.clink_wm_logged))).assertExists()
       onNode(hasContentDescriptionEqualTo("Logged Flat White")).assertExists()
+      // The confirmation takes the whole action row (DESIGN.md 5.2); the counts and the drink panel stay.
+      onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_log))).assertDoesNotExist()
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_flare))).assertDoesNotExist()
+      onNode(hasTextEqualTo("4 waters")).assertExists()
     }
   }
 
@@ -175,9 +194,10 @@ class GlanceRenderTest {
     assertTrue(m.compactText)
     assertEquals(0.65f, m.textScale, 0.001f)
     render(m) {
-      // Usual #1 goes first (DESIGN.md 5.1); counts and buttons stay.
-      onNode(hasTextEqualTo("Flat White")).assertDoesNotExist()
-      onNode(hasTextEqualTo("drinks")).assertExists()
+      // Secondary lines go at 1.3 and up (the last drink, the audience); counts and buttons stay.
+      onNode(hasText("Last drink")).assertDoesNotExist()
+      onNode(hasText("Auto")).assertDoesNotExist()
+      onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_log))).assertExists()
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_flare))).assertExists()
     }
   }

@@ -8,8 +8,8 @@
 // deleted through the app's own delete path. Everything the run creates is removed at the end.
 //
 // Run (dev only; the proxy adds the real Management API token, which is never read here):
-//   NODE_USE_ENV_PROXY=1 SUPABASE_ACCESS_TOKEN=proxy-injected CLINK_E2E=1 \
-//     npx jest -c e2e/widget-api/jest.config.js
+//   SUPABASE_ACCESS_TOKEN=proxy-injected npm run test:e2e:widget
+// (the script sets CLINK_E2E=1 and NODE_USE_ENV_PROXY=1).
 // The widget token, the access token and the state body are never printed.
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';

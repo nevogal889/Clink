@@ -74,3 +74,50 @@ Probed the migrated database directly as well as reading the tests.
 - **Not checkable yet:** no Swift or Kotlin code exists, so widget fixture decoding in Swift and Kotlin can't be tested. Device, large-text and screen-reader passes need hardware. Must-fixes for later milestones (M-06 image screening, M-10 web deletion page, M-11 export, M-12 to M-15 legal and store, and the `snap-cleanup` part of M-17) have nothing built to check yet.
 - **`npm audit`:** moderate findings in transitive Expo toolchain packages, not forced (as `scaffold.md` says).
 - **Carried over from `database.md`:** the avatar 10-a-day limit isn't enforced, and `private.install_history` needs a retention row in ARCHITECTURE 4.8.
+
+## Polish pass review: Android widget and widget backend (2026-11-16)
+
+Independent Design Director and QA pass over the widget polish pass (`android-widget.md` and `widget-backend.md`, both "Polish pass" sections). I didn't write that work. I looked at `overview.png`, the `before/` set, all 134 renders and both art sheets, read the layout code, and checked the spec points below.
+
+### Fixed
+
+- `ARCHITECTURE.md` 3.2: the error bullet said `malformed` and `stale` codes "drop" the op, which contradicted the outbox table ("log: never dropped") and the Kotlin code. It now says a log moves to the widget's `rejected` list for the app to report.
+
+### Spec checks
+
+| Check | Result |
+|---|---|
+| Logs never dropped, Kotlin | `model/Outbox.kt`: a log retries forever, and a malformed refusal moves it to `rejected`, never deletes it. `SyncTest.theKotlinErrorTableMatchesWidgetApiErrors` parses the shared table, so the two can't drift. |
+| Logs never dropped, server | `0020_log_time.sql` clamps `loggedAt` into [now − 90 days, now] in `widget_log_drink` and in the `drink_logs` trigger. No time-based refusal is left. |
+| Unknown keys tolerated | `widgetStateReadSchema` in the app; the Kotlin decoder ignores unknown keys (`DecoderAndResolveTest`). The server stays strict. |
+| allowBackup | The merged manifest (`./gradlew :app:processDebugMainManifest`) has `allowBackup="false"` and `dataExtractionRules="@xml/clink_data_extraction_rules"`. The rules exclude every domain for cloud backup and device transfer. |
+| Sign-out retry | `signout_pending` holds only the install id. A transient failure keeps it, and it's sent before the next `register-device`. |
+| CORS | Exact allow-list from `projects.json`, no wildcard, 403 for any other origin, `Vary: Origin`. It applies only to the three app-facing functions. |
+
+### Design verdict
+
+The split 4x2 (counts on enamel, the usual #1 on its own tinted panel with its ink rim, and Who joins? in the drink's solid under the drink it sends) reads as Clink, not as a stock widget. It's a clear step up from `before/`. Nothing is cut at font 1.0, 1.3 or 2.0. All text pairs pass DESIGN.md 7: the lowest is `danger` on the cobalt tint at 5.6:1, and `ink.secondary` on enamel is 7.1:1 (light) and 8.3:1 (dark). "Last drink 7:30 AM" is clear on the 4x2. "Last 7:30" on the 2x2 is clear enough for today's drinks.
+
+### Remaining issues, ranked by what a demanding CEO notices first
+
+1. **The usual 4x2 size probably gets the short layout.** On Android 12+ the platform picks the fitting size closest to the real one, by square distance. A 330 × 155 dp 4x2 is under the 160 dp height of `MEDIUM` and `MEDIUM_WIDE`, so it gets `MEDIUM_SHORT` (250 × 120) stretched. That layout has no "drinks" word ("3 ◦ 4"), no last-drink line and no camera (`w4-idle-medium-short-light.png`). Fix: lower the 4x2 height breakpoints to about 140 dp after measuring the real Pixel launcher size on the CEO's emulator **(verify)**. Owner: Android. `ClinkWidget.kt:50-52`.
+2. **Flare countdowns read like clock times**, which is the same complaint the CEO made about "1:42:00". "Coffee, in 14 min" sits over a big "14:00" (`w9-my-flare-*`). The 2x2 shows "Maya 13:00" with no "left" (`w11-incoming-small-*`, `w15-replied-in-small-*`). Fix: minute text ("14 min left") or a label on every countdown. Owner: Design and Copy (DESIGN.md 5.1 Time, `ws.in.left`).
+3. **Dark-mode drink art merges.** White enamel with the `#EEF2F5` outline (DESIGN.md 3.6 outline rule) turns the cup and saucer into one pale blob: Flat White on the idle panel (`w4-idle-medium-dark.png`) and the whole coffee row of `art-sheet-dark.png`. Owner: Design (art). A darker enamel or a dark separating line in dark mode would fix it.
+4. **The 2x2 picker has pictures only**, and Espresso, Macchiato, Flat White and Cappuccino are nearly the same small cup on a saucer (`art-sheet-light.png`). A usual 3 of three coffees can't be told apart there. Owner: Design (stronger per-drink marks), or keep the names when two usual drinks share a silhouette.
+5. **The snap caption fails contrast.** DESIGN.md 3.7 sets the scrim from 0% at 45% of the height to 64% at the bottom, then says text in the bottom 40% sits on "at least 60%". At 60% of the height the scrim is only about 17%. Measured behind "Leo · 38m" in `w3-idle-snap-medium-light.png`: 2.9 to 4.7:1. Over a white photo it can drop to about 1.5:1, against the 4.5:1 rule. This also affects the app's snap tiles. Owner: Design (fix 3.7), then `gen-android-colors.mjs` `clink_bg_scrim`.
+6. **No ✕ on the 250 dp 4x2 picker** (`w8-picker-medium-light.png`). Only the wide 4x2 has one. DESIGN.md 5.2 asks for a 44 pt ✕, and only the 2x2 exception is written down (5.3). A user who opened it by mistake waits 30 s or taps a 12 dp margin. Owner: Android and Design. `WidgetContent.kt:850` (`close = model.layout.wide`).
+7. **Rejected logs are never read.** Nothing in `app/src` calls `takeRejected()` or reads `getOutbox().rejected`, so a refused log sits in the widget store and the user never hears of it. Owner: Wire unit (`app/src/lib/widget/sync.ts`).
+8. **At font 2.0 the 2x2 friend's flare loses what is wanted**: only "Maya 13:00" and I'm in remain, with no "Matcha" (`w11-incoming-small-light-font200.png`). Owner: Android and Design (drop order: the countdown before the drink).
+9. **Your live flare on the 2x2 says "0 in"** (`ws.live.counts`), while the 4x2 says "No replies yet". Showing a zero to the sender is close to the no-shame rule. Owner: Copy (add a `ws.live.none`).
+10. **After 4 caffeinated drinks the panel turns tea but Who joins? stays coffee brown** (`w7-*`). It's documented, but it looks like a bug. Owner: Design.
+11. **Small misalignments.** On the short 4x2 the water count sits about 5 dp below the numeral's baseline (`w4-idle-medium-short-light.png`). In the medium picker, Water is drawn about twice the height of Jasmine Tea, because the crop fills the box by height (`w8-picker-medium-light.png`). Owner: Android.
+12. **Offline sign-out leaves the push device row** until the next signed-in launch (ARCHITECTURE.md 3.6 step 3), so friends' flare notifications, with names and places, can still reach a signed-out phone. Owner: CTO and Risk. Our own FCM service could drop messages while signed out.
+13. **The snap tile without a thumbnail** (a camera glyph under a scrim) looks like a broken image until thumbnails arrive in M3 to M5.
+
+### Results
+
+| What | Command | Result |
+|---|---|---|
+| Widget harness | `app/android/gradlew -p app/modules/clink-native/android/standalone testDebugUnitTest --rerun-tasks` (JDK 17) | 50/50, 0 failures |
+| Merged manifest | `cd app/android && ./gradlew :app:processDebugMainManifest` | `allowBackup="false"` and the extraction rules are present |
+| Repo | `npm run ci` | green (Jest 492/492, script tests 17 and 22) |

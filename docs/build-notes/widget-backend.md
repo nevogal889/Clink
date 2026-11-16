@@ -196,3 +196,36 @@ The local date comes from the stored time in the device zone, else the saved zon
 
 - **iOS**: unchanged (no Apple account or Mac).
 - **A fresh-container setup script** for this environment: the tools here (JDK 17, Android SDK, Deno in the scratchpad, Postgres 16 with pgTAP) were already installed; the local Postgres runs under `/tmp/clink-cto-pg` because the scratchpad lost its permissions mid-run.
+
+## Polish pass, re-check (2026-11-16, later)
+
+Owner: CTO. A second run over the seven polish items against the committed tree. Nothing in the backend needed a change; three small fixes below.
+
+### What changed
+
+| Part | Change |
+|---|---|
+| Root `package.json` | `test:e2e:widget` sets `NODE_USE_ENV_PROXY=1` itself, so Node's `fetch` reaches clink-dev behind the agent proxy (it failed with `ENOTFOUND` without it); no effect where no proxy is set. |
+| `scripts/README.md`, `e2e/widget-api/widget.e2e.test.ts` | Run line updated to `SUPABASE_ACCESS_TOKEN=proxy-injected npm run test:e2e:widget`. |
+| `docs/ARCHITECTURE.md` 3.1 | Reconciled with the Kotlin decoder: it also drops a list item with an unknown enum value. Allowed, not required, since a new enum value bumps `v`; the app's decoder refuses the document and falls back to its own build. |
+
+### Decisions (one line each)
+
+- **The Kotlin decoder's item-level enum leniency stays, documented as optional**: it is safer, not different in kind, and the server rule (bump `v`) means the TS decoder never needs it.
+- **`test:e2e:widget` carries the proxy flag**: the script is opt-in and dev-only, and a run that fails on DNS proves nothing.
+- **The log-time rule stays in ARCHITECTURE.md 0 (principle 8), 3.2 "Log time" and 4.4**: section 6 is invites and has no time rule to change.
+
+### Results
+
+| Check | Result |
+|---|---|
+| `npm run ci` | green |
+| pgTAP local (Postgres 16) | 14 files, 391/391 |
+| Deno: lint, check, `deno test` with `CLINK_TEST_DB_URL` | clean, 23/23 |
+| `supabase-apply.mjs --status` | 0001 to 0020 applied on clink-dev |
+| `supabase-deploy-functions.mjs` (redeploy of the committed code) | `complete-signup`, `delete-account`, `register-device` v16, `widget-api` v11; `CLINK_CORS_ORIGINS=http://localhost:8081` |
+| pgTAP on clink-dev | 14 files, 391/391, rolled back |
+| `supabase-smoke.mjs` | 49/49; 3 test users created, 0 left |
+| `npm run test:e2e:widget` (0105) | 10/10, median 262 ms per widget-api call |
+| Real preflight with curl | `204` and the origin echoed for `http://localhost:8081` on the three app-facing functions; `403` with no CORS header for any other origin; `widget-api/state` `405` |
+| Data left on clink-dev | only +1 201 555 0106 (the CEO's): `updated_at`, its 1 device and 1 log unchanged before and after; no other users, logs, devices or ownerless events; no `tests` schema |

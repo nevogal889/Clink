@@ -47,15 +47,15 @@ data class TrackerModel(
   /** The whole water count as COPY.md writes it ("4 waters"). */
   val waterText: String,
   /**
-   * The last drink as a time of day ("Last drink 7:30 AM"; small "Last 7:30"): exact, never stale,
-   * so no ticking and no per-minute redraws. null with no drink today: `noneText` shows instead.
+   * The last-drink line, longest first: the layout shows the first that fits, or none (DESIGN.md
+   * 5.1 item 4). A time of day ("Last drink 12:54 PM", "Last 12:54 PM", "Last 12:54"): exact and
+   * never stale, so nothing ticks. With no drink today: "No drinks yet today", "No drinks yet".
    */
-  val lastText: String?,
-  val noneText: String,
+  val lastOptions: List<String>,
   val a11y: String,
 )
 
-/** The usual #1 as a line (small tall widget): its picture and its short name. */
+/** The usual #1 as a line (tall 2x2): its picture and its short name. */
 data class UsualLine(val art: Int, val text: String)
 
 /**
@@ -69,8 +69,8 @@ sealed class MediaTile {
 
   data class Photo(val file: String, val caption: String, override val tap: Tap, override val a11y: String) : MediaTile()
 
-  /** Usual #1 (or the herbal tea note after 4 caffeinated drinks): Icon L on its category plate. */
-  data class Drink(val art: Int, val name: String, val background: Int, override val tap: Tap, override val a11y: String) : MediaTile()
+  /** Usual #1 (or the herbal tea note after 4 caffeinated drinks): its Icon L and its short name, on the panel. */
+  data class Drink(val art: Int, val name: String, override val tap: Tap, override val a11y: String) : MediaTile()
 
   data class PickUsual(val text: String, override val tap: Tap, override val a11y: String) : MediaTile()
 }
@@ -119,6 +119,12 @@ sealed class Content {
     val log: ButtonModel,
     val camera: ButtonModel,
     val whoJoins: ButtonModel,
+    /**
+     * The drink panel on the 4x2 (polish pass): the right part of the widget, edge to edge, in the
+     * usual #1's tint with its own rim band (cobalt when there is no usual 3 yet). It holds the
+     * drink (or a friend's snap) over the Who joins? button that sends it.
+     */
+    val panel: Int,
     val overlay: OverlayModel?,
   ) : Content()
 
@@ -134,12 +140,14 @@ sealed class Content {
     val glyph: Int,
     val hero: Int,
     val textColor: Int,
+    /** Longest first ("Coffee, in 14 min"; small "Your coffee"): the layout shows the first that fits. */
     val title: String,
     val place: String?,
     val expiresAt: Instant,
     val chips: List<ReplyChip>,
     val chipBackground: Int,
-    val more: String?,
+    /** "+N more" for each number of chips shown (index 0 to chips.size); null when nothing is hidden. */
+    val moreByShown: List<String?>,
     val noneText: String?,
     val counts: String,
     val a11y: String,
@@ -152,8 +160,10 @@ sealed class Content {
     val initial: String,
     val name: String,
     val title: String,
-    val subTitle: String,
-    val meta: String,
+    /** Small: "Matcha · in 10 min", then "Matcha". */
+    val subOptions: List<String>,
+    /** Medium: "Café Lumi · in 10 min", then "In 10 min". */
+    val metaOptions: List<String>,
     val expiresAt: Instant,
     /** Chronometer format for the countdown: COPY.md `wm.in.left` / `ws.in.left` with %s. */
     val leftFormat: String,

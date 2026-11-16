@@ -1613,7 +1613,7 @@
     "ws.drinks": { "section": "6.1", "max": 10, "placeholders": ["n"] },
     "ws.water": { "section": "6.1", "max": 10, "placeholders": ["n"] },
     "ws.last": { "section": "6.1", "max": 12, "placeholders": ["ago"] },
-    "ws.last_at": { "section": "6.1", "max": 10, "placeholders": ["time"] },
+    "ws.last_at": { "section": "6.1", "max": 13, "placeholders": ["time"] },
     "ws.last_none": { "section": "6.1", "max": 14, "placeholders": [] },
     "ws.log": { "section": "6.1", "max": 9, "placeholders": [] },
     "ws.pick.water": { "section": "6.1", "max": 8, "placeholders": [] },

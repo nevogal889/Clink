@@ -7,7 +7,9 @@
 // What it makes (DESIGN.md 3.6 sizes, 3.5 dark rules, 2.8 UI glyphs):
 // - clink_icon_<category>_<slug>: Icon S (24 grid) for every catalog drink, light and night.
 // - clink_icon_l_<category>_<slug>: Icon L (64 grid: shade tone and gleam), for the widget's drink
-//   tile, picker cells and confirmation (40 dp and up, DESIGN.md 3.2), light and night.
+//   panel, picker cells and confirmation (40 dp and up, DESIGN.md 3.2), light and night. The
+//   viewport is cropped to the drawn bounds plus 1 unit, so a short cup and a tall glass both fill
+//   their box; the widget reads each picture's aspect from its intrinsic size.
 // - clink_hero_<category>: the five heroes, light and night (night swaps only the contour outline).
 // - clink_glyph_<category>[_ink|_on_solid]: category glyphs in ink.primary, category ink, onSolid.
 // - clink_ui_<name>[_variant]: the few UI glyphs the widget draws (DESIGN.md 2.8 shapes).
@@ -263,13 +265,188 @@ function convertChildren(node, style, indent) {
   return lines;
 }
 
-/** SVG text to VectorDrawable XML, drawn at `sizeDp` on its longer side. */
-export function svgToVector(src, { sizeDp, source }) {
+// ---------------------------------------------------------------------------------------------
+// Drawn bounds, so a drink picture can be cropped to what is drawn (polish pass: a flat white
+// fills only a third of its 64 grid, so at widget sizes the cup came out tiny next to a tall glass).
+
+/** Points along one path `d` (absolute and relative M L H V C Q A Z), sampled finely enough for bounds. */
+export function samplePath(d) {
+  const toks = d.match(/[A-Za-z]|-?(?:\d+\.?\d*|\.\d+)(?:e-?\d+)?/g) ?? [];
+  const pts = [];
+  let i = 0;
+  let cmd = '';
+  let x = 0;
+  let y = 0;
+  let sx = 0;
+  let sy = 0;
+  const n = () => num(toks[i++], 'path');
+  const STEPS = 24;
+  while (i < toks.length) {
+    if (/[A-Za-z]/.test(toks[i])) cmd = toks[i++];
+    const rel = cmd === cmd.toLowerCase();
+    const C = cmd.toUpperCase();
+    const ox = rel ? x : 0;
+    const oy = rel ? y : 0;
+    if (C === 'Z') {
+      x = sx;
+      y = sy;
+      pts.push([x, y]);
+      continue;
+    }
+    if (C === 'M' || C === 'L') {
+      x = ox + n();
+      y = oy + n();
+      if (C === 'M') {
+        sx = x;
+        sy = y;
+        cmd = rel ? 'l' : 'L';
+      }
+      pts.push([x, y]);
+    } else if (C === 'H') {
+      x = (rel ? x : 0) + n();
+      pts.push([x, y]);
+    } else if (C === 'V') {
+      y = (rel ? y : 0) + n();
+      pts.push([x, y]);
+    } else if (C === 'C' || C === 'Q') {
+      const c = [];
+      for (let k = 0; k < (C === 'C' ? 3 : 2); k++) c.push([ox + n(), oy + n()]);
+      const p = [[x, y], ...c];
+      for (let s = 1; s <= STEPS; s++) {
+        const t = s / STEPS;
+        let q = p;
+        while (q.length > 1)
+          q = q
+            .slice(1)
+            .map((b, k) => [q[k][0] + (b[0] - q[k][0]) * t, q[k][1] + (b[1] - q[k][1]) * t]);
+        pts.push(q[0]);
+      }
+      [x, y] = c[c.length - 1];
+    } else if (C === 'A') {
+      let rx = Math.abs(n());
+      let ry = Math.abs(n());
+      const phi = (n() * Math.PI) / 180;
+      const large = n() !== 0;
+      const sweep = n() !== 0;
+      const x2 = ox + n();
+      const y2 = oy + n();
+      // SVG arc endpoint to centre parameterisation (SVG 1.1 implementation notes F.6.5).
+      const cos = Math.cos(phi);
+      const sin = Math.sin(phi);
+      const dx = (x - x2) / 2;
+      const dy = (y - y2) / 2;
+      const x1p = cos * dx + sin * dy;
+      const y1p = -sin * dx + cos * dy;
+      const lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+      if (lambda > 1) {
+        rx *= Math.sqrt(lambda);
+        ry *= Math.sqrt(lambda);
+      }
+      const numr = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
+      const den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
+      let co = Math.sqrt(Math.max(0, numr / den));
+      if (large === sweep) co = -co;
+      const cxp = (co * rx * y1p) / ry;
+      const cyp = (-co * ry * x1p) / rx;
+      const cx = cos * cxp - sin * cyp + (x + x2) / 2;
+      const cy = sin * cxp + cos * cyp + (y + y2) / 2;
+      const ang = (ux, uy, vx, vy) => Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+      const t1 = ang(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);
+      let dt = ang((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry);
+      if (!sweep && dt > 0) dt -= 2 * Math.PI;
+      if (sweep && dt < 0) dt += 2 * Math.PI;
+      for (let s = 1; s <= STEPS * 2; s++) {
+        const t = t1 + (dt * s) / (STEPS * 2);
+        pts.push([
+          cx + rx * Math.cos(t) * cos - ry * Math.sin(t) * sin,
+          cy + rx * Math.cos(t) * sin + ry * Math.sin(t) * cos,
+        ]);
+      }
+      x = x2;
+      y = y2;
+    } else {
+      throw new Error(`svg: unsupported path command ${cmd}`);
+    }
+  }
+  return pts;
+}
+
+/**
+ * The drawn bounds of an SVG, strokes included: [minX, minY, maxX, maxY] in viewBox units.
+ * Group and shape transforms (translate, rotate) are applied, like the conversion does.
+ */
+export function drawnBounds(src) {
   const svg = parseSvg(src);
-  const vb = (svg.attrs.viewBox ?? `0 0 ${svg.attrs.width} ${svg.attrs.height}`)
+  const b = [Infinity, Infinity, -Infinity, -Infinity];
+  const apply = (p, transform) => {
+    let [px, py] = p;
+    // An SVG transform list applies right to left to the point.
+    for (const g of groupAttrs(transform).reverse()) {
+      if ('translateX' in g) {
+        px += g.translateX;
+        py += g.translateY;
+      } else {
+        const a = (g.rotation * Math.PI) / 180;
+        const qx = px - g.pivotX;
+        const qy = py - g.pivotY;
+        px = g.pivotX + qx * Math.cos(a) - qy * Math.sin(a);
+        py = g.pivotY + qx * Math.sin(a) + qy * Math.cos(a);
+      }
+    }
+    return [px, py];
+  };
+  const walk = (node, style, transforms) => {
+    for (const child of node.children) {
+      const own = { ...style };
+      for (const k of INHERITED) if (child.attrs[k] !== undefined) own[k] = child.attrs[k];
+      const tf = child.attrs.transform ? [child.attrs.transform, ...transforms] : transforms;
+      if (child.name === 'g') {
+        walk(child, own, tf);
+        continue;
+      }
+      if (!SHAPES.has(child.name)) continue;
+      const fill = own.fill ?? '#000000';
+      const stroke = own.stroke ?? 'none';
+      if (fill === 'none' && stroke === 'none') continue;
+      const half = stroke === 'none' ? 0 : num(own['stroke-width'] ?? 1, 'stroke-width') / 2;
+      for (let p of samplePath(shapePath(child))) {
+        for (const t of tf) p = apply(p, t);
+        b[0] = Math.min(b[0], p[0] - half);
+        b[1] = Math.min(b[1], p[1] - half);
+        b[2] = Math.max(b[2], p[0] + half);
+        b[3] = Math.max(b[3], p[1] + half);
+      }
+    }
+  };
+  walk(svg, {}, []);
+  return b;
+}
+
+/** A viewBox tight around the drawing, with `margin` units on every side, kept inside the original grid. */
+export function cropViewBox(src, margin) {
+  const svg = parseSvg(src);
+  const [vx, vy, vw, vh] = (svg.attrs.viewBox ?? `0 0 ${svg.attrs.width} ${svg.attrs.height}`)
     .trim()
     .split(/[\s,]+/)
     .map((v) => num(v, 'viewBox'));
+  const [x0, y0, x1, y1] = drawnBounds(src);
+  const r = (v) => Math.round(v * 100) / 100;
+  const minX = r(Math.max(vx, Math.floor((x0 - margin) * 4) / 4));
+  const minY = r(Math.max(vy, Math.floor((y0 - margin) * 4) / 4));
+  const maxX = r(Math.min(vx + vw, Math.ceil((x1 + margin) * 4) / 4));
+  const maxY = r(Math.min(vy + vh, Math.ceil((y1 + margin) * 4) / 4));
+  return [minX, minY, r(maxX - minX), r(maxY - minY)];
+}
+
+/** SVG text to VectorDrawable XML, drawn at `sizeDp` on its longer side (`viewBox` overrides the SVG's). */
+export function svgToVector(src, { sizeDp, source, viewBox }) {
+  const svg = parseSvg(src);
+  const vb =
+    viewBox ??
+    (svg.attrs.viewBox ?? `0 0 ${svg.attrs.width} ${svg.attrs.height}`)
+      .trim()
+      .split(/[\s,]+/)
+      .map((v) => num(v, 'viewBox'));
   const [minX, minY, w, h] = vb;
   const scale = sizeDp / Math.max(w, h);
   const body = convertChildren(svg, {}, minX || minY ? '    ' : '  ');
@@ -359,9 +536,13 @@ export async function buildAssets() {
     const src = read(`icons/${f}`);
     both(name, src, darkIcon(src), { sizeDp: 24, source: `app/assets/art/icons/${f}` });
     const large = read(`icons/${id}.64.svg`);
+    // Cropped to what is drawn (1 unit of air), so every drink fills its box in the widget: the
+    // picture is the main thing in a picker cell and on the drink panel (polish pass).
+    const viewBox = cropViewBox(large, 1);
     both(`clink_icon_l_${id.replace(/\./g, '_')}`, large, darkIcon(large), {
-      sizeDp: 64,
-      source: `app/assets/art/icons/${id}.64.svg`,
+      sizeDp: 64 * (Math.max(viewBox[2], viewBox[3]) / 64),
+      source: `app/assets/art/icons/${id}.64.svg (cropped to ${viewBox.join(' ')})`,
+      viewBox,
     });
   }
 

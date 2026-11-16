@@ -140,6 +140,31 @@ function rimmed(body, rim, rimDp, radius) {
   ];
 }
 
+/**
+ * The drink panel on the idle 4x2 (polish pass): the right part of the widget, edge to edge, so
+ * square on the left and following the container on the right. Its own rim band in the drink's
+ * ink continues the widget's cobalt band: two rims side by side, the brand's and the drink's.
+ */
+function panel(body, rim, radius) {
+  const corners = `<corners android:topLeftRadius="0dp" android:bottomLeftRadius="0dp" android:topRightRadius="${radius}" android:bottomRightRadius="${radius}" />`;
+  return [
+    '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">',
+    '    <item>',
+    '        <shape android:shape="rectangle">',
+    `            <solid android:color="${c(rim)}" />`,
+    `            ${corners}`,
+    '        </shape>',
+    '    </item>',
+    '    <item android:top="4dp">',
+    '        <shape android:shape="rectangle">',
+    `            <solid android:color="${c(body)}" />`,
+    `            ${corners}`,
+    '        </shape>',
+    '    </item>',
+    '</layer-list>',
+  ];
+}
+
 function plain(fill, radius, stroke) {
   return [
     '<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">',
@@ -176,16 +201,12 @@ export function shapeList() {
       'cell',
       (r) => rimmed('surfaceRaised', `${cat}_ink`, '2dp', r),
     ]);
-    // The usual #1 tile on the idle widget (polish pass): a drink container, so its tint with a
-    // 3 dp rim in the drink's ink (DESIGN.md 1.2 rule 1, 5.2).
-    list.push([
-      `clink_bg_plate_${cat}`,
-      'inner',
-      (r) => rimmed(`${cat}_tint`, `${cat}_ink`, '3dp', r),
-    ]);
+    // The drink panel on the idle 4x2 (polish pass): a drink container, so its tint with a rim in
+    // the drink's ink (DESIGN.md 1.2 rule 1, 5.2).
+    list.push([`clink_bg_panel_${cat}`, 'container', (r) => panel(`${cat}_tint`, `${cat}_ink`, r)]);
   }
-  // No usual 3 yet: the same tile in brand colours, a cobalt rim on the cobalt tint.
-  list.push(['clink_bg_plate_cobalt', 'inner', (r) => rimmed('cobaltTint', 'cobalt', '3dp', r)]);
+  // No usual 3 yet: the same panel in brand colours, a cobalt rim on the cobalt tint.
+  list.push(['clink_bg_panel_cobalt', 'container', (r) => panel('cobaltTint', 'cobalt', r)]);
   for (const cat of CATEGORIES) {
     list.push([
       `clink_bg_cell_${cat}`,

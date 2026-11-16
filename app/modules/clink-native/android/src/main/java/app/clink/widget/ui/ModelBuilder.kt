@@ -149,11 +149,22 @@ class ModelBuilder(private val copy: Copy) {
         s.today.localDate == Resolve.localDateAt(now, zone) && Resolve.localDateAt(it, zone) == s.today.localDate
       }
     // The time of day of the last drink (Head of Product, polish pass): exact and never stale, so
-    // the widget needs no ticking text. Midnight clears it with the counts.
-    val lastText =
-      last?.let {
-        if (small) copy.t(R.string.clink_ws_last_at, "time" to copy.time(it, zone, short = true))
-        else copy.t(R.string.clink_wm_last_at, "time" to copy.time(it, zone))
+    // the widget needs no ticking text. Midnight clears it with the counts. Longest first; the
+    // layout keeps the first that fits ("Last drink 12:54 PM", "Last 12:54 PM", "Last 12:54").
+    val lastOptions =
+      if (last != null) {
+        val full = copy.time(last, zone)
+        val short = copy.time(last, zone, short = true)
+        (if (small) listOf(copy.t(R.string.clink_ws_last_at, "time" to short))
+        else
+          listOf(
+            copy.t(R.string.clink_wm_last_at, "time" to full),
+            copy.t(R.string.clink_ws_last_at, "time" to full),
+            copy.t(R.string.clink_ws_last_at, "time" to short),
+          )).distinct()
+      } else {
+        (if (small) listOf(copy.t(R.string.clink_ws_last_none))
+        else listOf(copy.t(R.string.clink_wm_last_none), copy.t(R.string.clink_ws_last_none))).distinct()
       }
     val a11y =
       when {
@@ -167,8 +178,7 @@ class ModelBuilder(private val copy: Copy) {
       waterNum = wn,
       waterWord = ww,
       waterText = water,
-      lastText = lastText,
-      noneText = copy.t(if (small) R.string.clink_ws_last_none else R.string.clink_wm_last_none),
+      lastOptions = lastOptions,
       a11y = a11y,
     )
   }
@@ -210,7 +220,6 @@ class ModelBuilder(private val copy: Copy) {
           MediaTile.Drink(
             DrinkIcons.iconL("tea.chamomile") ?: R.drawable.clink_glyph_tea_ink,
             copy.t(R.string.clink_wm_caff),
-            Res.of(LogCategory.TEA).plate,
             Tap.OpenPicker,
             copy.t(R.string.clink_a11y_w_log),
           )
@@ -218,7 +227,6 @@ class ModelBuilder(private val copy: Copy) {
           MediaTile.Drink(
             Res.art(first.drinkId, LogCategory.of(first.category)),
             copy.t(R.string.clink_wm_usual, "drink_short" to Copy.truncate(first.drinkShort, Copy.DRINK_SHORT)),
-            Res.of(first.category).plate,
             Tap.OpenPicker,
             copy.t(R.string.clink_a11y_w_plate, "drink" to first.name),
           )
@@ -311,7 +319,24 @@ class ModelBuilder(private val copy: Copy) {
           subLabel = label,
         )
       }
-    return Content.Idle(tracker(s, v, layout, fontScale, now, zone), media, usual, log, camera, whoJoins, overlay)
+    // The panel takes the colours of what it shows: the herbal tea note in tea, else the usual #1,
+    // else cobalt (no usual 3 yet).
+    val panelRes =
+      when {
+        v.caffeineNote -> Res.of(LogCategory.TEA)
+        first != null -> Res.of(first.category)
+        else -> Res.of(LogCategory.WATER)
+      }
+    return Content.Idle(
+      tracker(s, v, layout, fontScale, now, zone),
+      media,
+      usual,
+      log,
+      camera,
+      whoJoins,
+      panelRes.panel,
+      overlay,
+    )
   }
 
   private fun picker(s: WidgetState.Ready, layout: Layout, overlay: OverlayModel?): Content.Picker {
@@ -369,7 +394,8 @@ class ModelBuilder(private val copy: Copy) {
             )
         }
       }
-    val more = (f.replies.size - chips.size).takeIf { it > 0 }?.let { copy.t(R.string.clink_wm_live_more, "n" to it) }
+    // "+N more" for every number of chips the layout manages to show (it drops chips that don't fit).
+    val moreByShown = (0..chips.size).map { shown -> (f.replies.size - shown).takeIf { it > 0 }?.let { copy.t(R.string.clink_wm_live_more, "n" to it) } }
     val ins = f.replies.count { it is Reply.In }
     val spoken =
       if (f.place != null) {
@@ -389,7 +415,7 @@ class ModelBuilder(private val copy: Copy) {
       expiresAt = f.expiresAt,
       chips = chips,
       chipBackground = fr.pillTint,
-      more = more,
+      moreByShown = moreByShown,
       noneText = if (f.replies.isEmpty()) copy.t(R.string.clink_wm_live_none) else null,
       counts = copy.t(R.string.clink_ws_live_counts, "in" to ins),
       a11y = spoken,
@@ -450,10 +476,12 @@ class ModelBuilder(private val copy: Copy) {
       initial = f.senderName.take(1).uppercase(Locale.US),
       name = copy.t(R.string.clink_ws_in_title, "name" to name),
       title = copy.t(R.string.clink_wm_in_title, "name" to name, "wants" to f.wants),
-      subTitle = copy.t(R.string.clink_ws_in_sub, "cat_cap" to cap(f.label), "mins" to copy.mins(toMeet)),
-      meta =
-        if (f.place != null) copy.t(R.string.clink_wm_in_meta, "place" to Copy.truncate(f.place, Copy.PLACE), "mins" to copy.mins(toMeet))
-        else copy.mins(toMeet, capital = true),
+      subOptions = listOf(copy.t(R.string.clink_ws_in_sub, "cat_cap" to cap(f.label), "mins" to copy.mins(toMeet)), cap(f.label)),
+      metaOptions =
+        listOfNotNull(
+          f.place?.let { copy.t(R.string.clink_wm_in_meta, "place" to Copy.truncate(it, Copy.PLACE), "mins" to copy.mins(toMeet)) },
+          copy.mins(toMeet, capital = true),
+        ),
       expiresAt = f.expiresAt,
       leftFormat = copy.raw(if (small) R.string.clink_ws_in_left else R.string.clink_wm_in_left).replace("{timer}", "%s"),
       more = v.more.takeIf { it > 0 }?.let { copy.t(if (small) R.string.clink_ws_more else R.string.clink_wm_in_more, "n" to it) },

@@ -15,7 +15,14 @@ import {
   pickWidgetStrings,
   resourceName,
 } from './gen-android-strings.mjs';
-import { buildAssets, buildIconsKotlin, darkIcon, svgToVector } from './gen-drink-assets.mjs';
+import {
+  buildAssets,
+  buildIconsKotlin,
+  cropViewBox,
+  darkIcon,
+  drawnBounds,
+  svgToVector,
+} from './gen-drink-assets.mjs';
 
 const KOTLIN = join(REPO_ROOT, 'app/modules/clink-native/android/src');
 const strings = JSON.parse(readFileSync(STRINGS_JSON, 'utf8')).strings;
@@ -90,6 +97,18 @@ test('drawables: every master converts, icons have night variants, Kotlin lookup
   assert.equal(iconS.length, icons.length);
   // Icon L for every drink too (widget tile, picker, confirmation).
   assert.equal(day.filter((f) => f.startsWith('clink_icon_l_')).length, icons.length);
+  // Icon L is cropped to what is drawn, inside the 64 grid, light and night on the same viewport.
+  const viewport = (xml) =>
+    xml
+      .match(/viewportWidth="([\d.]+)"\s+android:viewportHeight="([\d.]+)"/)
+      .slice(1)
+      .map(Number);
+  const byPath = new Map(assets);
+  for (const f of day.filter((x) => x.startsWith('clink_icon_l_'))) {
+    const [w, h] = viewport(byPath.get(`drawable/${f}`));
+    assert.ok(w <= 64 && h <= 64 && (w < 64 || h < 64), `${f} is not cropped (${w} x ${h})`);
+    assert.deepEqual(viewport(byPath.get(`drawable-night/${f}`)), [w, h]);
+  }
   for (const f of day) assert.ok(night.has(f), `${f} has no night`);
   const kt = buildIconsKotlin();
   assert.ok(kt.includes('"coffee.flat_white" -> R.drawable.clink_icon_coffee_flat_white'));
@@ -117,6 +136,45 @@ test('SVG conversion: shapes, inheritance, transforms, refusals', () => {
     }),
   );
   assert.equal(darkIcon('stroke="#17202A"'), 'stroke="#EEF2F5"');
+});
+
+test('drink art crop: drawn bounds with strokes, arcs and transforms', () => {
+  const near = (a, b) => a.forEach((v, i) => assert.ok(Math.abs(v - b[i]) < 0.05, `${a} vs ${b}`));
+  // A stroked square: half the stroke on every side.
+  near(
+    drawnBounds(
+      '<svg viewBox="0 0 64 64"><rect x="10" y="20" width="5" height="5" stroke="#17202A" stroke-width="2" fill="none"/></svg>',
+    ),
+    [9, 19, 16, 26],
+  );
+  // An ellipse's extremes, and an arc command that bulges past its end points.
+  near(
+    drawnBounds(
+      '<svg viewBox="0 0 64 64"><ellipse cx="32" cy="40" rx="18" ry="5.4" fill="#FFFFFF"/></svg>',
+    ),
+    [14, 34.6, 50, 45.4],
+  );
+  near(
+    drawnBounds(
+      '<svg viewBox="0 0 64 64"><path d="M10 40A10 10 0 0 1 30 40" fill="#FFFFFF"/></svg>',
+    ),
+    [10, 30, 30, 40],
+  );
+  // A 90 degree rotation about the square's own centre leaves it in place.
+  near(
+    drawnBounds(
+      '<svg viewBox="0 0 64 64"><rect x="0" y="0" width="10" height="4" transform="rotate(90 5 2)" fill="#FFFFFF"/></svg>',
+    ),
+    [3, -3, 7, 7],
+  );
+  // The crop adds the margin, snaps outwards to a quarter unit and stays inside the grid.
+  assert.deepEqual(
+    cropViewBox(
+      '<svg viewBox="0 0 64 64"><rect x="10.1" y="0" width="5" height="5" fill="#FFFFFF"/></svg>',
+      1,
+    ),
+    [9, 0, 7.25, 6],
+  );
 });
 
 test('config plugin: public meta-data only', () => {
