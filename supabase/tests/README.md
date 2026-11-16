@@ -10,8 +10,9 @@ Everything here runs on a plain Postgres 16 with pgTAP, without a Supabase accou
 | `setup/01_test_helpers.sql` | Schema `tests`: `create_user`, `seed` (the standard graph, below), `rows_as` / `run` / `affected` (run one statement as a user, `anon` or `service`, then switch back), `q` / `qrun` (the same as SQL text for `throws_ok`), `set_clock` / `set_clock_to` (moves `private.app_now()`), `flare`, `give_usual`, `befriend`. |
 | `00_security.test.sql` | RLS on every public table, no anon grants, no client grants in `private`, only the 4 helpers executable by `authenticated`, every other private function fails with `permission denied` when called, `search_path` pinned on every security definer function, no views in `public`, no quiet-hours column, policies use `(select auth.uid())`. |
 | `01` to `10_*.test.sql` | Allow and deny cases per table and function (profiles, settings, friends and the 20 cap, groups, usual 3, tracker, last drink, flares and audience T22 to T32, XP caps and reversals, snaps, reports, storage, invites, sign-up, devices, deletion cascade, retention). |
+| `12_widget_api.test.sql` | Widget tokens (0019): resolve, rotate, the 120-per-hour device limit, revocation when another account takes the install, on suspension, sign-out and deletion; `widget_added` once per instance (20 per device); the idempotent widget log and its refusals; no client access. |
 | `concurrency/races.sh` | Two real sessions racing: the 20-friend cap and one live flare per sender. |
-| `../functions/tests/*.test.ts` | Deno tests for `complete-signup`, `register-device`, `delete-account` against the same database, with fakes for Auth admin, Storage, push and Apple. |
+| `../functions/tests/*.test.ts` | Deno tests for `complete-signup`, `register-device`, `delete-account` and `widget-api` against the same database, with fakes for Auth admin, Storage, push and Apple. |
 
 Standard graph from `tests.seed()`: `a` me; `b` friend; `c` stranger; `d` blocked by `a`; `e` friend outside the Work group; `f` suspended friend; `g` sent `a` a request; `h` got a request from `a`; `w` friend in `a`'s Work group; `k` friend in `a`'s Home friends group.
 

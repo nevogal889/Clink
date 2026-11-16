@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ticking time for the widget (ARCHITECTURE.md 3.3 Android item 5, DESIGN.md 5.1 "Time"). The
+     colour is a night-aware resource; the size is set per render to respect the widget's text
+     scale cap. Screen readers read the parent's contentDescription instead (DESIGN.md 5.6). -->
+<Chronometer xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clink_chrono"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="sans-serif"
+    android:textStyle="normal"
+    android:textColor="@color/clink_ink_secondary"
+    android:textSize="13sp"
+    android:fontFeatureSettings="tnum"
+    android:includeFontPadding="false"
+    android:importantForAccessibility="no"
+    android:maxLines="1"
+    android:singleLine="true" />

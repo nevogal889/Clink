@@ -1,0 +1,8 @@
+{
+  "name": "clink-native",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Clink's native code: the Android Glance widget and its bridge (iOS widget later).",
+  "main": "index.ts",
+  "types": "index.ts"
+}

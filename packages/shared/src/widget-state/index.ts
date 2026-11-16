@@ -9,6 +9,8 @@ import { resolveAutomaticAt } from '../audience';
 import { flareCategorySchema, logCategorySchema } from '../catalog';
 import { CAPS, TEXT_LIMITS, TIMERS, charLength } from '../limits';
 
+export * from './build';
+
 export const WIDGET_STATE_VERSION = 1;
 /** iOS App Group UserDefaults key / Android DataStore key (ARCHITECTURE.md 3.1). */
 export const WIDGET_STATE_KEY = 'widget.state.v1';

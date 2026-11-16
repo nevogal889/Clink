@@ -74,3 +74,12 @@ export async function decrypt(keyBytes: Bytes, data: Bytes): Promise<string> {
   );
   return new TextDecoder().decode(pt);
 }
+
+// Constant-time equality for two byte strings of the same length (widget token hashes). Length is
+// not secret here: both sides are SHA-256 digests.
+export function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i]! ^ b[i]!;
+  return diff === 0;
+}

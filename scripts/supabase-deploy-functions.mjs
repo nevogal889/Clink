@@ -18,10 +18,25 @@ import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { DEV_REF, ROOT, api, ensureProxyEnv, flagValue, projectRef, run } from './supabase/lib.mjs';
+import { diff as sharedDiff } from './supabase/sync-shared.mjs';
 
 // Pinned CLI (CLAUDE.md: versions are pinned). 3.1.0 is the version this was verified with.
 export const CLI = 'supabase@3.1.0';
 const FUNCTIONS = path.join(ROOT, 'supabase/functions');
+
+/**
+ * Functions that check their own credential instead of a Supabase JWT, so the gateway's JWT check
+ * is off for them (`--no-verify-jwt`). widget-api takes only the widget token (ARCHITECTURE.md 4.4).
+ */
+export const NO_VERIFY_JWT = new Set(['widget-api']);
+
+/** The CLI applies --no-verify-jwt to every function in one call, so the two kinds deploy apart. */
+export function deployGroups(names) {
+  return [
+    { names: names.filter((n) => !NO_VERIFY_JWT.has(n)), verifyJwt: true },
+    { names: names.filter((n) => NO_VERIFY_JWT.has(n)), verifyJwt: false },
+  ].filter((g) => g.names.length > 0);
+}
 
 export function localFunctions(dir = FUNCTIONS) {
   return readdirSync(dir, { withFileTypes: true })
@@ -66,33 +81,44 @@ async function main() {
     ((await api('GET', `/v1/projects/${ref}/functions`)) ?? []).map((f) => [f.slug, f.version]),
   );
 
+  // The functions bundle copies of packages/shared; refuse to ship stale ones.
+  const stale = sharedDiff();
+  if (stale.length) {
+    throw new Error(
+      `supabase/functions/_shared/shared is out of date: ${stale.join(', ')}. Run node scripts/supabase/sync-shared.mjs`,
+    );
+  }
+
   // `--yes` confirms the hosted change; running this script is that confirmation.
-  const r = spawnSync(
-    'npx',
-    [
-      '-y',
-      CLI,
-      'functions',
-      'deploy',
-      ...names,
-      '--use-api',
-      '--import-map',
-      'supabase/functions/deno.json',
-      `--remote=${ref}`,
-      '--yes',
-    ],
-    {
-      cwd: ROOT,
-      encoding: 'utf8',
-      env: { ...process.env, SUPABASE_ACCESS_TOKEN: cliToken() },
-    },
-  );
-  const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
-    .split('\n')
-    .filter((l) => l && !l.startsWith('Uploading asset'))
-    .join('\n');
-  console.log(out);
-  if (r.status !== 0 || /"_tag":"Error"/.test(out)) throw new Error('functions deploy failed');
+  for (const group of deployGroups(names)) {
+    const r = spawnSync(
+      'npx',
+      [
+        '-y',
+        CLI,
+        'functions',
+        'deploy',
+        ...group.names,
+        '--use-api',
+        '--import-map',
+        'supabase/functions/deno.json',
+        ...(group.verifyJwt ? [] : ['--no-verify-jwt']),
+        `--remote=${ref}`,
+        '--yes',
+      ],
+      {
+        cwd: ROOT,
+        encoding: 'utf8',
+        env: { ...process.env, SUPABASE_ACCESS_TOKEN: cliToken() },
+      },
+    );
+    const out = `${r.stdout ?? ''}${r.stderr ?? ''}`
+      .split('\n')
+      .filter((l) => l && !l.startsWith('Uploading asset'))
+      .join('\n');
+    console.log(out);
+    if (r.status !== 0 || /"_tag":"Error"/.test(out)) throw new Error('functions deploy failed');
+  }
 
   // Non-secret config. The secrets endpoint is the only way to set a function env var.
   await api('POST', `/v1/projects/${ref}/secrets`, [{ name: 'CLINK_ENV', value: env }]);
@@ -101,7 +127,11 @@ async function main() {
   let bad = 0;
   for (const n of names) {
     const f = after.find((x) => x.slug === n);
-    const ok = f && f.status === 'ACTIVE' && f.version > (before.get(n) ?? 0);
+    const ok =
+      f &&
+      f.status === 'ACTIVE' &&
+      f.version > (before.get(n) ?? 0) &&
+      f.verify_jwt === !NO_VERIFY_JWT.has(n);
     if (!ok) bad++;
     console.log(
       `  ${n.padEnd(18)} ${f ? `${f.status} v${f.version} verify_jwt=${f.verify_jwt}` : 'missing'}${ok ? '' : '   NOT UPDATED'}`,

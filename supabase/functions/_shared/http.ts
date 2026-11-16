@@ -30,6 +30,8 @@ const DB_STATUS: Record<string, number> = {
   CLBAD: 400,
   CLNFD: 404,
   CLBLK: 404,
+  CLCON: 409, // 0019: an id that belongs to another account
+  CLOLD: 422, // 0019: a log older than the 90-day history
 };
 
 type DbError = { code?: unknown; message?: unknown; detail?: unknown };
