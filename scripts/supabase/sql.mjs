@@ -84,8 +84,19 @@ export function stripLeadingComments(s) {
       const end = t.indexOf('\n');
       t = end < 0 ? '' : t.slice(end + 1);
     } else if (t.startsWith('/*')) {
-      const end = t.indexOf('*/');
-      t = end < 0 ? '' : t.slice(end + 2);
+      // Block comments nest, as in splitStatements.
+      let depth = 1;
+      let i = 2;
+      while (i < t.length && depth > 0) {
+        if (t[i] === '/' && t[i + 1] === '*') {
+          depth++;
+          i += 2;
+        } else if (t[i] === '*' && t[i + 1] === '/') {
+          depth--;
+          i += 2;
+        } else i++;
+      }
+      t = depth > 0 ? '' : t.slice(i);
     } else return t;
   }
 }

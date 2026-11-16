@@ -1,6 +1,6 @@
 // Sign in, onboarding step 1 (DESIGN.md 4.1, PRD 3.1). One tap plus the provider's sheet.
 import { t } from '@clink/shared';
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Linking, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import { Shelf } from '@/features/signin/Shelf';
 import { Wordmark } from '@/ui/Art';
 import { TextButton } from '@/ui/controls';
 import { Sheet } from '@/ui/Sheet';
+import { useSnackbarInset } from '@/ui/Snackbar';
 import { spacing, typography } from '@/ui/theme';
 import { lookPlatform } from '@/ui/theme/look';
 import { Txt } from '@/ui/Txt';
@@ -27,6 +28,9 @@ export default function SignIn() {
   const [busy, setBusy] = useState<AuthMethod | null>(null);
   const [error, setError] = useState(false);
   const [otherOpen, setOtherOpen] = useState(false);
+  const [actionsHeight, setActionsHeight] = useState(0);
+  // A snackbar here ("Your account is deleted.") sits above the buttons and the legal line.
+  useSnackbarInset(actionsHeight + insets.bottom + spacing.s4 + spacing.s2, useIsFocused());
   const android = lookPlatform() === 'android';
 
   const primary: AuthMethod = android ? 'google' : 'apple';
@@ -67,7 +71,10 @@ export default function SignIn() {
           </Txt>
         </View>
       </View>
-      <View style={{ paddingHorizontal: spacing.gutter, gap: spacing.s3 }}>
+      <View
+        onLayout={(e) => setActionsHeight(Math.round(e.nativeEvent.layout.height))}
+        style={{ paddingHorizontal: spacing.gutter, gap: spacing.s3 }}
+      >
         <ProviderButton
           testID="signin-primary"
           provider={primary}
@@ -80,9 +87,8 @@ export default function SignIn() {
           testID="signin-phone"
           provider="phone"
           label={t('signin.phone')}
-          busy={busy === 'phone'}
-          disabled={busy !== null && busy !== 'phone'}
-          onPress={() => go('phone')}
+          disabled={busy !== null}
+          onPress={() => router.push('/phone')}
         />
         {error ? (
           <View

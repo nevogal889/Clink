@@ -12,9 +12,9 @@ import { DataProvider } from '@/lib/store';
 import { Sheet } from '@/ui/Sheet';
 import { SnackbarHost, SnackbarProvider, useSnackbar, useSnackbarInset } from '@/ui/Snackbar';
 
-import Camera from './camera';
-import InviteStep from './onboarding/invite';
-import UsualStep from './onboarding/usual';
+import Camera from '@/app/camera';
+import InviteStep from '@/app/onboarding/invite';
+import UsualStep from '@/app/onboarding/usual';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -42,7 +42,7 @@ const presetText = () => t('usual.preset_set', { preset: t('preset.coffee') });
 
 async function onUsualStep() {
   const api = createMockApi({ latencyMs: 0 });
-  api.state.session = { userId: 'u_me', method: 'apple' };
+  api.state.session = { userId: 'u_me', method: 'apple', phone: null };
   api.state.me = { ...api.state.me, displayName: 'Dana', onboarding: 'usual' };
   await renderRouter(
     {

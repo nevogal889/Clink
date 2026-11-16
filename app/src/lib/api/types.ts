@@ -1,7 +1,8 @@
-// The app's data layer contract. Screens talk to this interface only. Today it is served by the
-// in-memory mock (./mock.ts); the Supabase implementation replaces it behind the same methods
-// (ARCHITECTURE.md 5 and 6). The server owns time and shared truth: the client sends durations
-// and tap times, never a clock time it computed.
+// The app's data layer contract. Screens talk to this interface only. Two implementations:
+// ./supabase.ts (the default whenever the app config has a Supabase URL and publishable key) and
+// ./mock.ts (in memory, for unit tests and the offline review build). The server owns time and
+// shared truth: the client sends durations and tap times, never a clock time it computed.
+// Every failure is thrown as an ApiError (./errors.ts) so screens map codes to COPY.md words.
 import type { AutoSettings, DrinkDetails, FlareCategory, LogCategory, XpKind } from '@clink/shared';
 
 export type AuthMethod = 'apple' | 'google' | 'phone';
@@ -9,6 +10,14 @@ export type AuthMethod = 'apple' | 'google' | 'phone';
 export interface Session {
   userId: string;
   method: AuthMethod;
+  /** The user's own verified number in E.164, or null. Shown only to them (PRD 3.1 rule 5). */
+  phone: string | null;
+}
+
+/** Birth month and year for the age check. Sent once, compared by the server, never stored. */
+export interface AgeAnswer {
+  birthMonth: number;
+  birthYear: number;
 }
 
 /** Onboarding steps 2 to 6 (PRD 3.2). Step 1 is sign-in itself. */
@@ -22,6 +31,11 @@ export interface Me {
   providerName: string | null;
   hasPhone: boolean;
   onboarding: OnboardingStep;
+  /**
+   * True while the signed-in identity has no account yet: the age check and complete-signup
+   * still have to run (PRD 3.1 rule 10). Name, usual 3 and the rest wait until it is false.
+   */
+  needsSignup: boolean;
 }
 
 /** One usual 3 slot: a catalog drink or a custom one, with its saved details. */
@@ -118,8 +132,21 @@ export type PermissionResult = 'granted' | 'denied';
 
 export interface ClinkApi {
   getSession(): Promise<Session | null>;
+  /** Apple or Google. Phone goes through sendPhoneCode and verifyPhoneCode. */
   signIn(method: AuthMethod): Promise<Session>;
   signOut(): Promise<void>;
+  /** Sends a 6-digit code by SMS (DESIGN.md 4.2). Also used to re-confirm before deletion. */
+  sendPhoneCode(e164: string): Promise<void>;
+  verifyPhoneCode(e164: string, code: string): Promise<Session>;
+  /**
+   * Creates the account after the age check (complete-signup). Throws ApiError `under_age`
+   * (with `min`) when too young: the server has then deleted the sign-in identity.
+   */
+  completeSignup(age: AgeAnswer, displayName: string): Promise<void>;
+  /** Deletes the account and everything in it (delete-account). Throws `reauth_required`. */
+  deleteAccount(): Promise<void>;
+  /** Called when the session ends outside the app's own sign-out (revoked, expired refresh). */
+  onSessionEnd?(listener: () => void): () => void;
 
   getMe(): Promise<Me>;
   updateMe(patch: Partial<Pick<Me, 'displayName' | 'photoUri' | 'onboarding'>>): Promise<Me>;

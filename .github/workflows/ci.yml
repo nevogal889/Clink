@@ -36,6 +36,8 @@ jobs:
       - run: npm test -- --ci
       - name: Art gallery checks
         run: npm run test:art
+      - name: Hosted Supabase script checks (no network)
+        run: node --test scripts/supabase/supabase.test.mjs
       - name: Expo web export (screens reviewable in a browser)
         run: npm run export:web
 

@@ -22,6 +22,7 @@ import { resolveChoice } from '@/features/camera/audience';
 import { FlarePanel, WhoJoinsBar, type Timing } from '@/features/camera/FlarePanel';
 import { OtherTimeSheet } from '@/features/camera/OtherTimeSheet';
 import { TopBar } from '@/features/camera/TopBar';
+import { RetryLine } from '@/features/sync/Notices';
 import { ShutterRow, Viewfinder, type Still } from '@/features/camera/Viewfinder';
 import { InviteMeter, ShareButtons } from '@/features/invite/InviteShare';
 import { TrackerSheet } from '@/features/tracker/TrackerSheet';
@@ -186,7 +187,8 @@ function CameraScreen() {
     barH +
     insets.bottom +
     (live ? 56 : 0) +
-    (widgetMissing ? 56 : 0);
+    (widgetMissing ? 56 : 0) +
+    (state.loadError === 'stale' ? spacing.target : 0);
   const viewSize = Math.max(240, Math.min(width - spacing.gutter * 2, height - chrome));
 
   async function send() {
@@ -258,6 +260,7 @@ function CameraScreen() {
           onTracker={() => setSheet('tracker')}
           onSettings={() => router.push('/settings')}
         />
+        <RetryLine />
         {live ? <LiveBar live={live} now={now} /> : null}
         {widgetMissing && !live ? (
           <WidgetNotice

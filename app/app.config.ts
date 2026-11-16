@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 // Everything lives in this file because the Expo config loader does not resolve TS imports.
@@ -60,6 +63,61 @@ export function assertShippable(
   }
 }
 
+/** Public Supabase settings: the project URL and the publishable key (ARCHITECTURE.md 8.5). */
+export interface PublicSupabase {
+  url: string;
+  publishableKey: string;
+}
+
+export type ApiChoice = 'supabase' | 'mock';
+
+/**
+ * Where the app's public Supabase settings come from, in order: the SUPABASE_URL and
+ * SUPABASE_PUBLISHABLE_KEY variables at build time, then supabase/projects.json for the variant.
+ * Both values are public by design and ship in the app. Nothing secret is ever read here.
+ */
+export function publicSupabase(
+  variant: Variant,
+  env: Record<string, string | undefined>,
+  projects: Record<string, { url?: string; publishableKey?: string } | undefined>,
+): PublicSupabase | null {
+  const url = env.SUPABASE_URL || projects[variant]?.url || '';
+  const publishableKey = env.SUPABASE_PUBLISHABLE_KEY || projects[variant]?.publishableKey || '';
+  if (!url || !publishableKey) return null;
+  if (!/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+\/?$/.test(url)) {
+    throw new Error(`Supabase URL must be an https origin; got "${url}".`);
+  }
+  // A secret or service role key must never reach the app (ARCHITECTURE.md 8.5).
+  if (/^sb_secret_/.test(publishableKey) || /service_role/.test(publishableKey)) {
+    throw new Error('SUPABASE_PUBLISHABLE_KEY holds a secret key. Use the publishable key.');
+  }
+  return { url: url.replace(/\/$/, ''), publishableKey };
+}
+
+/** CLINK_API=mock forces the in-memory data layer; otherwise Supabase when it is configured. */
+export function apiChoice(
+  env: Record<string, string | undefined>,
+  sb: PublicSupabase | null,
+): ApiChoice {
+  const raw = env.CLINK_API;
+  if (raw !== undefined && raw !== '' && raw !== 'mock' && raw !== 'supabase') {
+    throw new Error(`CLINK_API must be mock or supabase; got "${raw}".`);
+  }
+  if (raw === 'mock') return 'mock';
+  if (raw === 'supabase' && !sb) {
+    throw new Error('CLINK_API=supabase but no Supabase URL and publishable key are set.');
+  }
+  return sb ? 'supabase' : 'mock';
+}
+
+function readProjects(): Record<string, { url?: string; publishableKey?: string }> {
+  try {
+    return JSON.parse(readFileSync(join(__dirname, '..', 'supabase', 'projects.json'), 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
 // Minimum OS (CLAUDE.md "Stack"): iOS 17.2, Android 8.0 (API 26).
 const IOS_DEPLOYMENT_TARGET = '17.2';
 const ANDROID_MIN_SDK = 26;
@@ -68,6 +126,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const variant = resolveVariant(process.env.APP_VARIANT);
   assertShippable(variant, process.env);
   const v = variantSettings(variant);
+  const supabase = publicSupabase(variant, process.env, readProjects());
+  const api = apiChoice(process.env, supabase);
 
   // Set once the Expo account exists (docs/ARCHITECTURE.md 12). Public by design.
   const easProjectId = process.env.EAS_PROJECT_ID;
@@ -99,6 +159,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       'expo-router',
       'expo-status-bar',
+      'expo-secure-store',
       ['expo-build-properties', { android: { minSdkVersion: ANDROID_MIN_SDK } }],
     ],
     experiments: {
@@ -107,6 +168,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     extra: {
       variant: v.variant,
       appGroup: v.appGroup,
+      api,
+      ...(supabase ? { supabase } : {}),
       ...(easProjectId ? { eas: { projectId: easProjectId } } : {}),
     },
   };

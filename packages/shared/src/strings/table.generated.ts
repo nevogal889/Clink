@@ -43,6 +43,8 @@ export const STRINGS = {
   'code.resend': 'Resend code',
   'code.wrong_number': 'Wrong number?',
   'code.slow': 'No code yet? Check the number, or resend.',
+  'code.field': '6-digit code',
+  'phone.country.pick': 'Pick your country',
   'signin.returning': 'Welcome back, {me}.',
   'age.title': 'When were you born?',
   'age.month': 'Month',
@@ -51,6 +53,19 @@ export const STRINGS = {
   'age.cta': 'Continue',
   'age.too_young.title': "Clink isn't for you yet",
   'age.too_young': 'Clink is for people {min} and over.',
+  'age.too_young.close': 'Close',
+  'age.m.1': 'January',
+  'age.m.2': 'February',
+  'age.m.3': 'March',
+  'age.m.4': 'April',
+  'age.m.5': 'May',
+  'age.m.6': 'June',
+  'age.m.7': 'July',
+  'age.m.8': 'August',
+  'age.m.9': 'September',
+  'age.m.10': 'October',
+  'age.m.11': 'November',
+  'age.m.12': 'December',
   'invite.paste.title': 'Got an invite?',
   'invite.paste.body':
     "If a friend sent you Clink, paste their invite and you'll start as friends.",
@@ -556,6 +571,7 @@ export const STRINGS = {
   'del.confirm.body': "You can't undo this.",
   'del.confirm.yes': 'Delete',
   'del.confirm.no': 'Cancel',
+  'del.deleting': 'Deleting…',
   'del.done': 'Your account is deleted.',
   'del.error': "Couldn't delete your account. Check your connection and try again.",
   'empty.friends': "No friends here yet. Send someone Clink and they'll show up.",
@@ -683,6 +699,7 @@ export const STRINGS = {
   'a11y.snap.photo': 'Photo from {name}, {ago_words} ago, {place}',
   'a11y.order.notes': 'Has notes',
   'a11y.usual.slot': 'Number {n}, {drink}',
+  'a11y.phone.country': 'Country, {country}',
   'fmt.ago.now': 'just now',
   'fmt.ago.m': '{m}m',
   'fmt.ago.h': '{h}h',
@@ -1105,6 +1122,18 @@ export const STRING_META: Record<
     max: 48,
     placeholders: [],
   },
+  'code.field': {
+    section: '4.1',
+    context: 'Code field label (screen readers; the six boxes show the digits)',
+    max: 14,
+    placeholders: [],
+  },
+  'phone.country.pick': {
+    section: '4.1',
+    context: 'Country picker sheet title',
+    max: 20,
+    placeholders: [],
+  },
   'signin.returning': {
     section: '4.1',
     context: 'Toast when an account is found',
@@ -1162,6 +1191,84 @@ export const STRING_META: Record<
         type: 'simple',
       },
     ],
+  },
+  'age.too_young.close': {
+    section: '4.1',
+    context: 'Refused screen button, back to the splash screen',
+    max: 8,
+    placeholders: [],
+  },
+  'age.m.1': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.2': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.3': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.4': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.5': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.6': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.7': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.8': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.9': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.10': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.11': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
+  },
+  'age.m.12': {
+    section: '4.1',
+    context: 'Month picker option',
+    max: 9,
+    placeholders: [],
   },
   'invite.paste.title': {
     section: '4.2',
@@ -4725,6 +4832,12 @@ export const STRING_META: Record<
     max: 8,
     placeholders: [],
   },
+  'del.deleting': {
+    section: '4.20',
+    context: 'Button while deletion runs',
+    max: 12,
+    placeholders: [],
+  },
   'del.done': {
     section: '4.20',
     context: 'Toast on the splash screen',
@@ -5677,6 +5790,17 @@ export const STRING_META: Record<
       },
       {
         name: 'drink',
+        type: 'simple',
+      },
+    ],
+  },
+  'a11y.phone.country': {
+    section: '4.26',
+    context: 'Country chip on the number screen',
+    max: null,
+    placeholders: [
+      {
+        name: 'country',
         type: 'simple',
       },
     ],
@@ -7140,6 +7264,8 @@ export interface StringParams {
   'code.resend': Record<string, never>;
   'code.wrong_number': Record<string, never>;
   'code.slow': Record<string, never>;
+  'code.field': Record<string, never>;
+  'phone.country.pick': Record<string, never>;
   'signin.returning': { me: string | number };
   'age.title': Record<string, never>;
   'age.month': Record<string, never>;
@@ -7148,6 +7274,19 @@ export interface StringParams {
   'age.cta': Record<string, never>;
   'age.too_young.title': Record<string, never>;
   'age.too_young': { min: string | number };
+  'age.too_young.close': Record<string, never>;
+  'age.m.1': Record<string, never>;
+  'age.m.2': Record<string, never>;
+  'age.m.3': Record<string, never>;
+  'age.m.4': Record<string, never>;
+  'age.m.5': Record<string, never>;
+  'age.m.6': Record<string, never>;
+  'age.m.7': Record<string, never>;
+  'age.m.8': Record<string, never>;
+  'age.m.9': Record<string, never>;
+  'age.m.10': Record<string, never>;
+  'age.m.11': Record<string, never>;
+  'age.m.12': Record<string, never>;
   'invite.paste.title': Record<string, never>;
   'invite.paste.body': Record<string, never>;
   'invite.paste.button': Record<string, never>;
@@ -7642,6 +7781,7 @@ export interface StringParams {
   'del.confirm.body': Record<string, never>;
   'del.confirm.yes': Record<string, never>;
   'del.confirm.no': Record<string, never>;
+  'del.deleting': Record<string, never>;
   'del.done': Record<string, never>;
   'del.error': Record<string, never>;
   'empty.friends': Record<string, never>;
@@ -7782,6 +7922,7 @@ export interface StringParams {
   'a11y.snap.photo': { name: string | number; ago_words: string | number; place: string | number };
   'a11y.order.notes': Record<string, never>;
   'a11y.usual.slot': { n: string | number; drink: string | number };
+  'a11y.phone.country': { country: string | number };
   'fmt.ago.now': Record<string, never>;
   'fmt.ago.m': { m: string | number };
   'fmt.ago.h': { h: string | number };
@@ -7940,22 +8081,22 @@ export const STRING_REFERENCES = [
   {
     key: 'profile.level_desc',
     note: '(from section 3)',
-    line: 835,
+    line: 850,
   },
   {
     key: 'empty.requests',
     note: '(section hidden)',
-    line: 1049,
+    line: 1065,
   },
   {
     key: 'a11y.w.confirm',
     note: 'the visible confirmation text ("Logged {drink}", "Sent to {audience}")',
-    line: 1202,
+    line: 1218,
   },
   {
     key: 'a11y.react',
     note: 'uses `snapv.react.a11y`',
-    line: 1229,
+    line: 1246,
   },
 ] as const;
 

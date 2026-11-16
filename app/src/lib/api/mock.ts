@@ -1,6 +1,7 @@
-// In-memory implementation of ClinkApi for the web review build and tests. Nothing leaves the
-// device and nothing persists across a reload. Names and places here are test data, standing in
-// for what the server would return. Replace with the Supabase implementation (./index.ts).
+// In-memory implementation of ClinkApi for unit tests and the offline review build (`?mock=` on
+// the web build, or CLINK_API=mock). Nothing leaves the device and nothing persists across a
+// reload. Names and places here are test data, standing in for what the server would return.
+// Simplification: Apple and Google sign-in skip the age check here; the phone flow runs it.
 import {
   flareExpiresAt,
   isFlareDrink,
@@ -9,7 +10,9 @@ import {
   type FlareCategory,
 } from '@clink/shared';
 
+import { ApiError } from './errors';
 import type {
+  AgeAnswer,
   Audience,
   AuthMethod,
   ClinkApi,
@@ -24,6 +27,10 @@ import type {
 } from './types';
 
 export type MockScenario = 'new' | 'setup';
+
+/** The code the mock accepts in the phone flow. Any other 6 digits is a wrong code. */
+export const MOCK_CODE = '123456';
+const MOCK_MIN_AGE = 16;
 
 export interface MockOptions {
   scenario?: MockScenario;
@@ -68,6 +75,7 @@ function seed(scenario: MockScenario, now: Date): MockState {
       providerName: null,
       hasPhone: false,
       onboarding: 'name',
+      needsSignup: false,
     },
     usual: [],
     logs: [],
@@ -108,13 +116,14 @@ function seed(scenario: MockScenario, now: Date): MockState {
 
   return {
     ...base,
-    session: { userId: 'u_me', method: 'apple' },
+    session: { userId: 'u_me', method: 'apple', phone: null },
     me: {
       displayName: 'Dana Kim',
       photoUri: null,
       providerName: 'Dana',
       hasPhone: false,
       onboarding: 'done',
+      needsSignup: false,
     },
     usual: [
       catalogUsual('coffee.flat_white', {
@@ -179,12 +188,44 @@ export function createMockApi(opts: MockOptions = {}): ClinkApi & { state: MockS
     state,
     getSession: () => wait(clone(state.session)),
     async signIn(method: AuthMethod) {
-      state.session = { userId: 'u_me', method };
+      state.session = { userId: 'u_me', method, phone: null };
       if (!state.me.providerName && method !== 'phone') state.me.providerName = 'Dana';
       return wait(clone(state.session), latency * 2);
     },
     async signOut() {
       state.session = null;
+    },
+    async sendPhoneCode(e164) {
+      if (!/^\+[1-9]\d{6,14}$/.test(e164)) throw new ApiError('phone_invalid');
+      await wait(undefined, latency * 2);
+    },
+    async verifyPhoneCode(e164, code) {
+      await wait(undefined, latency * 2);
+      if (code !== MOCK_CODE) throw new ApiError('code_wrong');
+      const isNew = state.me.displayName === '';
+      state.session = { userId: 'u_me', method: 'phone', phone: e164 };
+      state.me.hasPhone = true;
+      if (isNew) state.me.needsSignup = true;
+      return clone(state.session);
+    },
+    async completeSignup(age: AgeAnswer, displayName: string) {
+      await wait(undefined, latency * 2);
+      const today = now();
+      const months =
+        (today.getUTCFullYear() - age.birthYear) * 12 + (today.getUTCMonth() + 1 - age.birthMonth);
+      // Born in the month that makes them exactly the minimum counts as old enough.
+      if (months < MOCK_MIN_AGE * 12) {
+        state.session = null;
+        state.me = seed('new', today).me;
+        throw new ApiError('under_age', { min: MOCK_MIN_AGE });
+      }
+      state.me.needsSignup = false;
+      state.me.displayName = displayName.trim();
+    },
+    async deleteAccount() {
+      await wait(undefined, latency * 2);
+      const fresh = seed('new', now());
+      Object.assign(state, fresh);
     },
 
     getMe: () => wait(clone(state.me)),

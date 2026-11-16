@@ -10,8 +10,8 @@ import { createMockApi } from '@/lib/api';
 import { DataProvider } from '@/lib/store';
 import { SnackbarHost, SnackbarProvider } from '@/ui/Snackbar';
 
-import Camera from './camera';
-import Profile from './profile';
+import Camera from '@/app/camera';
+import Profile from '@/app/profile';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },

@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 
 import { DataProvider, useData } from '@/lib/store';
+import { NoticeHost, SessionGuard } from '@/features/sync/Notices';
 import { SnackbarHost, SnackbarProvider } from '@/ui/Snackbar';
 import { fontFiles } from '@/ui/theme/typography';
 import { useTheme } from '@/ui/useTheme';
@@ -41,6 +42,8 @@ function Shell() {
             </Stack>
           ) : null}
           <SnackbarHost bottom={32} followInset />
+          {ready ? <NoticeHost /> : null}
+          {ready ? <SessionGuard /> : null}
         </View>
       </SnackbarProvider>
     </>

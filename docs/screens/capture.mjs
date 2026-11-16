@@ -51,7 +51,9 @@ async function tap(page, testId) {
 }
 
 async function open(page, base, query = '') {
-  await page.goto(`${base}/${query}`);
+  // Review states run on the mock data layer; the default build talks to clink-dev.
+  const q = query.includes('mock=') ? query : `?mock=new${query ? `&${query.slice(1)}` : ''}`;
+  await page.goto(`${base}/${q}`);
   await page.waitForSelector(id(query.includes('mock=setup') ? 'screen-camera' : 'screen-sign-in'));
   await pause(page, 900);
 }

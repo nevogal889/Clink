@@ -9,14 +9,14 @@ import { createMockApi } from '@/lib/api';
 import { DataProvider } from '@/lib/store';
 import { SnackbarHost, SnackbarProvider } from '@/ui/Snackbar';
 
-import Camera from './camera';
-import Index from './index';
-import InviteStep from './onboarding/invite';
-import NameStep from './onboarding/name';
-import NotificationsStep from './onboarding/notifications';
-import UsualStep from './onboarding/usual';
-import WidgetStep from './onboarding/widget';
-import SignIn from './sign-in';
+import Camera from '@/app/camera';
+import Index from '@/app/index';
+import InviteStep from '@/app/onboarding/invite';
+import NameStep from '@/app/onboarding/name';
+import NotificationsStep from '@/app/onboarding/notifications';
+import UsualStep from '@/app/onboarding/usual';
+import WidgetStep from '@/app/onboarding/widget';
+import SignIn from '@/app/sign-in';
 
 const metrics = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -107,7 +107,7 @@ describe('onboarding', () => {
 
   it('asks for notifications only after Continue on our explainer', async () => {
     const api = createMockApi({ latencyMs: 0 });
-    api.state.session = { userId: 'u_me', method: 'apple' };
+    api.state.session = { userId: 'u_me', method: 'apple', phone: null };
     api.state.me = { ...api.state.me, displayName: 'Dana', onboarding: 'notifications' };
     await renderRouter(routes(api), { initialUrl: '/' });
     await waitFor(() => expect(visible('screen-onb-notifications')).toBeTruthy());
@@ -118,7 +118,7 @@ describe('onboarding', () => {
 
   it('resumes on the saved step after a restart (acceptance 5)', async () => {
     const api = createMockApi({ latencyMs: 0 });
-    api.state.session = { userId: 'u_me', method: 'apple' };
+    api.state.session = { userId: 'u_me', method: 'apple', phone: null };
     api.state.me = { ...api.state.me, displayName: 'Dana', onboarding: 'invite' };
     await renderRouter(routes(api), { initialUrl: '/' });
     await waitFor(() => expect(visible('screen-onb-invite')).toBeTruthy());

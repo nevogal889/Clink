@@ -78,8 +78,15 @@ async function main() {
   requireDevRef(ref);
   if (phones.length < 3) throw new Error('need 3 test phone numbers in supabase/auth.dev.json');
   const created = [];
+  // Server time at the start, to find this run's ownerless app_events rows at cleanup.
+  const startedAt = (await query(ref, 'select now()::text as t'))[0].t;
   const year = new Date().getUTCFullYear();
-  const adult = { birthMonth: 1, birthYear: year - 30, displayName: 'Smoke Test', timezone: 'Europe/Dublin' };
+  const adult = {
+    birthMonth: 1,
+    birthYear: year - 30,
+    displayName: 'Smoke Test',
+    timezone: 'Europe/Dublin',
+  };
 
   try {
     // Leftovers from an earlier interrupted run would make "created" read "exists".
@@ -104,31 +111,91 @@ async function main() {
       token: a.token,
       body: { ...adult, installId: randomUUID(), userId: a.userId },
     });
-    check('complete-signup refuses unknown fields (no user id in the body)', bad.status === 400 && bad.json?.error === 'bad_input', `${bad.status} ${bad.json?.error}`);
+    check(
+      'complete-signup refuses unknown fields (no user id in the body)',
+      bad.status === 400 && bad.json?.error === 'bad_input',
+      `${bad.status} ${bad.json?.error}`,
+    );
     const installId = randomUUID();
     const ok = await fn('complete-signup', { token: a.token, body: { ...adult, installId } });
-    check('complete-signup creates the account', ok.status === 200 && ok.json?.status === 'created' && !!ok.json?.inviteCode, `${ok.status} ${ok.json?.status}`);
+    check(
+      'complete-signup creates the account',
+      ok.status === 200 && ok.json?.status === 'created' && !!ok.json?.inviteCode,
+      `${ok.status} ${ok.json?.status}`,
+    );
     const again = await fn('complete-signup', { token: a.token, body: { ...adult, installId } });
-    check('a second complete-signup answers exists', again.status === 200 && again.json?.status === 'exists', `${again.status} ${again.json?.status}`);
+    check(
+      'a second complete-signup answers exists',
+      again.status === 200 && again.json?.status === 'exists',
+      `${again.status} ${again.json?.status}`,
+    );
 
     // Data API with the user's token and with the public key alone.
-    const own = await call(`/rest/v1/profiles?select=id,display_name&id=eq.${a.userId}`, { method: 'GET', token: a.token });
-    check('the user reads their own profile through the Data API', own.status === 200 && own.json?.[0]?.display_name === 'Smoke Test', `${own.status}`);
+    const own = await call(`/rest/v1/profiles?select=id,display_name&id=eq.${a.userId}`, {
+      method: 'GET',
+      token: a.token,
+    });
+    check(
+      'the user reads their own profile through the Data API',
+      own.status === 200 && own.json?.[0]?.display_name === 'Smoke Test',
+      `${own.status}`,
+    );
     const anon = await call('/rest/v1/profiles?select=id', { method: 'GET' });
-    check('the public key alone reads no profiles', anon.status === 401 || (anon.status === 200 && anon.json?.length === 0), `${anon.status}`);
-    const priv = await call('/rest/v1/user_private?select=*', { method: 'GET', token: a.token, apikey: true });
-    check('the private schema is not reachable through the Data API', priv.status === 404 || priv.status === 401 || priv.status === 403, `${priv.status}`);
+    check(
+      'the public key alone reads no profiles',
+      anon.status === 401 || (anon.status === 200 && anon.json?.length === 0),
+      `${anon.status}`,
+    );
+    const priv = await call('/rest/v1/user_private?select=*', {
+      method: 'GET',
+      token: a.token,
+      apikey: true,
+    });
+    check(
+      'the private schema is not reachable through the Data API',
+      priv.status === 404 || priv.status === 401 || priv.status === 403,
+      `${priv.status}`,
+    );
 
     // register-device.
-    const device = { installId, platform: 'android', appVersion: '0.1.0', timezone: 'Europe/Dublin', notifPermission: false };
+    const device = {
+      installId,
+      platform: 'android',
+      appVersion: '0.1.0',
+      timezone: 'Europe/Dublin',
+      notifPermission: false,
+    };
     const r1 = await fn('register-device', { token: a.token, body: device });
-    check('register-device registers and returns a widget token', r1.status === 200 && r1.json?.status === 'registered' && !!r1.json?.widgetToken, `${r1.status} ${r1.json?.status}`);
+    check(
+      'register-device registers and returns a widget token',
+      r1.status === 200 && r1.json?.status === 'registered' && !!r1.json?.widgetToken,
+      `${r1.status} ${r1.json?.status}`,
+    );
     const r2 = await fn('register-device', { token: a.token, body: device });
-    check('the widget token rotates on every call', r2.status === 200 && r2.json?.widgetToken !== r1.json?.widgetToken && r2.json?.deviceId === r1.json?.deviceId);
-    const rBad = await fn('register-device', { token: a.token, body: { ...device, apnsEnv: 'sandbox' } });
-    check('register-device refuses iOS-only fields on Android', rBad.status === 400 && rBad.json?.error === 'bad_input', `${rBad.status} ${rBad.json?.error}`);
-    const out = await fn('register-device', { token: a.token, body: { action: 'signout', installId } });
-    check('sign-out removes the device', out.status === 200 && out.json?.status === 'signed_out' && out.json?.removed === true, `${out.status} ${out.json?.removed}`);
+    check(
+      'the widget token rotates on every call',
+      r2.status === 200 &&
+        r2.json?.widgetToken !== r1.json?.widgetToken &&
+        r2.json?.deviceId === r1.json?.deviceId,
+    );
+    const rBad = await fn('register-device', {
+      token: a.token,
+      body: { ...device, apnsEnv: 'sandbox' },
+    });
+    check(
+      'register-device refuses iOS-only fields on Android',
+      rBad.status === 400 && rBad.json?.error === 'bad_input',
+      `${rBad.status} ${rBad.json?.error}`,
+    );
+    const out = await fn('register-device', {
+      token: a.token,
+      body: { action: 'signout', installId },
+    });
+    check(
+      'sign-out removes the device',
+      out.status === 200 && out.json?.status === 'signed_out' && out.json?.removed === true,
+      `${out.status} ${out.json?.removed}`,
+    );
 
     // B: under-age refusal leaves no account.
     const b = await signIn(phones[1]);
@@ -137,24 +204,54 @@ async function main() {
       token: b.token,
       body: { ...adult, birthYear: year - 12, installId: randomUUID() },
     });
-    check('complete-signup refuses under 16', young.status === 403 && young.json?.error === 'under_age' && young.json?.min === 16, `${young.status} ${young.json?.error} ${young.json?.min}`);
+    check(
+      'complete-signup refuses under 16',
+      young.status === 403 && young.json?.error === 'under_age' && young.json?.min === 16,
+      `${young.status} ${young.json?.error} ${young.json?.min}`,
+    );
     check('... and the auth user is deleted', (await authUserCount(ref, [b.userId])) === 0);
 
     // delete-account.
     const dBad = await fn('delete-account', { token: a.token, body: { confirm: true } });
-    check('delete-account refuses unknown fields', dBad.status === 400 && dBad.json?.error === 'bad_input', `${dBad.status} ${dBad.json?.error}`);
+    check(
+      'delete-account refuses unknown fields',
+      dBad.status === 400 && dBad.json?.error === 'bad_input',
+      `${dBad.status} ${dBad.json?.error}`,
+    );
     const dNo = await fn('delete-account', { body: {} });
     check('delete-account without a token is refused', dNo.status === 401, `${dNo.status}`);
     const del = await fn('delete-account', { token: a.token, body: {} });
-    check('delete-account deletes the account', del.status === 200 && del.json?.status === 'deleted', `${del.status} ${del.json?.status ?? del.json?.error}`);
+    check(
+      'delete-account deletes the account',
+      del.status === 200 && del.json?.status === 'deleted',
+      `${del.status} ${del.json?.status ?? del.json?.error}`,
+    );
     const left = await query(ref, `select private.account_leftovers(${literal(a.userId)}) as j`);
-    check('no row or file is left for the deleted user', JSON.stringify(left[0]?.j) === '{}', JSON.stringify(left[0]?.j));
+    check(
+      'no row or file is left for the deleted user',
+      JSON.stringify(left[0]?.j) === '{}',
+      JSON.stringify(left[0]?.j),
+    );
     check('... and the auth user is gone', (await authUserCount(ref, [a.userId])) === 0);
     const after = await fn('register-device', { token: a.token, body: device });
-    check('the deleted user\'s token no longer registers a device', after.status !== 200, `${after.status} ${after.json?.error}`);
+    check(
+      "the deleted user's token no longer registers a device",
+      after.status !== 200,
+      `${after.status} ${after.json?.error}`,
+    );
   } finally {
     if (created.length) {
-      await query(ref, `delete from auth.users where id in (${created.map(literal).join(',')})`);
+      const ids = created.map(literal).join(',');
+      // Deleting the account keeps install_history (30 days, invite abuse rule) and an ownerless
+      // account_deleted event by design. They are this run's test data, so they go too.
+      await query(
+        ref,
+        `delete from auth.users where id in (${ids});
+         delete from private.install_history where user_id in (${ids});
+         delete from public.app_events
+          where created_at >= ${literal(startedAt)}::timestamptz
+            and (user_id in (${ids}) or user_id is null);`,
+      );
       const n = await authUserCount(ref, created);
       console.log(`cleanup: ${created.length} test user(s) created, ${n} left`);
     }

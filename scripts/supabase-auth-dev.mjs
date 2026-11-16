@@ -52,7 +52,11 @@ export function mismatches(desired, actual) {
       return Math.abs(Date.parse(actual[k]) - Date.parse(desired[k])) > 60_000;
     }
     if (k === 'sms_test_otp') {
-      const norm = (s) => String(s ?? '').split(',').sort().join(',');
+      const norm = (s) =>
+        String(s ?? '')
+          .split(',')
+          .sort()
+          .join(',');
       return norm(actual[k]) !== norm(desired[k]);
     }
     return actual[k] !== desired[k];
@@ -73,7 +77,8 @@ async function main() {
   const actual = await api('GET', `/v1/projects/${ref}/config/auth`);
   const bad = mismatches(desired, actual);
   for (const k of Object.keys(desired)) {
-    const shown = k === 'sms_test_otp' ? `${desired.sms_test_otp.split(',').length} numbers` : actual[k];
+    const shown =
+      k === 'sms_test_otp' ? `${desired.sms_test_otp.split(',').length} numbers` : actual[k];
     console.log(`  ${k} = ${JSON.stringify(shown)}${bad.includes(k) ? '   MISMATCH' : ''}`);
   }
   if (bad.length) throw new Error(`Auth config did not take: ${bad.join(', ')}`);

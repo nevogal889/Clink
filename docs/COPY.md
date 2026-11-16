@@ -392,6 +392,8 @@ Grouped by screen. Inputs list their character limit as "input N" (limits from `
 | `code.resend` | Button | Resend code | 16 |
 | `code.wrong_number` | Text button | Wrong number? | 16 |
 | `code.slow` | Hint after 30 s | No code yet? Check the number, or resend. | 48 |
+| `code.field` | Code field label (screen readers; the six boxes show the digits) | 6-digit code | 14 |
+| `phone.country.pick` | Country picker sheet title | Pick your country | 20 |
 | `signin.returning` | Toast when an account is found | Welcome back, {me}. | 28 |
 
 **Age check** (after sign-in succeeds, before the account exists; `PRD.md` 3.1 rule 10). Neutral: no default, no hint of the cut-off.
@@ -405,6 +407,19 @@ Grouped by screen. Inputs list their character limit as "input N" (limits from `
 | `age.cta` | Button | Continue | 12 |
 | `age.too_young.title` | Refused screen title | Clink isn't for you yet | 26 |
 | `age.too_young` | Refused screen body | Clink is for people {min} and over. | 40 |
+| `age.too_young.close` | Refused screen button, back to the splash screen | Close | 8 |
+| `age.m.1` | Month picker option | January | 9 |
+| `age.m.2` | Month picker option | February | 9 |
+| `age.m.3` | Month picker option | March | 9 |
+| `age.m.4` | Month picker option | April | 9 |
+| `age.m.5` | Month picker option | May | 9 |
+| `age.m.6` | Month picker option | June | 9 |
+| `age.m.7` | Month picker option | July | 9 |
+| `age.m.8` | Month picker option | August | 9 |
+| `age.m.9` | Month picker option | September | 9 |
+| `age.m.10` | Month picker option | October | 9 |
+| `age.m.11` | Month picker option | November | 9 |
+| `age.m.12` | Month picker option | December | 9 |
 
 ### 4.2 Invite check (iOS, before sign-in) and invite arrival
 
@@ -1038,6 +1053,7 @@ Reason ids map to the database values in `packages/shared`: `report.r.1` nudity,
 | `del.confirm.body` | Body | You can't undo this. | 22 |
 | `del.confirm.yes` | Button | Delete | 8 |
 | `del.confirm.no` | Button | Cancel | 8 |
+| `del.deleting` | Button while deletion runs | Deleting… | 12 |
 | `del.done` | Toast on the splash screen | Your account is deleted. | 26 |
 | `del.error` | Error | Couldn't delete your account. Check your connection and try again. | 70 |
 
@@ -1226,6 +1242,7 @@ Screen readers only; never shown. One key per row of `DESIGN.md` 5.6, which refe
 | `a11y.snap.photo` | Snap in the viewer | Photo from {name}, {ago_words} ago, {place} |
 | `a11y.order.notes` | Note marker on a run-list row | Has notes |
 | `a11y.usual.slot` | Usual 3 slot | Number {n}, {drink} |
+| `a11y.phone.country` | Country chip on the number screen | Country, {country} |
 | `a11y.react` | Reaction button | uses `snapv.react.a11y` |
 
 `{cat_name}` is the tab word (`cat.coffee` … `cat.smoothie_juice`).

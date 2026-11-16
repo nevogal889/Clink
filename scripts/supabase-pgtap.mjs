@@ -62,7 +62,9 @@ export function buildTestRequest(testSql, helpersSql) {
 async function main() {
   ensureProxyEnv();
   const ref = projectRef();
-  const filter = process.argv.slice(2).find((a, i, all) => !a.startsWith('--') && all[i - 1] !== '--ref');
+  const filter = process.argv
+    .slice(2)
+    .find((a, i, all) => !a.startsWith('--') && all[i - 1] !== '--ref');
   const files = findTests(TESTS).filter((f) => !filter || f.includes(filter));
   const helpers = readFileSync(HELPERS, 'utf8');
 
@@ -88,7 +90,9 @@ async function main() {
       console.log(`${rel}: ok ${tap.passed}/${tap.planned}`);
     } else {
       bad++;
-      console.log(`${rel}: FAIL ${tap.passed} passed, ${tap.failed} failed, planned ${tap.planned}`);
+      console.log(
+        `${rel}: FAIL ${tap.passed} passed, ${tap.failed} failed, planned ${tap.planned}`,
+      );
       for (const f of tap.failures) {
         console.log(`  not ok ${f.number} - ${f.description}`);
         for (const d of f.diag) console.log(`    ${d}`);

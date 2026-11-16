@@ -1,6 +1,7 @@
-// Settings, the part this build has (DESIGN.md 4.17). Profile and My usual 3, then Sign out on the
-// root list. Groups, Widgets, Notifications, Privacy, Blocked people, Help and Delete account come
-// with their milestones (ARCHITECTURE.md 13: M3 to M5); they are not shown until they work.
+// Settings, the part this build has (DESIGN.md 4.17). Profile and My usual 3, then Sign out and
+// Delete account on the root list (deletion within 3 taps, PRD AC 3.19.1). Groups, Widgets,
+// Notifications, Privacy, Blocked people and Help come with their milestones (ARCHITECTURE.md 13:
+// M3 to M5); they are not shown until they work.
 import { t } from '@clink/shared';
 import { Stack, useRouter } from 'expo-router';
 import { ScrollView, View } from 'react-native';
@@ -112,12 +113,18 @@ export default function Settings() {
             testID="set-signout"
             label={t('set.a.signout')}
             chevron={false}
-            last
             onPress={async () => {
               // No confirm: it only signs out, and signing back in restores everything.
               await actions.signOut();
               router.replace('/sign-in');
             }}
+          />
+          <Row
+            testID="set-delete"
+            label={t('set.a.delete')}
+            danger
+            last
+            onPress={() => router.push('/delete-account')}
           />
         </Section>
       </ScrollView>

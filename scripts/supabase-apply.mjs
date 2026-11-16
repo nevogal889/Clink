@@ -63,7 +63,10 @@ export function plan(local, remote) {
   }
   const remoteOnly = remote.filter((r) => !localVersions.has(r.version)).map((r) => r.version);
   // A pending version older than the newest applied one means history diverged.
-  const newestApplied = remote.map((r) => r.version).sort().at(-1);
+  const newestApplied = remote
+    .map((r) => r.version)
+    .sort()
+    .at(-1);
   const outOfOrder = pending.filter((m) => newestApplied && m.version < newestApplied);
   return { pending, changed, remoteOnly, outOfOrder };
 }
@@ -90,11 +93,7 @@ async function main() {
   const p = plan(local, remote);
   console.log(`project ${ref}: ${local.length} local, ${remote.length} applied`);
   for (const m of local) {
-    const state = p.pending.includes(m)
-      ? 'pending'
-      : p.changed.includes(m)
-        ? 'CHANGED'
-        : 'applied';
+    const state = p.pending.includes(m) ? 'pending' : p.changed.includes(m) ? 'CHANGED' : 'applied';
     console.log(`  ${m.version}  ${m.name.padEnd(22)} ${state}`);
   }
   for (const v of p.remoteOnly) console.log(`  ${v}  (remote only, no local file)`);

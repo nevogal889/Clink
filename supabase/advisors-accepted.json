@@ -12,6 +12,16 @@
       "reason": "Intended API (ARCHITECTURE.md 4.4): lists the caller's incoming flares without group fields. Same controls as flare_view."
     },
     {
+      "name": "auth_leaked_password_protection",
+      "detail": "",
+      "reason": "Clink has no passwords: email sign-in is off and users sign in with phone OTP, Apple or Google (ARCHITECTURE.md 5). The HaveIBeenPwned check only applies to password sign-ups, and it is a paid-plan feature (verify)."
+    },
+    {
+      "name": "auth_insufficient_mfa_options",
+      "detail": "",
+      "reason": "ARCHITECTURE.md 5 has no in-app second factor in v1: the verified phone or the Apple or Google identity is the sign-in, and S-04 step-up is deferred to after beta. Turning on TOTP would expose factor enrolment the app has no screen for. Re-check when S-04 is revisited."
+    },
+    {
       "name": "unused_index",
       "detail": "",
       "reason": "INFO only. clink-dev has no traffic yet, so every index reads as unused. Re-check on clink-prod after beta."
