@@ -133,3 +133,5 @@ Every decision the CEO has approved so far. When this file and `original-prd.md`
 ## CEO answers after the first art review
 - **App icon:** the notched ring is dropped (it reads as a loading spinner). The icon is a cup rim seen from above, a thick ellipse with a gleam on cobalt, the same idea as the dot on the "i" in the wordmark.
 - **Drink art:** one more pass on all 5 heroes before beta for more character (texture, bolder shapes), keeping the DESIGN.md shape grammar. Redraw the matcha bowl: its glaze streaks read as dirt.
+- **App icon, final touch:** the rim seen from above gets a short handle on the right so it reads as a cup, not a donut or swim ring. The rim stays category-neutral (no drink surface inside).
+- **Next milestone while the Apple account is pending:** connect Supabase (real database and sign-in behind the screens) on the CEO's free Supabase account.

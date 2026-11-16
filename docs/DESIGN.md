@@ -45,7 +45,7 @@ Why it fits Clink:
 - Letters are steel `#17202A` on light, enamel white `#F6F8F9` on dark or cobalt. One-colour version: the tittle takes the letter colour.
 - Never outlined, never on a gradient, never on a photo without the scrim in 3.7.
 
-**Mark: the rim.** A cup rim seen from above, the same idea as the tittle, drawn at icon scale. Reason: CEO decision after the first art review (`DECISIONS.md`, "CEO answers after the first art review"); the old notched ring read as a loading spinner.
+**Mark: the rim.** A cup rim seen from above, the same idea as the tittle, drawn at icon scale. Reason: CEO decision after the first art review (`DECISIONS.md`, "CEO answers after the first art review"); the old notched ring read as a loading spinner. A short handle on the right, a D loop with an upright hole that shares the rim's outer edge, makes it read as a cup and not a donut or a swim ring (CEO decision, same section). The handle makes the mark 120 units wide for a 100-unit rim; placements centre the whole mark. Generator: `app/assets/art/brand/_source/draw-brand.mjs`.
 - A thick elliptical band. Outer edge ratio 0.53 (not a circle, so it never reads as an O). Band 12.5% of the mark width at the sides.
 - The opening is raised 1.6% of the width, so the near lip (front) is the heaviest edge and the back lip the thinnest. That perspective, plus the ellipse, is what makes it a rim and not a donut.
 - Inside the opening, the cup's back wall shows as a crescent in a lighter tone, with one gleam on it (light from the top left). The rest of the opening is empty: the surface shows through as the drink.

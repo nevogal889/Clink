@@ -11,6 +11,10 @@
 //   wall    the inside back wall seen through the opening: the opening minus a lower, narrower
 //           ellipse (the drink surface, left empty so the background shows through).
 //   gleam   one tapered sliver on the wall, left of centre (light from the top left).
+//   handle  a short loop on the right, joined to the rim's outer edge (it shares that edge, so
+//           rim and handle stay one even-odd path), with a flattened hole. It makes the rim read
+//           as a cup, not a donut or a swim ring (CEO decision, DECISIONS.md). The mark is then
+//           120 units wide (x -50 to 70), so every placement shifts it left by SHIFT to centre it.
 // The rim band is the wordmark tittle's idea at icon scale: tittle centre line ratio 0.42, here
 // 0.46 so the band reads as thick at 29 pt.
 
@@ -31,6 +35,8 @@ const K = 0.46; // centre-line ellipse ratio of the rim band
 const BAND = 12.5; // band width at the sides
 const LIFT = 1.6; // opening raised by this much: heavier near lip
 const DRINK = { rx: 0.74, ratio: 0.355, drop: 8.5 }; // drink surface inside the opening
+const HANDLE = { top: -10, bottom: 15, reach: 71, hole: { cx: 58, cy: 3, rx: 4.2, ry: 6.6 } };
+const SHIFT = 10; // half of the extra width the handle adds on the right
 
 const n = (v) => {
   const r = Math.round(v * 100) / 100;
@@ -74,15 +80,52 @@ function ellipsePath(e, t) {
   return `M${n(l[0])} ${n(l[1])}A${n(rx)} ${n(ry)} 0 1 0 ${n(r[0])} ${n(r[1])}A${n(rx)} ${n(ry)} 0 1 0 ${n(l[0])} ${n(l[1])}Z`;
 }
 
+/** The handle: out from the rim's outer edge and back along it, minus a flattened hole. */
+function handlePath(outer, t) {
+  const onRim = (y) => [outer.rx * Math.sqrt(1 - (y / outer.ry) ** 2), y];
+  const { top, bottom, reach, hole } = HANDLE;
+  const pts = [
+    onRim(top),
+    [62, top - 2],
+    [reach, top + 3],
+    [reach, (top + bottom) / 2],
+    [reach, bottom - 2],
+    [62, bottom + 2],
+    onRim(bottom),
+  ].map(([x, y]) => t(x, y));
+  const p = pts.map(([x, y]) => `${n(x)} ${n(y)}`);
+  const out =
+    `M${p[0]}C${p[1]} ${p[2]} ${p[3]}C${p[4]} ${p[5]} ${p[6]}` +
+    `A${n(outer.rx * t.s)} ${n(outer.ry * t.s)} 0 0 0 ${p[0]}Z`;
+  return out + ellipsePath(hole, t);
+}
+
+/**
+ * A patch over the handle's join, in the rim colour. The renderer approximates the two arcs that
+ * share the join differently, which leaves a hairline at icon sizes. The patch sits inside the rim
+ * band and the handle, so it never changes the outline. One-colour files skip it (too small).
+ */
+function jointPath(outer, t) {
+  const x = (y) => outer.rx * Math.sqrt(1 - (y / outer.ry) ** 2);
+  const { top, bottom } = HANDLE;
+  const pts = [
+    [x(top) - 4, top + 0.5],
+    [x(top) + 3, top + 0.5],
+    [x(bottom) + 3, bottom - 0.5],
+    [x(bottom) - 4, bottom - 0.5],
+  ].map(([a, b]) => t(a, b));
+  return `M${pts.map(([a, b]) => `${n(a)} ${n(b)}`).join('L')}Z`;
+}
+
 /**
  * The mark's paths, scaled by s and centred on (cx, cy).
  * gap > 0 insets the wall from the rim, for one-colour silhouettes where the two would merge.
  */
 export function markPaths({ s, cx, cy, gap = 0 }) {
-  const t = (x, y) => [cx + x * s, cy + y * s];
+  const t = (x, y) => [cx + (x - SHIFT) * s, cy + y * s];
   t.s = s;
   const { outer, open, drink } = rimGeometry();
-  const rim = ellipsePath(outer, t) + ellipsePath(open, t);
+  const rim = ellipsePath(outer, t) + ellipsePath(open, t) + handlePath(outer, t);
 
   const wallTop = { ...open, rx: open.rx - gap, ry: open.ry - gap };
   const [px, py] = crossing(wallTop, drink);
@@ -113,7 +156,7 @@ export function markPaths({ s, cx, cy, gap = 0 }) {
   }
   const pts = [...upper, ...lower.reverse()];
   const gleam = `M${pts.map(([x, y]) => `${n(x)} ${n(y)}`).join('L')}Z`;
-  return { rim, wall, gleam };
+  return { rim, wall, gleam, joint: jointPath(outer, t) };
 }
 
 const svg = (viewBox, comment, body) =>
@@ -123,7 +166,10 @@ const svg = (viewBox, comment, body) =>
 
 /** Full-colour mark: rim, wall, gleam. Colours per surface. */
 function markBody(p, { rim, wall, gleam, gleamOpacity }) {
-  const out = [`<path fill-rule="evenodd" d="${p.rim}" fill="${rim}"/>`];
+  const out = [
+    `<path fill-rule="evenodd" d="${p.rim}" fill="${rim}"/>`,
+    `<path d="${p.joint}" fill="${rim}"/>`,
+  ];
   if (wall) out.push(`<path d="${p.wall}" fill="${wall}"/>`);
   if (gleam) {
     const op = gleamOpacity ? ` fill-opacity="${gleamOpacity}"` : '';
@@ -145,7 +191,7 @@ export function buildBrand() {
   const m = { s: 0.92, cx: 50, cy: 50 };
   files['mark.svg'] = svg(
     SQUARE,
-    'Clink mark, 64 px and up (DESIGN.md 1.3): a cup rim seen from above. Cobalt rim, the inside back wall in dark-mode cobalt, one white gleam.',
+    'Clink mark, 64 px and up (DESIGN.md 1.3): a cup rim seen from above, with a short handle. Cobalt rim, the inside back wall in dark-mode cobalt, one white gleam.',
     markBody(markPaths(m), { rim: COBALT, wall: COBALT_DARK, gleam: WHITE }),
   );
   files['mark-small.svg'] = svg(
@@ -159,9 +205,9 @@ export function buildBrand() {
     silhouette(markPaths({ ...m, gap: 2.4 }), STEEL),
   );
 
-  // App icons: 1024 full bleed, the OS applies its mask. Rim 700 wide, centre 2% low so the
+  // App icons: 1024 full bleed, the OS applies its mask. Mark 744 wide (rim 620 plus handle), centre 2% low so the
   // heavier near lip doesn't make the mark look like it is sliding down.
-  const icon = { s: 7, cx: 512, cy: 532 };
+  const icon = { s: 6.2, cx: 512, cy: 532 };
   const ip = markPaths(icon);
   files['app-icon.svg'] = svg(
     '0 0 1024 1024',
@@ -185,12 +231,12 @@ export function buildBrand() {
     markBody(ip, { rim: WHITE, wall: '#8C8C8C', gleam: WHITE }),
   );
 
-  // Android adaptive icon: 108 dp canvas, 66 dp safe zone. The rim is 60 dp wide; its ends sit
-  // 30 dp from the centre, inside the 33 dp safe radius.
-  const fg = { s: 0.6, cx: 54, cy: 55 };
+  // Android adaptive icon: 108 dp canvas, 66 dp safe zone. The mark is 66 dp wide with the
+  // handle; its ends sit 33 dp from the centre, on the safe radius.
+  const fg = { s: 0.55, cx: 54, cy: 55 };
   files['android-adaptive-foreground.svg'] = svg(
     '0 0 108 108',
-    'Android adaptive icon foreground (DESIGN.md 1.3): 108 dp canvas, rim 60 dp wide inside the 66 dp safe zone. Background layer is plain cobalt #2443A6.',
+    'Android adaptive icon foreground (DESIGN.md 1.3): 108 dp canvas, mark 66 dp wide inside the 66 dp safe zone. Background layer is plain cobalt #2443A6.',
     markBody(markPaths(fg), { rim: WHITE, wall: COBALT_DARK, gleam: WHITE }),
   );
   files['android-monochrome.svg'] = svg(
@@ -198,26 +244,26 @@ export function buildBrand() {
     'Android adaptive icon monochrome layer, for themed icons (DESIGN.md 1.3): one-colour silhouette, Android reads its alpha only. Rim and back wall with a gap.',
     silhouette(markPaths({ ...fg, gap: 2.4 }), WHITE),
   );
-  // Notification small icon: 24 dp, 2 dp padding, so the rim is 20 dp wide. The wall gap is
+  // Notification small icon: 24 dp, 2 dp padding, so the mark is 20 dp wide with the handle. The wall gap is
   // 1 dp, the smallest that survives mdpi.
   files['android-notification.svg'] = svg(
     '0 0 24 24',
     'Android notification small icon (DESIGN.md 1.3): white silhouette on transparent, 24 dp. Rim and back wall with a 1 dp gap; no gleam.',
-    silhouette(markPaths({ s: 0.2, cx: 12, cy: 12.3, gap: 5 }), WHITE),
+    silhouette(markPaths({ s: 0.166, cx: 12, cy: 12.3, gap: 6 }), WHITE),
   );
 
-  // Lockup: mark left, wordmark right. Mark width = x-height x 1.5 (150), centred on the
-  // x-height band (y 0 to 100), gap = one stem (24).
+  // Lockup: mark left, wordmark right. Rim width = x-height x 1.5 (150; 180 with the handle),
+  // centred on the x-height band (y 0 to 100), gap = one stem (24).
   const word = readFileSync(join(OUT, 'wordmark.svg'), 'utf8');
   const letters = word.match(/<g fill="#17202A">[\s\S]*?<\/g>/)[0];
   const tittle = word.match(/<ellipse[^>]*\/>/)[0];
-  const lp = markPaths({ s: 1.5, cx: 75, cy: 50 });
+  const lp = markPaths({ s: 1.5, cx: 90, cy: 50 });
   files['lockup.svg'] = svg(
-    '0 -42 522 146',
+    '0 -42 552 146',
     'Lockup (DESIGN.md 1.3): rim mark left, wordmark right. Mark width = x-height x 1.5, centred on the x-height band, gap = one stem.',
     [
       ...markBody(lp, { rim: COBALT, wall: COBALT_DARK, gleam: WHITE }),
-      '<g transform="translate(174 0)">',
+      '<g transform="translate(204 0)">',
       ...letters.split('\n').map((l) => l.replace(/^\s{2}/, '')),
       tittle,
       '</g>',
