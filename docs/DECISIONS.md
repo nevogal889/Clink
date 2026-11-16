@@ -136,3 +136,4 @@ Every decision the CEO has approved so far. When this file and `original-prd.md`
 - **App icon, final touch:** the rim seen from above gets a short handle on the right so it reads as a cup, not a donut or swim ring. The rim stays category-neutral (no drink surface inside).
 - **Next milestone while the Apple account is pending:** connect Supabase (real database and sign-in behind the screens) on the CEO's free Supabase account.
 - **Android testing before store accounts:** the CEO tests on the Android Studio emulator on their Mac. Builds are installed directly (EAS internal distribution or a local APK); Play Console only before external testers.
+- **Supabase plan:** development runs on the free plan; the CEO pauses one of their other free projects to free a slot. Upgrade the Clink organization to Pro before beta (free projects pause when idle and have no daily backups; price: verify at the time).
