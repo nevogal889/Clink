@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 
@@ -21,10 +21,12 @@ function Shell() {
   const [fontsLoaded, fontError] = useFonts(fontFiles);
   const { state } = useData();
   const { c, mode } = useTheme();
+  // Snackbars belong to the route that raised them; a route change dismisses them.
+  const pathname = usePathname();
   const ready = (fontsLoaded || !!fontError) && state.ready;
   return (
     <>
-      <SnackbarProvider>
+      <SnackbarProvider routeKey={pathname}>
         <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
         <View style={{ flex: 1, backgroundColor: c.surfaceBase }}>
           {ready ? (

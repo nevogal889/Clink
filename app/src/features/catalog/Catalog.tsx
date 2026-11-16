@@ -65,15 +65,17 @@ export function CategoryHeader({ category }: { category: FlareCategory }) {
       }}
       testID="category-header"
     >
+      {/* The name sits at the top, under the rim band, so when the header is the last thing above
+          the fold (onboarding step 3) it reads as the start of the menu, not an empty card. */}
       <View
         style={{
           flexDirection: 'row',
-          alignItems: 'flex-end',
+          alignItems: 'stretch',
           paddingLeft: spacing.s5,
-          minHeight: 176,
+          minHeight: 168,
         }}
       >
-        <View style={{ flex: 1, paddingBottom: spacing.s5, paddingTop: spacing.s6 }}>
+        <View style={{ flex: 1, paddingBottom: spacing.s5, paddingTop: spacing.s5 }}>
           <Txt variant="displayL" accessibilityRole="header">
             {catName(category)}
           </Txt>
@@ -81,7 +83,9 @@ export function CategoryHeader({ category }: { category: FlareCategory }) {
             {t('cat.count', { n })}
           </Txt>
         </View>
-        <View style={{ marginRight: -spacing.s2, marginBottom: -spacing.s2 }}>
+        <View
+          style={{ alignSelf: 'flex-end', marginRight: -spacing.s2, marginBottom: -spacing.s2 }}
+        >
           <PourHero category={category} size={168} />
         </View>
       </View>

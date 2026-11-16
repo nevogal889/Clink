@@ -1,61 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <!-- Water hero (DESIGN.md 3.3). V4 straight tumbler, water at 75%, two ice cubes, three
-       bubbles. White enamel jug (V12) behind and left with a water-ink rim and light speckle. -->
+  <!-- Water hero (DESIGN.md 3.3, art pass 2). V4 faceted cafe tumbler with a heavy glass bottom, water at 75%, two bevelled ice cubes, three bubbles. Enamel jug behind and left with a water-ink rim, pouring lip and base band, one chip, sparse speckle. -->
   <!-- Cast shadows -->
-  <ellipse cx="318" cy="822" rx="130" ry="39" fill="#17202A" fill-opacity="0.14"/>
-  <ellipse cx="660" cy="856" rx="140" ry="42" fill="#17202A" fill-opacity="0.14"/>
-  <!-- Jug: contour, handle, body, shade, speckle, gleam, inside, rim, pouring lip -->
-  <g id="contour-jug" fill="#17202A" stroke="#17202A" stroke-width="16" stroke-linejoin="round">
-    <path fill-rule="evenodd" d="M380 424H452C494 424 500 520 470 590C452 632 430 664 404 690L370 600Z M382 456H446C468 456 470 528 444 584C430 614 416 636 398 654L370 560Z"/>
-    <path d="M198 400L168 813.4A122 36.6 0 0 0 412 813.4L382 400A92 27.6 0 0 0 198 400Z"/>
-    <ellipse cx="290" cy="400" rx="92" ry="27.6" stroke-width="30"/>
-    <path d="M208 388Q178 388 152 396Q178 404 206 413Z" stroke-width="30"/>
-  </g>
-  <path fill-rule="evenodd" fill="#F4F6F7" d="M380 424H452C494 424 500 520 470 590C452 632 430 664 404 690L370 600Z M382 456H446C468 456 470 528 444 584C430 614 416 636 398 654L370 560Z"/>
-  <path d="M198 400L168 813.4A122 36.6 0 0 0 412 813.4L382 400A92 27.6 0 0 1 198 400Z" fill="#F4F6F7"/>
-  <path d="M330.5 424.8A92 27.6 0 0 0 382 400L412 813.4A122 36.6 0 0 1 343.7 846.3Z" fill="#D2D4D5"/>
-  <g fill="#17202A" fill-opacity="0.35">
-    <circle cx="317" cy="445" r="3.9"/>
-    <circle cx="321" cy="554" r="2.2"/>
-    <circle cx="271" cy="532" r="3.0"/>
-    <circle cx="376" cy="694" r="3.5"/>
-    <circle cx="231" cy="502" r="2.7"/>
-    <circle cx="260" cy="685" r="2.1"/>
-    <circle cx="254" cy="784" r="2.2"/>
-    <circle cx="376" cy="606" r="3.6"/>
-    <circle cx="245" cy="615" r="2.2"/>
-    <circle cx="300" cy="632" r="4.0"/>
-    <circle cx="241" cy="561" r="3.7"/>
-    <circle cx="387" cy="734" r="4.1"/>
-    <circle cx="366" cy="532" r="3.5"/>
-    <circle cx="239" cy="729" r="2.9"/>
-    <circle cx="266" cy="753" r="2.5"/>
-    <circle cx="346" cy="584" r="4.1"/>
-    <circle cx="251" cy="647" r="3.3"/>
-    <circle cx="291" cy="581" r="4.3"/>
-  </g>
-  <path d="M222 520L209 705" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="13" stroke-linecap="round"/>
-  <ellipse cx="290" cy="400" rx="92" ry="27.6" fill="#D2D4D5"/>
-  <ellipse cx="290" cy="407" rx="76" ry="22.8" fill="#CFE8F1"/>
-  <path d="M208 388Q178 388 152 396Q178 404 206 413Z" fill="#F4F6F7"/>
-  <ellipse cx="290" cy="400" rx="92" ry="27.6" fill="none" stroke="#085C74" stroke-width="14"/>
-  <path d="M206 388Q178 388 152 396Q178 404 204 412" fill="none" stroke="#085C74" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
-  <!-- Tumbler: contour (offset outward, since glass is see-through) and body -->
-  <g id="contour-glass" fill="none" stroke="#17202A" stroke-width="8">
-    <ellipse cx="620" cy="470" rx="170" ry="51" stroke-width="30"/>
-    <path d="M446 470L484.9 840.7A135.1 43.3 0 0 0 755.1 840.7L794 470"/>
-  </g>
-  <path d="M450 470L488.9 840.7A131.1 39.3 0 0 0 751.1 840.7L790 470A170 51 0 0 0 450 470Z" fill="#DCEEF3" fill-opacity="0.5"/>
-  <!-- Water, shade, two ice cubes, three bubbles -->
-  <path d="M469 555.5L495.9 812A124.1 37.2 0 0 0 744.1 812L771 555.5A151 45.3 0 0 0 469 555.5Z" fill="#CFE8F1"/>
-  <path d="M686.4 596.2A151 45.3 0 0 0 771 555.5L744.1 812A124.1 37.2 0 0 1 674.6 845.4Z" fill="#AEC6CF"/>
-  <rect x="604" y="616" width="82" height="82" rx="16" fill="#F4F6F7" transform="rotate(14 645 657)"/>
-  <rect x="560" y="512" width="88" height="88" rx="16" fill="#F4F6F7" transform="rotate(8 604 556)"/>
-  <g fill="none" stroke="#0B7391" stroke-opacity="0.6" stroke-width="4">
-    <circle cx="548" cy="770" r="12"/>
-    <circle cx="562" cy="722" r="9"/>
-    <circle cx="556" cy="684" r="6"/>
-  </g>
-  <path d="M514 590L526 730" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="24" stroke-linecap="round"/>
-  <ellipse cx="620" cy="470" rx="170" ry="51" fill="none" stroke="#085C74" stroke-width="14"/>
+  <ellipse cx="330" cy="858" rx="132" ry="39.6" fill="#17202A" fill-opacity="0.14"/>
+  <ellipse cx="666" cy="860" rx="148" ry="44.4" fill="#17202A" fill-opacity="0.14"/>
+  <!-- Jug: contour, handle, body, shade, speckle, gleam, inside, rim, lip, chip -->
+  <g id="contour-jug" fill="#17202A" stroke="#17202A" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"><path d="M378 440H448C494 440 496 540 466 604C448 642 426 668 402 688L394 600ZM382 474H440C462 474 462 540 438 590C426 614 414 632 398 648L390 560Z" fill-rule="evenodd"/><path d="M198 398L168 840A122 36.6 0 0 0 412 840L382 398A92 27.6 0 0 0 198 398Z"/><ellipse cx="290" cy="398" rx="92" ry="27.6" stroke-width="30"/><path d="M210 386Q178 384 150 396Q178 406 206 412Z" stroke-width="30"/><g transform="translate(4 5)"><path d="M378 440H448C494 440 496 540 466 604C448 642 426 668 402 688L394 600ZM382 474H440C462 474 462 540 438 590C426 614 414 632 398 648L390 560Z" fill-rule="evenodd"/><path d="M198 398L168 840A122 36.6 0 0 0 412 840L382 398A92 27.6 0 0 0 198 398Z"/><ellipse cx="290" cy="398" rx="92" ry="27.6" stroke-width="30"/><path d="M210 386Q178 384 150 396Q178 406 206 412Z" stroke-width="30"/></g></g>
+  <path d="M378 440H448C494 440 496 540 466 604C448 642 426 668 402 688L394 600ZM382 474H440C462 474 462 540 438 590C426 614 414 632 398 648L390 560Z" fill="#F4F6F7" fill-rule="evenodd"/>
+  <path d="M476 520C482 560 476 590 466 604C448 642 426 668 402 688L400 664C418 648 432 628 442 606C458 572 466 548 476 520Z" fill="#D2D4D5"/>
+  <path d="M198 398L168 840A122 36.6 0 0 0 412 840L382 398A92 27.6 0 0 1 198 398Z" fill="#F4F6F7"/>
+  <path d="M336 421.9A92 27.6 0 0 0 382 398L412 840A122 36.6 0 0 1 351 871.7Z" fill="#D2D4D5"/>
+  <g fill="#17202A" fill-opacity="0.35"><circle cx="333.2" cy="519.3" r="2.2"/><circle cx="189.4" cy="759.1" r="2.4"/><circle cx="303.7" cy="694.8" r="2.6"/><circle cx="271.6" cy="706" r="2.1"/><circle cx="224.1" cy="776.9" r="2.3"/><circle cx="263.4" cy="744.8" r="2.2"/><circle cx="339.2" cy="490.9" r="3.1"/><circle cx="311.3" cy="791.2" r="2.2"/><circle cx="303.2" cy="719.4" r="3.5"/><circle cx="274.3" cy="463" r="2.8"/><circle cx="321.6" cy="454.5" r="2.1"/><circle cx="302.7" cy="485.8" r="2.4"/><circle cx="388.9" cy="568.7" r="2.4"/><circle cx="259.1" cy="664.8" r="2.9"/><circle cx="229" cy="828.9" r="3"/><circle cx="309.3" cy="671.4" r="2.5"/><circle cx="365.2" cy="603.6" r="2.4"/><circle cx="206.9" cy="445.4" r="3.5"/><circle cx="172.6" cy="795.2" r="2.8"/><circle cx="176" cy="825.5" r="2.1"/><circle cx="307.5" cy="611.1" r="2.1"/><circle cx="305.1" cy="571.9" r="3"/><circle cx="383.2" cy="671.2" r="2.1"/><circle cx="332.2" cy="650.9" r="2.1"/><circle cx="276.8" cy="485" r="2"/><circle cx="293.7" cy="635.4" r="3.3"/><circle cx="200.8" cy="473.1" r="2.6"/><circle cx="372.3" cy="655.7" r="2.5"/><circle cx="335.6" cy="568.1" r="3.3"/><circle cx="363.2" cy="519.5" r="2.3"/><circle cx="287.5" cy="551.9" r="2.3"/><circle cx="363.1" cy="441.9" r="3.2"/><circle cx="281.3" cy="752.6" r="3"/><circle cx="256.2" cy="830.5" r="2"/><circle cx="252.4" cy="716.7" r="2.6"/><circle cx="382.3" cy="776.1" r="2.2"/><circle cx="206.1" cy="799.1" r="2.1"/><circle cx="213.5" cy="759.7" r="2.5"/><circle cx="362.7" cy="713.2" r="2.3"/><circle cx="388.2" cy="825.8" r="2.8"/></g>
+  <path d="M171 826A119 35.7 0 0 0 409 826" fill="none" stroke="#085C74" stroke-width="12"/>
+  <path d="M226 470C223.4 484.9 213.6 529.4 210.2 559.3C206.8 589.2 205.9 621 205.5 649.4C205.1 677.8 207.6 716.6 208 730C208.4 743.4 205.6 743.2 208 730C210.4 716.8 218.9 678.8 222.5 650.6C226.1 622.4 229.2 590.8 229.8 560.7C230.4 530.6 226.6 485.1 226 470C225.4 454.9 228.6 455.1 226 470Z" fill="#FFFFFF" fill-opacity="0.85"/>
+  <ellipse cx="290" cy="398" rx="92" ry="27.6" fill="#D2D4D5"/>
+  <ellipse cx="290" cy="406" rx="76" ry="22.8" fill="#CFE8F1"/>
+  <path d="M210 386Q178 384 150 396Q178 406 206 412Z" fill="#F4F6F7"/>
+  <ellipse cx="290" cy="398" rx="92" ry="27.6" fill="none" stroke="#085C74" stroke-width="14"/>
+  <path d="M206 387Q178 384 150 396Q178 406 204 411" fill="none" stroke="#085C74" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M313.9 420.3L319.3 415.8L325.6 417.6L331.9 414L340 416.7L345.4 422.1L339.1 426.6L332.8 429.3L324.7 427.5L318.4 428.4Z" fill="#D2D4D5"/>
+  <path d="M322 423L326.5 420.3L331.9 421.2L336.4 418.5L342.7 422.1L338.2 426.6L331.9 429.3L325.6 427.5Z" fill="#17202A"/>
+  <!-- Tumbler: contour (offset outward, since glass is see-through), body -->
+  <g id="contour-glass" fill="none" stroke="#17202A" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"><path d="M452 478L486 840A142 42.6 0 0 0 770 840L804 478"/><path d="M799.4 548L772 840A144 43.2 0 0 1 628 883.2"/><ellipse cx="628" cy="478" rx="174" ry="52.2" stroke-width="30"/></g>
+  <path d="M456 478L490 840A138 41.4 0 0 0 766 840L800 478A172 51.6 0 0 0 456 478Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <!-- Water, shade, ice, bubbles, heavy bottom -->
+  <path d="M468.5 568.5L490.2 800A137.8 41.3 0 0 0 765.8 800L787.5 568.5A159.5 47.9 0 0 0 468.5 568.5Z" fill="#CFE8F1"/>
+  <path d="M701.4 611A159.5 47.9 0 0 0 787.5 568.5L765.8 800A137.8 41.3 0 0 1 696.9 835.8Z" fill="#AEC6CF"/>
+  <path d="M625.2 620.8L702.8 640.1L683.5 717.7L605.8 698.4Z" fill="#F4F6F7" stroke="#F4F6F7" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M625.2 620.8L702.8 640.1L730.2 629.6L652.5 610.3Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M702.8 640.1L730.2 629.6L710.8 707.2L683.5 717.7Z" fill="#D2D4D5" stroke="#D2D4D5" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M549.8 518.2L640.9 531L628.1 622.1L537 609.3Z" fill="#F4F6F7" stroke="#F4F6F7" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M549.8 518.2L640.9 531L671 515.7L579.9 502.9Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M640.9 531L671 515.7L658.2 606.8L628.1 622.1Z" fill="#D2D4D5" stroke="#D2D4D5" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M468.5 568.5A159.5 47.9 0 0 0 787.5 568.5" fill="none" stroke="#AEC6CF" stroke-width="5"/>
+  <path d="M467.6 601.1A160.4 48.1 0 0 0 788.4 601.1M473 613.5L500 846.7M489.1 625.1L513.3 856.7M514.6 635.1L534.3 865.3M547.8 642.8L561.8 871.9M586.5 647.6L593.7 876M628 649.2L628 877.4M669.5 647.6L662.3 876M708.2 642.8L694.2 871.9M741.4 635.1L721.7 865.3M766.9 625.1L742.7 856.7M783 613.5L756 846.7" fill="none" stroke="#AEC6CF" stroke-width="5" stroke-linecap="round"/>
+  <g fill="none" stroke="#0B7391" stroke-opacity="0.6" stroke-width="4"><circle cx="548" cy="760" r="12"/><circle cx="560" cy="716" r="9"/><circle cx="552" cy="682" r="6"/></g>
+  <path d="M490.2 800A137.8 41.3 0 0 0 765.8 800L761 834A133 39.9 0 0 1 495 834Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M490.2 800A137.8 41.3 0 0 0 765.8 800L761 834A133 39.9 0 0 1 495 834Z" fill="#DCEEF3" fill-opacity="0.5"/>
+  <path d="M502 590C501.2 600.2 497 630.9 497.4 651.1C497.9 671.2 501.1 691.1 504.8 710.9C508.6 730.7 517.5 760.2 520 770C522.5 779.8 519.5 780.2 520 770C520.5 759.8 523.4 729.3 523.2 709.1C522.9 688.9 522.1 668.8 518.6 648.9C515 629.1 504.8 599.8 502 590C499.2 580.2 502.8 579.8 502 590Z" fill="#FFFFFF" fill-opacity="0.85"/>
+  <ellipse cx="628" cy="478" rx="172" ry="51.6" fill="none" stroke="#085C74" stroke-width="14"/>
 </svg>

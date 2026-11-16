@@ -3,11 +3,11 @@
 // and editors save on close (DESIGN.md 8 rule 8). This is the one place to swap in native
 // detent sheets on device builds.
 import { t } from '@clink/shared';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Animated, Modal, Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SnackbarHost } from './Snackbar';
+import { SnackbarHost, useSnackbarLayer } from './Snackbar';
 import { motion, radius, spacing } from './theme';
 import { Txt } from './Txt';
 import { useReducedMotion, useTheme } from './useTheme';
@@ -44,6 +44,10 @@ export function Sheet({
   const reduced = useReducedMotion();
   const rise = useState(() => new Animated.Value(0))[0];
   const [footerHeight, setFooterHeight] = useState(0);
+  // An open sheet is its own snackbar layer: it hides the screen's snackbar and drops its own
+  // when it closes.
+  const layer = `sheet:${useId()}`;
+  useSnackbarLayer(layer, visible);
 
   useEffect(() => {
     if (!visible) return;
@@ -146,7 +150,10 @@ export function Sheet({
               {footer}
             </View>
           ) : null}
-          <SnackbarHost bottom={(footer ? footerHeight : 0) + insets.bottom + spacing.s4} />
+          <SnackbarHost
+            layer={layer}
+            bottom={(footer ? footerHeight : 0) + insets.bottom + spacing.s4}
+          />
         </Animated.View>
       </View>
     </Modal>

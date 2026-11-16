@@ -266,8 +266,10 @@ export function Chip({
       accessibilityState={state}
       hitSlop={(44 - height) / 2 > 0 ? (44 - height) / 2 : 0}
       style={{
-        height,
+        // minHeight, so the label grows with the text size instead of spilling out (chips wrap).
+        minHeight: height,
         paddingHorizontal: spacing.s4,
+        paddingVertical: spacing.s1,
         borderRadius: radius.chip,
         borderCurve: 'continuous',
         borderWidth: selected ? 0 : 1,

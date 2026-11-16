@@ -1,7 +1,7 @@
 // Onboarding end to end over the real route files and the mock data layer (PRD 3.2 acceptance
 // criteria 1, 2, 3 and 7; tap budget for step 3 with a preset).
 import { t } from '@clink/shared';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -25,10 +25,11 @@ const metrics = {
 
 function routes(api: ReturnType<typeof createMockApi>) {
   function Layout() {
+    const pathname = usePathname();
     return (
       <SafeAreaProvider initialMetrics={metrics}>
         <DataProvider api={api}>
-          <SnackbarProvider>
+          <SnackbarProvider routeKey={pathname}>
             <Stack screenOptions={{ headerShown: false }} />
             <SnackbarHost />
           </SnackbarProvider>

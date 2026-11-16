@@ -833,10 +833,10 @@ The note shows after the 4th caffeinated drink of the day (`PRD.md` 3.11). No nu
 | `profile.edit` | Button | Edit | 6 |
 | `profile.level` | Level line | Level {n} · {level_name} | 28 |
 | `profile.level_desc` | Description | (from section 3) | 70 |
-| `profile.to_next` | Progress line | {xp} XP to {next_level_name} | 32 |
+| `profile.to_next` | Hint under the progress bar | {xp} more to reach {next_level_name} | 34 |
 | `profile.top` | Progress line at level 8 | Top level | 10 |
 | `profile.level_n` | Level number above the level name | Level {n} | 10 |
-| `profile.total` | Total, right of the progress line | {xp} XP | 10 |
+| `profile.total` | Your XP, the number above the progress bar | {xp} XP | 10 |
 | `profile.private` | Footer | Only you can see your level. | 30 |
 | `profile.how` | Text button | How XP works | 14 |
 | `profile.history` | Section | Recent | 8 |

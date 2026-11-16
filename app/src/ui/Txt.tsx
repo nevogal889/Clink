@@ -2,6 +2,7 @@
 // each token's max scale.
 import { Text, type TextProps, type TextStyle } from 'react-native';
 
+import { reviewTextScale } from './theme/look';
 import { typography, type TypeName } from './theme/typography';
 import { useTheme } from './useTheme';
 
@@ -13,6 +14,8 @@ export interface TxtProps extends TextProps {
   align?: TextStyle['textAlign'];
 }
 
+const REVIEW_SCALE = reviewTextScale();
+
 export function Txt({
   variant = 'body',
   color,
@@ -22,7 +25,10 @@ export function Txt({
   ...rest
 }: TxtProps) {
   const { c } = useTheme();
-  const { maxFontSizeMultiplier, ...type } = typography[variant];
+  const { maxFontSizeMultiplier, ...base } = typography[variant];
+  const k = Math.min(REVIEW_SCALE, rest.maxFontSizeMultiplier ?? maxFontSizeMultiplier);
+  const type =
+    k > 1 ? { ...base, fontSize: base.fontSize * k, lineHeight: base.lineHeight * k } : base;
   const ink =
     color ??
     (tone === 'secondary' ? c.inkSecondary : tone === 'tertiary' ? c.inkTertiary : c.inkPrimary);

@@ -94,6 +94,9 @@ export function TopBar({
           variant="callout"
           style={{ fontFamily: 'Archivo-SemiBold' }}
           color={friendCount > 0 ? c.inkPrimary : c.cobalt}
+          // Capped like the tracker chip's numerals, so the 52 pt bar keeps all four controls at
+          // the largest text sizes; the screen reader reads the full label.
+          maxFontSizeMultiplier={1.35}
         >
           {friendCount > 0 ? t('top.friends', { n: friendCount }) : t('top.friends_none')}
         </Txt>

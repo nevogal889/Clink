@@ -141,7 +141,7 @@ export default function Profile() {
         <Animated.View
           testID="profile-level"
           accessible
-          accessibilityLabel={`${t('profile.level', { n: info.level, level_name: levelName })}. ${info.next && info.xpToNext !== null ? t('profile.to_next', { xp: info.xpToNext, next_level_name: t(info.next.nameKey as 'level.1') }) : t('profile.top')}. ${t('profile.private')}`}
+          accessibilityLabel={`${t('profile.level', { n: info.level, level_name: levelName })}. ${t('profile.total', { xp: xp.total })}. ${info.next && info.xpToNext !== null ? t('profile.to_next', { xp: info.xpToNext, next_level_name: t(info.next.nameKey as 'level.1') }) : t('profile.top')}. ${t('profile.private')}`}
           style={{
             paddingHorizontal: spacing.gutter,
             marginTop: spacing.s8,
@@ -160,12 +160,20 @@ export default function Profile() {
           <Txt variant="callout" tone="secondary" style={{ marginTop: spacing.s1, maxWidth: 520 }}>
             {levelDesc}
           </Txt>
+          {/* Your XP is the number; the hint under the bar says what is left (DESIGN.md 4.16). */}
+          <Txt
+            variant="title"
+            testID="profile-total"
+            style={{ fontVariant: ['tabular-nums'], marginTop: spacing.s5 }}
+          >
+            {t('profile.total', { xp: xp.total })}
+          </Txt>
           <View
             style={{
               height: 8,
               borderRadius: radius.bar,
               backgroundColor: c.cobaltTint,
-              marginTop: spacing.s5,
+              marginTop: spacing.s2,
               overflow: 'hidden',
             }}
           >
@@ -179,26 +187,19 @@ export default function Profile() {
               }}
             />
           </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              marginTop: spacing.s2,
-              gap: spacing.s3,
-            }}
+          <Txt
+            variant="callout"
+            tone="secondary"
+            testID="profile-to-next"
+            style={{ fontVariant: ['tabular-nums'], marginTop: spacing.s2 }}
           >
-            <Txt variant="callout" style={{ fontVariant: ['tabular-nums'], flexShrink: 1 }}>
-              {info.next && info.xpToNext !== null
-                ? t('profile.to_next', {
-                    xp: info.xpToNext,
-                    next_level_name: t(info.next.nameKey as 'level.1'),
-                  })
-                : t('profile.top')}
-            </Txt>
-            <Txt variant="callout" tone="secondary" style={{ fontVariant: ['tabular-nums'] }}>
-              {t('profile.total', { xp: xp.total })}
-            </Txt>
-          </View>
+            {info.next && info.xpToNext !== null
+              ? t('profile.to_next', {
+                  xp: info.xpToNext,
+                  next_level_name: t(info.next.nameKey as 'level.1'),
+                })
+              : t('profile.top')}
+          </Txt>
           <View
             style={{
               flexDirection: 'row',

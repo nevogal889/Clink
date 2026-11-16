@@ -385,7 +385,7 @@ export const STRINGS = {
   'caff.widget': 'Herbal tea next?',
   'profile.edit': 'Edit',
   'profile.level': 'Level {n} · {level_name}',
-  'profile.to_next': '{xp} XP to {next_level_name}',
+  'profile.to_next': '{xp} more to reach {next_level_name}',
   'profile.top': 'Top level',
   'profile.level_n': 'Level {n}',
   'profile.total': '{xp} XP',
@@ -3578,8 +3578,8 @@ export const STRING_META: Record<
   },
   'profile.to_next': {
     section: '4.16',
-    context: 'Progress line',
-    max: 32,
+    context: 'Hint under the progress bar',
+    max: 34,
     placeholders: [
       {
         name: 'xp',
@@ -3610,7 +3610,7 @@ export const STRING_META: Record<
   },
   'profile.total': {
     section: '4.16',
-    context: 'Total, right of the progress line',
+    context: 'Your XP, the number above the progress bar',
     max: 10,
     placeholders: [
       {

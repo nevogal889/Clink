@@ -19,7 +19,7 @@ import { useData } from '@/lib/store';
 import { summarizeToday } from '@/lib/tracker';
 import { AudienceSheet } from '@/features/camera/AudienceSheet';
 import { resolveChoice } from '@/features/camera/audience';
-import { FlarePanel, type Timing } from '@/features/camera/FlarePanel';
+import { FlarePanel, WhoJoinsBar, type Timing } from '@/features/camera/FlarePanel';
 import { OtherTimeSheet } from '@/features/camera/OtherTimeSheet';
 import { TopBar } from '@/features/camera/TopBar';
 import { ShutterRow, Viewfinder, type Still } from '@/features/camera/Viewfinder';
@@ -151,8 +151,9 @@ function CameraScreen() {
   const [sharing, setSharing] = useState(false);
   const [widgetMissing, setWidgetMissing] = useState(false);
   const [invites, setInvites] = useState(0);
-  const [panelH, setPanelH] = useState(300);
-  useSnackbarInset(panelH + insets.bottom, useIsFocused());
+  const [panelH, setPanelH] = useState(260);
+  const [barH, setBarH] = useState(72);
+  useSnackbarInset(panelH + barH + insets.bottom, useIsFocused());
 
   const now = useNow(!!state.live);
 
@@ -176,12 +177,13 @@ function CameraScreen() {
 
   // Viewfinder: square, full width inside the gutters; under 700 pt tall it shrinks to fit,
   // never below 240 (DESIGN.md 4.4 "Small screens"). The panel is measured; past that the
-  // screen scrolls (large text), with Who joins? still at the panel's foot.
+  // screen scrolls (large text) and Who joins? stays pinned under it.
   const chrome =
     insets.top +
     spacing.topBar +
     spacing.shutterRow +
     panelH +
+    barH +
     insets.bottom +
     (live ? 56 : 0) +
     (widgetMissing ? 56 : 0);
@@ -301,17 +303,24 @@ function CameraScreen() {
               onOther={() => setSheet('other')}
               audience={resolved}
               onAudience={() => setSheet('audience')}
-              onSend={() => void send()}
-              sending={sending}
-              sendFailed={sendFailed}
               noFriends={noFriends}
-              thumbnail={!!still}
               now={now}
             />
           </View>
-          <View style={{ height: insets.bottom, backgroundColor: theme.cat(category).tint }} />
         </View>
       </ScrollView>
+      <View onLayout={(e) => setBarH(Math.round(e.nativeEvent.layout.height))}>
+        <WhoJoinsBar
+          category={category}
+          onSend={() => void send()}
+          sending={sending}
+          sendFailed={sendFailed}
+          noFriends={noFriends}
+          empty={!noFriends && resolved.count === 0}
+          thumbnail={!!still}
+        />
+      </View>
+      <View style={{ height: insets.bottom, backgroundColor: theme.cat(category).tint }} />
 
       <AudienceSheet
         visible={sheet === 'audience'}

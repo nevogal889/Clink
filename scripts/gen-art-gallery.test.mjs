@@ -21,6 +21,9 @@ import {
   swapAll,
   swapContour,
 } from './gen-art-gallery.mjs';
+import { BRAND_FILES, buildCompare } from './gen-art-gallery-compare.mjs';
+import { buildBrand, rimGeometry } from '../app/assets/art/brand/_source/draw-brand.mjs';
+import { buildHeroes } from '../app/assets/art/heroes/_source/draw-heroes.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ART = path.join(ROOT, 'app/assets/art');
@@ -146,6 +149,7 @@ test('brand set is complete and passes the structural checks', () => {
     'app-icon-dark',
     'app-icon-mono',
     'android-adaptive-foreground',
+    'android-monochrome',
     'android-notification',
   ];
   for (const name of names) {
@@ -155,6 +159,63 @@ test('brand set is complete and passes the structural checks', () => {
   assert.match(read('brand/app-icon.svg'), /viewBox="0 0 1024 1024"/);
   assert.match(read('brand/app-icon.svg'), /<rect width="1024" height="1024" fill="#2443A6"\/>/);
   assert.doesNotMatch(read('brand/app-icon-mono.svg'), /<rect/);
+});
+
+test('brand and hero SVGs match their generators (no hand edits)', () => {
+  for (const [name, svg] of Object.entries(buildBrand())) {
+    assert.equal(read(`brand/${name}`), svg, `brand/${name}: rerun draw-brand.mjs`);
+  }
+  for (const [name, svg] of Object.entries(buildHeroes())) {
+    assert.equal(read(`heroes/${name}`), svg, `heroes/${name}: rerun draw-heroes.mjs`);
+  }
+});
+
+test('the mark is a rim seen from above, not a ring with a notch (DECISIONS.md, art review)', () => {
+  const { outer, open, drink } = rimGeometry();
+  const ratio = outer.ry / outer.rx;
+  assert.ok(ratio > 0.45 && ratio < 0.6, `outer ratio ${ratio} reads as an ellipse, not an O`);
+  const front = outer.ry - (open.cy + open.ry);
+  const back = outer.ry - (open.ry - open.cy);
+  assert.ok(front > back, 'near lip is heavier than the back lip');
+  assert.ok(
+    drink.cy > open.cy && drink.rx < open.rx,
+    'drink sits low in the opening: back wall shows',
+  );
+  // Every mark file draws a closed band: two full ellipses under one fill rule, no open arc.
+  for (const name of ['mark', 'mark-small', 'mark-mono', 'app-icon', 'android-notification']) {
+    const svg = read(`brand/${name}.svg`);
+    assert.doesNotMatch(svg, /stroke-width/, `${name}: filled shapes only`);
+    assert.equal((svg.match(/A[\d.]+ [\d.]+ 0 1 0/g) ?? []).length >= 4, true, name);
+  }
+});
+
+test('one-colour brand files survive a flat system tint', () => {
+  for (const name of ['android-notification', 'android-monochrome', 'mark-mono']) {
+    const svg = read(`brand/${name}.svg`);
+    const colours = new Set([...svg.matchAll(/fill="(#[0-9A-F]{6})"/g)].map((m) => m[1]));
+    assert.equal(colours.size, 1, `${name}: one colour`);
+    assert.doesNotMatch(svg, /opacity/, `${name}: no opacity`);
+    assert.equal((svg.match(/<path/g) ?? []).length, 1, `${name}: one silhouette`);
+  }
+});
+
+test('compare page shows before and after for every hero and the app icon', () => {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"></svg>';
+  const pair = { before: svg, after: svg };
+  const data = {
+    heroes: Object.fromEntries(CATEGORIES.map((c) => [c, pair])),
+    brand: Object.fromEntries(
+      BRAND_FILES.map((b) => [b, b === 'android-monochrome' ? { after: svg } : pair]),
+    ),
+  };
+  const html = buildCompare(data, 'abc123');
+  assert.match(html, /<title>Clink art before and after<\/title>/);
+  assert.match(html, /abc123/);
+  assert.equal((html.match(/<section class="hero-row">/g) ?? []).length, 5);
+  assert.match(html, /Before: the notched ring/);
+  assert.match(html, /After: the rim from above/);
+  assert.match(html, /Settings row, 29 pt/);
+  assert.match(html, /Home screen, 60 pt/);
 });
 
 test('gallery lists every SVG, skips _source folders, and --check fails only on errors', async () => {

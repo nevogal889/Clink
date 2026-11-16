@@ -10,3 +10,14 @@ export function lookPlatform(): Look {
   const search = typeof window !== 'undefined' ? (window.location?.search ?? '') : '';
   return /[?&]look=android\b/.test(search) ? 'android' : 'ios';
 }
+
+/**
+ * Web review only: `?text=max` draws every text style at the largest accessibility size, capped
+ * by its token's max scale (DESIGN.md 2.4), so screenshots can check truncation. Native builds
+ * follow the OS text size and always get 1 here.
+ */
+export function reviewTextScale(): number {
+  if (Platform.OS !== 'web') return 1;
+  const search = typeof window !== 'undefined' ? (window.location?.search ?? '') : '';
+  return /[?&]text=max\b/.test(search) ? 3.1 : 1;
+}

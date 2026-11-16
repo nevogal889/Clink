@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <!-- App icon, monochrome (DESIGN.md 1.3): mark only, white on transparent. Source for the iOS
-       tinted variant (greyscale) and any single-colour use; the OS supplies the tint. -->
-  <path d="M763.66 409.74A280 280 0 1 1 634.74 280.82L602.81 318.55L595.9 367.82A184.8 184.8 0 1 0 676.66 448.58L725.93 441.67Z" fill="#FFFFFF"/>
+  <!-- App icon, iOS tinted source (DESIGN.md 1.3): greyscale on transparent. White rim and gleam, grey back wall; the OS applies the tint. -->
+  <path fill-rule="evenodd" d="M162 532A350 184.63 0 1 0 862 532A350 184.63 0 1 0 162 532ZM249.5 520.8A262.5 97.13 0 1 0 774.5 520.8A262.5 97.13 0 1 0 249.5 520.8Z" fill="#FFFFFF"/>
+  <path d="M318.52 586.44A262.5 97.13 0 1 1 705.48 586.44A194.25 68.96 0 1 0 318.52 586.44Z" fill="#8C8C8C"/>
+  <path d="M302 511.99L313.02 496.9L324.05 483.17L335.08 474.12L346.1 467.88L357.13 463.57L368.15 460.89L379.17 459.7L390.2 459.98L401.23 461.94L412.25 468.83L412.25 468.83L401.23 479.91L390.2 486.68L379.17 492.44L368.15 497.53L357.13 502.08L346.1 506.26L335.08 510.32L324.05 515.12L313.02 521.19L302 511.99Z" fill="#FFFFFF"/>
 </svg>

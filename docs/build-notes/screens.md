@@ -30,20 +30,26 @@ npm run export:web -w @clink/app        # writes app/dist (gitignored)
 #   /                      new user, starts at sign-in
 #   /?mock=setup           finished setup with sample data (camera, tracker, profile)
 #   any URL + &look=android   Android shapes, gutters and the Google button
+#   any URL + &text=max       every text style at the largest accessibility size (review only)
+node docs/screens/capture.mjs           # all states, light and dark, into docs/screens
+node docs/screens/capture.mjs 13 21     # only the states whose names start with these
 ```
 
-Screenshots: `docs/screens/NN-name-{light,dark}.png`, 390 x 844 at 2x, 26 states per theme, taken with Playwright against the export. Each was looked at; the revision pass is below.
+Screenshots: `docs/screens/NN-name-{light,dark}.png`, 390 x 844 at 2x, 28 states per theme, taken by `docs/screens/capture.mjs` (Playwright, its own static server with the SPA fallback, clock started at Monday 07:00 local). Each was looked at; the revision passes are below.
 
-## Commands and results (2026-11-16)
+## Commands and results (second pass, 2026-11-16)
 
 | Command | Result |
 |---|---|
-| `npm run typecheck -w @clink/app` | pass |
-| `npx eslint app/src` | pass (no-literal-text rule included) |
-| `npx prettier --check "app/src/**/*.{ts,tsx,mjs}"` | pass |
-| `npx jest` for the app with the one-React mapping below | 10 suites, 58 tests pass |
-| `npx jest --selectProjects app` with the current `app/jest.config.js` | 27 of 58 fail: two copies of React (see "For other units", item 1) |
-| `npx expo export --platform web` | pass, 17 bundles |
+| `npm run typecheck` | pass |
+| `npx eslint app/src docs/screens` | pass |
+| `npx prettier --check app/src docs/screens docs/COPY.md docs/build-notes/screens.md` | pass |
+| `npm run check:gen` | pass (813 strings) |
+| `npx jest --selectProjects app` | 13 suites, 73 tests pass (art freshness included, after the regeneration below) |
+| `node app/src/ui/art/gen-art.mjs` | regenerated against the Art unit's files at 07:40 (all five heroes and the brand mark redrawn) |
+| `npm run export:web` | pass |
+| `node docs/screens/capture.mjs` | 56 screenshots (28 states x 2 themes) |
+| `npm run ci` | see "CI at hand-off" below |
 
 Tests: `app/src/app/onboarding.flow.test.tsx` (the real route files under `renderRouter`: all six steps, skip paths, resume on step 4, notification prompt only after Continue, camera defaults, Who joins? in one tap, Other 5 to 60, To: picker, no-friends and empty-audience states), `features/usual/DetailsEditor.test.tsx`, `features/tracker/TrackerSheet.test.tsx`, `lib/usual.test.ts`, `lib/tracker.test.ts`, `lib/xpHistory.test.ts`, `features/camera/audience.test.ts`, `ui/art/art.test.ts` (generated art is fresh, every drink has both icon sizes).
 
@@ -51,7 +57,10 @@ Tests: `app/src/app/onboarding.flow.test.tsx` (the real route files under `rende
 
 - **Flare panel hero sits right of the chips and place field**, not of the place and timing rows: five timing pills with 44 pt targets do not fit beside a 112 pt hero on a 390 pt phone.
 - **"Make it yours" sits under the drink name** in each slot; on the right it squeezed names onto two lines.
-- **Group names may truncate on the To: chip** with the Auto tag beside them, like place names (DESIGN 2.4 allows ellipsis for user-entered names); the picker shows them in full.
+- **The To: line names the group in full** (emoji + name, wrapping at large text) on its own line above a full-width Who joins?. This replaces the earlier call to let group names truncate on a chip beside the button.
+- **Snackbars belong to a layer** (the focused route or an open sheet) and leave when it does. They never carry over to another screen or a sheet.
+- **Who joins? is pinned** outside the camera's scroll view, so the panel scrolls under it at large text sizes.
+- **Top-bar friends pill text caps at 1.35x**, the same as the tracker chip numerals. The full label is still read out.
 - **Spare height on tall phones goes around the shutter**, so the viewfinder stays full width and no band opens above the panel.
 - **The root snackbar sits above the focused screen's action area** (`useSnackbarInset`) and a sheet's snackbar above its footer, so Undo never covers Continue, Done or Who joins?.
 - **Quick-log tiles are flat `surface.sunk` enamel** with no outline, so the row doesn't read as a strip of cards.
@@ -66,26 +75,44 @@ Tests: `app/src/app/onboarding.flow.test.tsx` (the real route files under `rende
 
 Fixed after looking: the category hero vanished after a switch (an `Animated` stop in the effect cleanup cut off the fade-in); slot rows squeezed names; the snackbar covered Continue and Done; a 60 pt dead band between the shutter and the panel; Retake sat on the top edge of its row; contact "Add" buttons were top-aligned; the sign-in shelf left an empty half screen; the camera could read its defaults before the data loaded (it now waits).
 
-## Strings Copy needs to add (COPY.md owner)
+## Second review pass (orchestrator's screenshot review, 2026-11-16)
 
-Kept in `app/src/lib/pendingCopy.ts` under the key we propose, read with `pt()`. Move each to COPY.md, regenerate, switch the caller to `t()`, delete the entry.
+| # | Problem | Fix | Test |
+|---|---|---|---|
+| 1 | The preset snackbar "Set to A bit of everything. Undo" stayed up over the details editor (06b) and followed Continue to the invite step (07). | Snackbars now have an owner: the layer on top when they were raised, either the focused route or an open sheet (`ui/Snackbar.tsx`). A host draws only its own layer's snackbar, and the snackbar is dropped as soon as its owner leaves the top: a route change (`SnackbarProvider routeKey={usePathname()}` in `_layout.tsx`), a sheet opening over it, or its sheet closing. It does not come back when the sheet closes. Sheets register through `useSnackbarLayer` in `ui/Sheet.tsx`, in a layout effect, so the tracker's "Something else" picker can close and the Logged snackbar lands on the tracker sheet. The root host still sits above the screen's action area (`useSnackbarInset`), and a sheet's above its footer. | `app/snackbar.flow.test.tsx`, 6 tests: preset then details editor, preset then Continue, tracker log and the picker path, inset, navigation, sheet-owned. 5 of the 6 fail with the old Snackbar. |
+| 2 | Camera panel crowded; the To: chip cut "Home frie…". | The send block is now two lines. The To: line is a plain tappable row: "To: 🏠 Home friends", a small outlined Auto marker and a chevron. It wraps and never truncates. **Who joins?** is full width and pinned under the scrolling panel (`WhoJoinsBar`), so it stays on screen at large text (DESIGN 4.4 states, "Who joins? stays pinned"). It is the only filled control in the flare zone. The empty-audience hint sits under the To: line, and the failed-send caption under the button. Chips now grow with text (`minHeight`), and the top-bar friends pill is capped at 1.35x like the tracker chip numerals, so the 52 pt bar keeps all four controls. Tap budgets in DESIGN 4.4 and PRD 3.0 are unchanged: Who joins? 1 tap from the camera, To: 2, Other 2. | `app/camera-profile.test.tsx`: the To: label is emoji + full name with no line limit, the Auto marker shows, and Who joins? sits outside the scrolling panel. The existing composer tests still pass. |
+| 3 | Profile "320 XP to Usual Order" next to "380 XP" read as two competing numbers. | Your XP is now the number above the bar ("380 XP", `title`, tabular). The hint under the bar reads "320 more to reach Usual Order". COPY.md 4.16 `profile.to_next` is now `{xp} more to reach {next_level_name}` (max 34: "2000 more to reach Kettle Keeper" is the longest). `profile.total` keeps its text with a new element note. The screen reader label adds the total. | `app/camera-profile.test.tsx` |
+| 4 | Usual 3 step: the category tabs sat on an empty, cut-off beige card. | The category header puts the name and "10 drinks" at the top under the rim band, with the hero at the bottom right. Where the fold cuts it, you now see "Coffee" as the start of the menu, not an empty card. | Screenshots 03 and 04 |
+| 5 | Move the 8 strings in `lib/pendingCopy.ts` into COPY.md. | Already done by the review unit before this pass (`review.md`, "What I fixed" 4). `pendingCopy.ts` is gone, every caller uses `t()`, and `friends.req.sent` became the existing `contact.requested`. Checked again: no `pt(` calls and no file left. | `npm run check:gen` |
+| 6 | Art is being redrawn by the Art unit. | No art file edited. Screens load art through `ui/art/art.generated.ts`, which `ui/art/gen-art.mjs` builds from the masters. It was regenerated at the very end so CI matches the Art unit's files on disk at that moment, and the screenshots were taken after that. | `ui/art/art.test.ts` |
 
-| Proposed key | Text | Where |
-|---|---|---|
-| `fmt.ago.*`, `fmt.mins.*`, `fmt.mins_cap.*`, `fmt.words.*` | "just now", "12m", "1h 42m", "now", "in 5 min", "Now", "In 10 min", "1 hour 42 minutes" | COPY 0.2 describes the formats but gives no keys |
-| `compose.auto_tag` | Auto | Tag on the To: chip (DESIGN 4.5) |
-| `usual.preset_set` | Set to {preset}. | Undo snackbar after a preset (DESIGN 4.14) |
-| `today.logged` | Logged {drink} | Undo snackbar after a quick log |
-| `profile.level_n` | Level {n} | Above the level name (DESIGN 4.16); COPY only has "Level {n} · {level_name}", used here as the screen reader label |
-| `profile.total` | {xp} XP | Right of the progress line |
-| `friends.req.sent` | Request sent | Contact row after Add (step 4) |
-| `onb.phone.added` | Number added. Nobody sees it. | Step 4 after the optional number |
+Large text: the web build now takes `?text=max` (`ui/theme/look.ts reviewTextScale`), which draws each text style at 3.1x, capped by its token's max scale (DESIGN 2.4). Screenshots 13b and 13c show the camera at that size: "Who joins?" stays pinned in full, and "To: 🏠 Home friends" wraps over three lines with Auto and the chevron beside it. The web build can't scale TextInput, so the place field stays at its default size there.
+
+## CI at hand-off (07:47)
+
+`npm run ci` was not green at hand-off, and both failures come from the Art unit's in-progress files, not from `app/src`:
+- **`format:check`** flags `app/assets/art/heroes/_source/draw-heroes.mjs`, `_source/lib.mjs`, `scripts/gen-art-gallery-compare.mjs` and `scripts/gen-art-gallery.test.mjs`. Lint also warns about an unused `poly` in `draw-heroes.mjs`.
+- **`ui/art/art.test.ts` freshness:** the Art unit rewrote the hero and brand SVGs about once a minute while this ran. `art.generated.ts` was regenerated three times, the last at 07:46, and went stale again within the minute each time.
+
+Everything else passes: typecheck, lint (0 errors), `check:gen`, `check:icons`, and 334 of 335 Jest tests (the one failure is the freshness check above). `test:art` was not reached because the Jest step failed first.
+
+**For the orchestrator, once the Art unit is done:** run `node app/src/ui/art/gen-art.mjs`, `npm run export:web` and `node docs/screens/capture.mjs`, then `npm run ci`. That refreshes the generated art the screens import and re-takes the screenshots with the final art. No screen code needs to change.
+
+## Strings
+
+Nothing pending. All screen strings come from COPY.md keys. This pass changed one key's text (`profile.to_next`) and one element note (`profile.total`), then ran `npm run gen -w @clink/shared`.
 
 Also for Copy: DESIGN 4.15 says the tracker caption is "Only you see this"; the screen uses COPY's `today.footer` ("Only you see this. It resets at midnight."). COPY wins; DESIGN could be updated.
 
+For Design (DESIGN.md owner), update to match what shipped and why:
+- **4.4 wireframe, Row 4:** the To: line sits above a full-width Who joins?, not beside a 168 pt button. Side by side, a 20-character group name gets about 150 pt and is cut.
+- **4.5:** the To: line shows the group emoji, and the Auto tag is an outlined marker in `ink.secondary`, not a filled badge, so it doesn't compete with Who joins?.
+- **4.16:** the total is the main number above the bar, and the hint under it reads "{xp} more to reach {level}". It no longer uses two labels on one line.
+- **4.14 category header:** the name sits at the top of the header, not the bottom.
+
 ## For other units
 
-1. **Scaffold / CTO, blocking CI for app render tests.** `app/package.json` pins `react` 19.3.0, so npm installs it in `app/node_modules`, while everything else (react-native, expo-router, the test renderer) gets 19.3.1 at the root. Metro already resolves one React, so the web build is fine; Jest loads two and every render test fails with "Cannot read properties of null (reading 'useRef')". Fix one of two ways: add to `app/jest.config.js` `moduleNameMapper`: `'^react$': '<rootDir>/node_modules/react'` and `'^react/(.*)$': '<rootDir>/node_modules/react/$1'`, or align the pin so npm dedupes. The 58 tests pass with the first fix applied through a temporary config.
+1. **Two copies of React in Jest:** fixed by the review unit with root `overrides` (`review.md`). Nothing open.
 2. **Native camera.** The viewfinder is a placeholder on every platform and the shutter makes a stand-in still. Wire `expo-camera` (or the native module) in `features/camera/Viewfinder.tsx`; the photo-taken state and Share snap already run through `api.shareSnap`.
 3. **Haptics** go through `lib/platform.ts` `playHaptic()`, which does nothing until `clink-native` exists (DESIGN 2.10).
 4. **Sign-in buttons** are stand-ins with the providers' colours and words. Device builds use `expo-apple-authentication` and Google's button (brand rules).
@@ -97,6 +124,6 @@ Also for Copy: DESIGN 4.15 says the tracker caption is "Only you see this"; the 
 
 - Screens outside this brief: live flare (4.7), incoming flare (4.8), Bring me one (4.9), order ticket (4.10), snaps viewer, friends sheet, groups, full Settings, privacy, report and block, delete account, invite check (4.1a), age check (4.1b), phone and code (4.2). The camera links only to screens that exist; the friends pill opens the invite sheet for now.
 - Offline pill and the "Couldn't send" 30 s / 2 min timers: the mock never goes offline, so only the failed-send caption is wired.
-- Large-text, VoiceOver and TalkBack passes need devices. Layouts wrap and scroll (timing pills and option chips wrap, the camera screen scrolls), but nothing was checked at accessibility sizes.
+- VoiceOver and TalkBack passes need devices. The large-text check here is the web stand-in (`?text=max`), done for the camera only. Other screens wrap and scroll, but they have not been looked at that size.
 - The add-widget illustrations are still frames; the looping versions need the real widget renders (M2).
 - Native detent sheets and Android full-screen editors: `ui/Sheet.tsx` is the single place to swap them in.

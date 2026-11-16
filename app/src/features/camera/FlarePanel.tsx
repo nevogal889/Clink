@@ -1,8 +1,13 @@
 // The flare panel on the camera screen (DESIGN.md 4.4, PRD 3.5). Category tint with the rim band,
-// category chips, place, timing pills with Meet time, the To: chip and Who joins?.
+// category chips, place, timing pills with Meet time and the To: line. Who joins? is
+// WhoJoinsBar, pinned by the camera screen under the scrolling panel.
 // Layout call: the 112 pt hero sits right of the chips and the place field, so the five timing
 // pills get the full width. Five pills with 44 pt targets don't fit beside the hero on a 390 pt
 // phone.
+// The send block is two lines, not one row: the To: line reads in full (group emoji + name, the
+// small Auto marker, a chevron) and Who joins? spans the width, so the one filled button on the
+// panel is the obvious next step. Side by side, a 168 pt button left a 20-character group name
+// about 150 pt and cut it.
 import { FLARE_CATEGORIES, TEXT_LIMITS, TIMING_PILLS, t, type FlareCategory } from '@clink/shared';
 import { ActivityIndicator, ScrollView, View, useWindowDimensions } from 'react-native';
 
@@ -34,11 +39,7 @@ export function FlarePanel({
   onOther,
   audience,
   onAudience,
-  onSend,
-  sending,
-  sendFailed,
   noFriends,
-  thumbnail,
   now,
 }: {
   category: FlareCategory;
@@ -50,21 +51,19 @@ export function FlarePanel({
   onOther: () => void;
   audience: ResolvedAudience;
   onAudience: () => void;
-  onSend: () => void;
-  sending: boolean;
-  sendFailed: boolean;
   noFriends: boolean;
-  thumbnail: boolean;
   now: Date;
 }) {
   const theme = useTheme();
   const { c } = theme;
-  const col = theme.cat(category);
   const { width } = useWindowDimensions();
   const heroSize = width < 360 ? 88 : 112;
   const empty = !noFriends && audience.count === 0;
   const meetAt = new Date(now.getTime() + timing.minutes * 60_000);
-  const toLabel = t('compose.to', { audience: audience.label });
+  // Group emoji + name, in full: it wraps rather than truncates (DESIGN.md 4.5).
+  const toLabel = t('compose.to', {
+    audience: audience.group?.emoji ? `${audience.group.emoji} ${audience.label}` : audience.label,
+  });
 
   return (
     <PourPanel
@@ -180,59 +179,90 @@ export function FlarePanel({
         </Txt>
       </View>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: spacing.s3,
-          paddingHorizontal: spacing.gutter,
-          marginTop: spacing.s3,
-          paddingBottom: spacing.s4,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Press
-            testID="cam-to"
-            onPress={onAudience}
-            accessibilityLabel={t('a11y.to', { audience: audience.label })}
-            accessibilityHint={t('a11y.to.hint')}
-            style={{
-              minHeight: 44,
-              alignSelf: 'flex-start',
-              maxWidth: '100%',
-              paddingHorizontal: spacing.s3,
-              borderRadius: radius.chip,
-              borderCurve: 'continuous',
-              borderWidth: 1,
-              borderColor: c.inkSecondary,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: spacing.s1,
-            }}
-          >
+      {/* Send block: who it goes to, read in full, then the one filled button. */}
+      <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s2 }}>
+        <Press
+          testID="cam-to"
+          onPress={onAudience}
+          scaleTo={0.99}
+          accessibilityLabel={t('a11y.to', { audience: audience.label })}
+          accessibilityHint={t('a11y.to.hint')}
+          style={{
+            minHeight: 44,
+            alignSelf: 'flex-start',
+            maxWidth: '100%',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.s2,
+          }}
+        >
+          <Txt variant="headline" style={{ flexShrink: 1 }} testID="cam-to-label">
+            {toLabel}
+          </Txt>
+          {audience.auto ? (
             <Txt
-              variant="callout"
-              style={{ fontFamily: 'Archivo-SemiBold', flexShrink: 1 }}
-              numberOfLines={1}
+              variant="micro"
+              tone="secondary"
+              testID="cam-to-auto"
+              style={{
+                paddingHorizontal: 5,
+                paddingVertical: 1,
+                borderRadius: 4,
+                borderWidth: 1,
+                borderColor: c.inkTertiary,
+                overflow: 'hidden',
+                flexShrink: 0,
+              }}
             >
-              {toLabel}
+              {t('compose.auto_tag')}
             </Txt>
-            {audience.auto ? (
-              <View
-                style={{
-                  paddingHorizontal: 5,
-                  paddingVertical: 1,
-                  borderRadius: 4,
-                  backgroundColor: c.inkPrimary,
-                }}
-              >
-                <Txt variant="micro" color={c.surfaceBase}>
-                  {t('compose.auto_tag')}
-                </Txt>
-              </View>
-            ) : null}
-          </Press>
-        </View>
+          ) : null}
+          <Icon name="chevronDown" size={18} color={c.inkSecondary} />
+        </Press>
+        {empty ? (
+          <Txt
+            variant="caption"
+            tone="secondary"
+            accessibilityLiveRegion="polite"
+            style={{ marginBottom: spacing.s2 }}
+          >
+            {t('compose.audience_empty', { group: audience.label })}
+          </Txt>
+        ) : null}
+      </View>
+      <View style={{ height: spacing.s2 }} />
+    </PourPanel>
+  );
+}
+
+/**
+ * Who joins?, pinned under the panel: full width, category solid, the one filled button in the
+ * flare zone. It stays put while the panel scrolls at large text sizes (DESIGN.md 4.4 states).
+ */
+export function WhoJoinsBar({
+  category,
+  onSend,
+  sending,
+  sendFailed,
+  noFriends,
+  empty,
+  thumbnail,
+}: {
+  category: FlareCategory;
+  onSend: () => void;
+  sending: boolean;
+  sendFailed: boolean;
+  noFriends: boolean;
+  /** The chosen audience has nobody in it: disabled, with the hint on the panel. */
+  empty: boolean;
+  thumbnail: boolean;
+}) {
+  const theme = useTheme();
+  const { c } = theme;
+  const col = theme.cat(category);
+  return (
+    <PourPanel category={category} rim={false} testID="who-joins-bar">
+      <View style={{ paddingHorizontal: spacing.gutter, paddingBottom: spacing.s4 }}>
         <Press
           testID="cam-send"
           onPress={onSend}
@@ -240,7 +270,6 @@ export function FlarePanel({
           accessibilityLabel={noFriends ? t('top.friends_none') : t('compose.send')}
           accessibilityState={{ disabled: empty, busy: sending }}
           style={{
-            minWidth: 168,
             minHeight: 56,
             borderRadius: radius.button,
             borderCurve: 'continuous',
@@ -249,6 +278,7 @@ export function FlarePanel({
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: spacing.s4,
+            paddingVertical: spacing.s2,
             gap: spacing.s2,
           }}
         >
@@ -270,26 +300,25 @@ export function FlarePanel({
           ) : !noFriends ? (
             <Glyph category={category} size={22} color={empty ? c.inkTertiary : col.onSolid} />
           ) : null}
-          <Txt variant="label" color={empty ? c.inkTertiary : noFriends ? c.onCobalt : col.onSolid}>
+          <Txt
+            variant="label"
+            color={empty ? c.inkTertiary : noFriends ? c.onCobalt : col.onSolid}
+            style={{ flexShrink: 1 }}
+          >
             {sending ? t('off.sending') : noFriends ? t('top.friends_none') : t('compose.send')}
           </Txt>
         </Press>
+        {sendFailed ? (
+          <Txt
+            variant="caption"
+            color={c.danger}
+            accessibilityLiveRegion="polite"
+            style={{ marginTop: spacing.s2 }}
+          >
+            {t('off.retry')}
+          </Txt>
+        ) : null}
       </View>
-      {empty || sendFailed ? (
-        <Txt
-          variant="caption"
-          color={sendFailed ? c.danger : undefined}
-          tone="secondary"
-          accessibilityLiveRegion="polite"
-          style={{
-            paddingHorizontal: spacing.gutter,
-            marginTop: -spacing.s2,
-            paddingBottom: spacing.s4,
-          }}
-        >
-          {sendFailed ? t('off.retry') : t('compose.audience_empty', { group: audience.label })}
-        </Txt>
-      ) : null}
     </PourPanel>
   );
 }
