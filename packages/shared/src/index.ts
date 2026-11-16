@@ -7,3 +7,4 @@ export * from './audience';
 export * from './limits';
 export * from './events';
 export * from './widget-state';
+export * from './api';

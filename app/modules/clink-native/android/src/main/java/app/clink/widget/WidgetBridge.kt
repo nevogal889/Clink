@@ -53,7 +53,25 @@ class WidgetBridge(private val context: Context) {
 
   suspend fun getOutbox(): Map<String, Any> {
     val out = store.snapshot().outbox
-    return mapOf("pending" to out.items.map { jsonToMap(OutboxLogic.entryJson(it.entry)) }, "dropped" to dropped(out.dropped))
+    return mapOf(
+      "pending" to out.items.map { jsonToMap(OutboxLogic.entryJson(it.entry)) },
+      "dropped" to dropped(out.dropped),
+      "rejected" to out.rejected.map { jsonToMap(OutboxLogic.rejectedJson(it)) },
+    )
+  }
+
+  /**
+   * Logs the server refused as malformed (ARCHITECTURE.md 3.2: never dropped silently). Returns
+   * them and forgets them: the app reports each one (error code and drink id, never free text).
+   */
+  suspend fun takeRejected(): List<Map<String, Any?>> {
+    var taken = emptyList<app.clink.widget.model.RejectedLog>()
+    store.updateOutbox { s ->
+      val (rest, list) = OutboxLogic.takeRejected(s)
+      taken = list
+      rest
+    }
+    return taken.map { jsonToMap(OutboxLogic.rejectedJson(it)) }
   }
 
   /** Flushes now (on app open, ARCHITECTURE.md 3.2) and hands over the drops for off.* messages. */

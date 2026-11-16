@@ -1,7 +1,7 @@
 -- widget-api database half: widget token check and revocation, the device rate limit, widget
 -- instances, the idempotent widget log (ARCHITECTURE.md 3.1, 3.5, 3.6, 4.4, 8.3; migration 0019).
 begin;
-select plan(45);
+select plan(43);
 select tests.seed();
 
 create function pg_temp.reg(p_user text, p_install uuid, p_hash bytea, p_push text default null)
@@ -102,32 +102,27 @@ select is((select count(*)::int from public.app_events where user_id = tests.id(
 
 -- widget_log_drink --------------------------------------------------------------------------------
 select is(private.widget_log_drink(tests.id('a'), '00000000-0000-0000-0000-0000000d0001', 'coffee.flat_white', 'Flat White',
-                                   'coffee', true, now() - interval '1 minute', current_date), 'logged', 'a widget log is written');
+                                   'coffee', true, now() - interval '1 minute', 'UTC'), 'logged', 'a widget log is written');
 select is((select source from public.drink_logs where id = '00000000-0000-0000-0000-0000000d0001'), 'widget',
           '... with source widget');
 select is(private.widget_log_drink(tests.id('a'), '00000000-0000-0000-0000-0000000d0001', 'coffee.flat_white', 'Flat White',
-                                   'coffee', true, now() - interval '1 minute', current_date), 'duplicate',
+                                   'coffee', true, now() - interval '1 minute', 'UTC'), 'duplicate',
           'the same id again is a duplicate');
 select is((select count(*)::int from public.drink_logs where user_id = tests.id('a')), 1, '... and writes nothing');
 select is((select count(*)::int from public.xp_events where user_id = tests.id('a') and kind = 'daily_log'), 1,
           'the first log of the day earns daily_log XP through the drink_logs trigger');
 select throws_ok($$select private.widget_log_drink(tests.id('b'), '00000000-0000-0000-0000-0000000d0001', 'water.still', 'Water',
-                                                   'water', false, now(), current_date)$$,
+                                                   'water', false, now(), 'UTC')$$,
                  'CLCON', 'conflict', 'an id that belongs to another account is refused');
-select throws_ok($$select private.widget_log_drink(tests.id('a'), gen_random_uuid(), 'water.still', 'Water', 'water', false,
-                                                   now() - interval '91 days', current_date - 91)$$,
-                 'CLOLD', 'too_old', 'a log older than the 90-day history is refused');
-select throws_ok($$select private.widget_log_drink(tests.id('a'), gen_random_uuid(), 'water.still', 'Water', 'water', false,
-                                                   now() + interval '1 hour', current_date)$$,
-                 'CLBAD', 'bad_input', 'a log in the future is refused');
+-- Time is clamped, never refused (0020); the cases are in 13_log_time.test.sql.
 select throws_ok($$select private.widget_log_drink(tests.id('f'), gen_random_uuid(), 'water.still', 'Water', 'water', false,
-                                                   now(), current_date)$$,
+                                                   now(), 'UTC')$$,
                  'CLSUS', 'suspended', 'a suspended user cannot log');
 
 -- Deny: no client reaches any of it ------------------------------------------------------------------
 select throws_ok(tests.qrun('a', $$(select count(*) from private.widget_begin(sha256('wk1')))$$), '42501', null,
                  'authenticated cannot call widget_begin');
-select throws_ok(tests.qrun('a', $$private.widget_log_drink(auth.uid(), gen_random_uuid(), 'water.still', 'Water', 'water', false, now(), current_date)$$),
+select throws_ok(tests.qrun('a', $$private.widget_log_drink(auth.uid(), gen_random_uuid(), 'water.still', 'Water', 'water', false, now(), 'UTC')$$),
                  '42501', null, 'authenticated cannot call widget_log_drink');
 select throws_ok(tests.q('a', 'select * from private.widget_instances'), '42501', null,
                  'authenticated cannot read widget instances');

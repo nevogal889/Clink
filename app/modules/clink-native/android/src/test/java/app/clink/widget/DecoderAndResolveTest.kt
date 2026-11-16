@@ -39,12 +39,21 @@ class DecoderAndResolveTest {
   }
 
   @Test
-  fun everyInvalidFixtureIsRefused() {
+  fun everyInvalidFixtureIsRefusedOrDegradesGracefully() {
     val bad = Fixtures.invalidStates()
     assertTrue(bad.size >= 9)
+    // Forward compatibility (CTO decision): an unknown key is ignored and an unknown enum value
+    // drops only its item. The server's strict schema still refuses these before they leave.
+    val degraded = setOf("xp-field.json", "water-flare.json")
     for ((name, json) in bad) {
-      assertNull("$name should be refused", WidgetStateDecoder.decodeOrNull(json))
+      if (name in degraded) {
+        assertNotNull("$name should decode", WidgetStateDecoder.decodeOrNull(json))
+      } else {
+        assertNull("$name should be refused", WidgetStateDecoder.decodeOrNull(json))
+      }
     }
+    val water = WidgetStateDecoder.decode(bad.first { it.first == "water-flare.json" }.second) as WidgetState.Ready
+    assertNull("a flare with a category this build can't draw is skipped", water.myFlare)
   }
 
   @Test
@@ -85,12 +94,36 @@ class DecoderAndResolveTest {
   }
 
   @Test
-  fun decoderIsStrictLikeZod() {
+  fun decoderIgnoresUnknownKeysAndSkipsUnknownValues() {
+    // An extra key anywhere decodes (the first additive server field must not freeze old widgets).
+    assertNotNull(WidgetStateDecoder.decodeOrNull("""{"v":1,"state":"signed_out","updatedAt":"2026-11-17T09:12:00Z","newField":3}"""))
+    val w11 = JSONObject(Fixtures.widgetStates().first { it.id == "W11" }.stateJson)
+    w11.put("streak", JSONObject().put("days", 4))
+    w11.getJSONObject("today").put("coffeeMg", 120)
+    w11.getJSONArray("usual").getJSONObject(0).put("temperature", "iced")
+    val incoming = w11.getJSONArray("incoming")
+    incoming.getJSONObject(0).put("reactions", org.json.JSONArray())
+    // Unknown enum values: a category the widget can't draw and a reply kind it doesn't know.
+    incoming.put(JSONObject(incoming.getJSONObject(0).toString()).put("flareId", "flr_new").put("category", "boba"))
+    incoming.put(
+      JSONObject(incoming.getJSONObject(0).toString()).put("flareId", "flr_maybe").put("myResponse", JSONObject().put("kind", "maybe"))
+    )
+    w11.getJSONArray("usual").getJSONObject(2).put("category", "kombucha")
+    val s = WidgetStateDecoder.decode(w11.toString()) as WidgetState.Ready
+    val before = WidgetStateDecoder.decode(Fixtures.widgetStates().first { it.id == "W11" }.stateJson) as WidgetState.Ready
+    assertEquals("the slot with an unknown category is skipped", before.usual.take(2), s.usual)
+    assertEquals(before.incoming.map { it.flareId } + "flr_maybe", s.incoming.map { it.flareId })
+    assertNull(s.incoming.first { it.flareId == "flr_maybe" }.myResponse)
+    assertTrue(s.incoming.none { it.flareId == "flr_new" })
+  }
+
+  @Test
+  fun decoderStaysStrictOnWhatItReads() {
     val ok = """{"v":1,"state":"signed_out","updatedAt":"2026-11-17T09:12:00Z"}"""
     assertNotNull(WidgetStateDecoder.decodeOrNull(ok))
-    // Unknown key, wrong version, missing seconds, numeric offset without a colon, impossible date.
+    // Wrong version, missing seconds, numeric offset without a colon, impossible date, unknown state.
     for (bad in listOf(
-      """{"v":1,"state":"signed_out","updatedAt":"2026-11-17T09:12:00Z","xp":3}""",
+      """{"v":1,"state":"paused","updatedAt":"2026-11-17T09:12:00Z"}""",
       """{"v":2,"state":"signed_out","updatedAt":"2026-11-17T09:12:00Z"}""",
       """{"v":1,"state":"signed_out","updatedAt":"2026-11-17T09:12Z"}""",
       """{"v":1,"state":"signed_out","updatedAt":"2026-11-17T09:12:00+0100"}""",
@@ -103,6 +136,22 @@ class DecoderAndResolveTest {
       Instant.parse("2026-11-17T08:12:00Z"),
       WidgetStateDecoder.parseInstant("2026-11-17T09:12:00.250+01:00")?.minusMillis(250),
     )
+  }
+
+  @Test
+  fun wrongTypesMissingFieldsAndBudgetsAreStillRefused() {
+    val w4 = Fixtures.widgetStates().first { it.id == "W4" }.stateJson
+    fun refused(edit: (JSONObject) -> Unit) {
+      val o = JSONObject(w4)
+      edit(o)
+      assertNull(o.toString(), WidgetStateDecoder.decodeOrNull(o.toString()))
+    }
+    refused { it.getJSONObject("today").put("drinks", "3") }
+    refused { it.getJSONObject("today").remove("localDate") }
+    refused { it.remove("usual") }
+    refused { it.getJSONArray("usual").getJSONObject(0).put("drinkShort", "A very long drink name") }
+    refused { o -> repeat(2) { o.getJSONArray("usual").put(o.getJSONArray("usual").getJSONObject(0)) } }
+    refused { it.getJSONObject("me").put("friendsCount", 21) }
   }
 
   @Test

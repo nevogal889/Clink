@@ -31,7 +31,8 @@ import org.json.JSONObject
 // Everything the widget keeps, in one Preferences DataStore in the app process (ARCHITECTURE.md
 // 3.1: the widget runs in the app process, so no cross-process store is needed).
 //   widget.state.v1     last good server state JSON (the same key as the iOS App Group)
-//   widget.state.at     device time it was stored, for the 10-minute staleness rule and acked logs
+//   widget.state.at     device time it was stored, for the 10-minute staleness rule
+//   widget.state.asof   device time its request started: the counts include logs acked before it
 //   widget.outbox.v1    the widget's own outbox (OutboxLogic.toJson)
 //   widget.locals.v1    per appWidgetId: picker mode, when it opened, the confirmation
 //   widget.configs.v1   per appWidgetId: size and Who joins? audience
@@ -46,7 +47,10 @@ data class Snapshot(
   val state: WidgetState,
   /** When the whole state was last stored (the 10-minute staleness rule). */
   val stateReceivedAt: Instant?,
-  /** When today's counts were last confirmed by the server: a state, or a log answer's `today`. */
+  /**
+   * The moment today's counts were last confirmed as of: when the request for the stored state or
+   * for the last log answer's `today` started. Logs acked after it still count on top.
+   */
   val countsReceivedAt: Instant?,
   /** Widget instances whose widget_added the server has recorded (ARCHITECTURE.md 3.5). */
   val reported: Set<Int>,
@@ -65,6 +69,7 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
     const val STATE_KEY_NAME = "widget.state.v1"
     private val STATE = stringPreferencesKey(STATE_KEY_NAME)
     private val STATE_AT = longPreferencesKey("widget.state.at")
+    private val STATE_ASOF = longPreferencesKey("widget.state.asof")
     private val OUTBOX = stringPreferencesKey("widget.outbox.v1")
     private val LOCALS = stringPreferencesKey("widget.locals.v1")
     private val CONFIGS = stringPreferencesKey("widget.configs.v1")
@@ -95,7 +100,7 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
         state = p[STATE]?.let { WidgetStateDecoder.decodeOrNull(it) } ?: INITIAL_STATE,
         stateReceivedAt = p[STATE_AT]?.let(Instant::ofEpochMilli),
         countsReceivedAt =
-          listOfNotNull(p[STATE_AT], p[COUNTS_AT]).maxOrNull()?.let(Instant::ofEpochMilli),
+          listOfNotNull(p[STATE_ASOF] ?: p[STATE_AT], p[COUNTS_AT]).maxOrNull()?.let(Instant::ofEpochMilli),
         reported = decodeStrings(p[REPORTED]).mapNotNull { it.toIntOrNull() }.toSet(),
         outbox = OutboxLogic.fromJson(p[OUTBOX]),
         locals = decodeLocals(p[LOCALS]),
@@ -116,7 +121,12 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
             v.optJSONObject("confirmation")?.let { c ->
               val kind = ConfirmationKind.of(c.optString("kind")) ?: return@let null
               val until = WidgetStateDecoder.parseInstant(c.optString("until")) ?: return@let null
-              Confirmation(kind, c.optString("drinkShort").takeIf { !c.isNull("drinkShort") && it.isNotEmpty() }, until)
+              Confirmation(
+                kind,
+                c.optString("drinkShort").takeIf { !c.isNull("drinkShort") && it.isNotEmpty() },
+                until,
+                c.optString("drinkId").takeIf { !c.isNull("drinkId") && it.isNotEmpty() },
+              )
             }
           id to
             WidgetLocal(
@@ -148,6 +158,7 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
                   .put("kind", it.kind.key)
                   .put("drinkShort", it.drinkShort ?: JSONObject.NULL)
                   .put("until", it.until.toString())
+                  .put("drinkId", it.drinkId ?: JSONObject.NULL)
               } ?: JSONObject.NULL,
             ),
         )
@@ -202,13 +213,18 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
     data.edit { block(it) }
   }
 
-  /** Stores a server state that already decoded. Returns false (and keeps the old one) otherwise. */
-  suspend fun putStateJson(json: String, receivedAt: Instant): Boolean {
+  /**
+   * Stores a server state that already decoded. Returns false (and keeps the old one) otherwise.
+   * `asOf` is when its request started (the app's states: when they arrive): acked logs newer than
+   * that stay counted on top, and only older ones are pruned.
+   */
+  suspend fun putStateJson(json: String, receivedAt: Instant, asOf: Instant = receivedAt): Boolean {
     WidgetStateDecoder.decodeOrNull(json) ?: return false
     data.edit { p ->
       p[STATE] = json
       p[STATE_AT] = receivedAt.toEpochMilli()
-      val pruned = OutboxLogic.pruneAcked(OutboxLogic.fromJson(p[OUTBOX]), receivedAt)
+      p[STATE_ASOF] = asOf.toEpochMilli()
+      val pruned = OutboxLogic.pruneAcked(OutboxLogic.fromJson(p[OUTBOX]), asOf)
       p[OUTBOX] = OutboxLogic.toJson(pruned)
     }
     return true
@@ -218,7 +234,7 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
    * A log answer's `today` (widgetLogResponse): replaces today's counts in the stored state when it
    * is for the same or a later local date, and marks the counts as confirmed now.
    */
-  suspend fun putToday(todayJson: String, receivedAt: Instant): Boolean {
+  suspend fun putToday(todayJson: String, receivedAt: Instant, asOf: Instant = receivedAt): Boolean {
     var ok = false
     data.edit { p ->
       val raw = p[STATE] ?: return@edit
@@ -231,8 +247,8 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
       val json = doc.toString()
       WidgetStateDecoder.decodeOrNull(json) ?: return@edit
       p[STATE] = json
-      p[COUNTS_AT] = receivedAt.toEpochMilli()
-      p[OUTBOX] = OutboxLogic.toJson(OutboxLogic.pruneAcked(OutboxLogic.fromJson(p[OUTBOX]), receivedAt))
+      p[COUNTS_AT] = asOf.toEpochMilli()
+      p[OUTBOX] = OutboxLogic.toJson(OutboxLogic.pruneAcked(OutboxLogic.fromJson(p[OUTBOX]), asOf))
       ok = true
     }
     return ok
@@ -295,8 +311,9 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
   }
 
   /**
-   * Sign-out (ARCHITECTURE.md 3.6): state, outbox, pickers and the token go; configs stay so a
-   * widget keeps its size and audience for the next sign-in. Writes the signed-out state.
+   * Sign-out (ARCHITECTURE.md 3.6): state, outbox, pickers, the token and the reported instances
+   * go (so the next account's widget_added counts every widget again); configs stay so a widget
+   * keeps its size and audience for the next sign-in. Writes the signed-out state.
    */
   suspend fun clearAll(now: Instant) {
     data.edit { p ->
@@ -305,6 +322,8 @@ class WidgetStore internal constructor(private val data: DataStore<Preferences>)
       p.remove(DISMISSED)
       p.remove(TOKEN)
       p.remove(COUNTS_AT)
+      p.remove(REPORTED)
+      p.remove(STATE_ASOF)
       p[STATE] = """{"v":1,"state":"signed_out","updatedAt":"$now"}"""
       p[STATE_AT] = now.toEpochMilli()
     }

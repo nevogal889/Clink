@@ -56,11 +56,12 @@ select throws_ok(tests.q('b', format($q$insert into public.drink_logs (id, user_
                                         values (gen_random_uuid(), %L, 'Latte', 'coffee', true, now(), current_date, 'app')$q$,
                                       tests.id('a'))),
                  '42501', null, 'b cannot log for a');
-select throws_ok(tests.q('a', format($q$insert into public.drink_logs (id, user_id, drink_name, category, caffeinated,
-                                          logged_at, local_date, source)
-                                        values (gen_random_uuid(), %L, 'Latte', 'coffee', true, now() + interval '1 hour',
-                                                current_date, 'app')$q$, tests.id('a'))),
-                 'CLBAD', 'bad_input', 'a log in the future is refused');
+-- The server owns time (0020): a future time is clamped to now, never refused. More in 13_log_time.
+select lives_ok(tests.q('h', format($q$insert into public.drink_logs (id, user_id, drink_name, category, caffeinated,
+                                         logged_at, local_date, source)
+                                       values (gen_random_uuid(), %L, 'Latte', 'coffee', true, now() + interval '1 hour',
+                                               current_date, 'app')$q$, tests.id('h'))),
+                'a log in the future is accepted (its time is clamped)');
 
 -- last drink sharing (F26) --------------------------------------------------------------
 select is(tests.rows_as('b', format('select 1 from public.last_drink_shares where user_id = %L', tests.id('a'))), 0::bigint,

@@ -7,7 +7,12 @@ import { test } from 'node:test';
 import { classify } from '../supabase-advisors.mjs';
 import { applySql, plan } from '../supabase-apply.mjs';
 import { desiredConfig, mismatches, testOtpString } from '../supabase-auth-dev.mjs';
-import { clinkEnv, deployGroups, localFunctions } from '../supabase-deploy-functions.mjs';
+import {
+  clinkEnv,
+  corsOrigins,
+  deployGroups,
+  localFunctions,
+} from '../supabase-deploy-functions.mjs';
 import { buildTestRequest } from '../supabase-pgtap.mjs';
 import {
   DEV_REF,
@@ -158,6 +163,20 @@ test('projects.json holds only public values', () => {
   assert.equal(dev.url, `https://${DEV_REF}.supabase.co`);
   assert.match(dev.publishableKey, /^sb_publishable_/);
   assert.doesNotMatch(text, /sb_secret_|service_role|eyJ[A-Za-z0-9_-]{10,}\.|postgres(ql)?:\/\//);
+});
+
+test('CORS allow-list: exact origins from projects.json, https only outside dev', () => {
+  assert.equal(corsOrigins(DEV_REF, 'dev'), 'http://localhost:8081');
+  const p = (corsOrigins) => ({ x: { ref: 'abcdefghijabcdefghij', corsOrigins } });
+  const other = 'abcdefghijabcdefghij';
+  assert.equal(corsOrigins(other, 'prod', p(['https://clink.example'])), 'https://clink.example');
+  assert.equal(corsOrigins(other, 'prod', p(undefined)), '');
+  assert.equal(corsOrigins('zzzzzzzzzzzzzzzzzzzz', 'prod', p(['https://a.example'])), '');
+  assert.throws(() => corsOrigins(other, 'prod', p(['http://localhost:8081'])));
+  assert.throws(() => corsOrigins(other, 'prod', p(['*'])));
+  assert.throws(() => corsOrigins(other, 'prod', p(['https://a.example/path'])));
+  assert.throws(() => corsOrigins(other, 'prod', p(['https://*.example'])));
+  assert.throws(() => corsOrigins(other, 'dev', p('https://a.example')));
 });
 
 test('project ref guard and CLINK_ENV', () => {

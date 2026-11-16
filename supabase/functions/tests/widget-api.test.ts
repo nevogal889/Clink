@@ -431,16 +431,10 @@ Deno.test({ name: 'widget-api: POST log refusals and limits', ...opts }, async (
     await refused(logBody({ userId: other }), 400, 'bad_input', 'no user id in the body');
     await refused(logBody({ id: 'nope' }), 400, 'bad_input', 'the id must be a UUID');
     await refused(
-      logBody({ loggedAt: isoSeconds(new Date(Date.now() + 3600_000)) }),
+      logBody({ loggedAt: '2026-02-30T09:00:00Z' }),
       400,
       'bad_input',
-      'a log in the future',
-    );
-    await refused(
-      logBody({ loggedAt: isoSeconds(new Date(Date.now() - 91 * 86400_000)) }),
-      422,
-      'too_old',
-      'older than the 90-day history',
+      'an impossible date is malformed',
     );
     const big = await api(
       new Request('http://local/widget-api/log', {
@@ -488,6 +482,82 @@ Deno.test({ name: 'widget-api: POST log refusals and limits', ...opts }, async (
     assertEquals((await api(get(otherWt))).status, 200, "another device's budget is separate");
   } finally {
     await cleanup(sql, [id, other]);
+    await sql.end();
+  }
+});
+
+Deno.test({ name: 'widget-api: POST log clamps loggedAt, never refuses it', ...opts }, async () => {
+  const sql = db();
+  const api = widgetApi(fakes(sql).deps);
+  const id = await readyUser(sql, 'Dana');
+  try {
+    const { token: wt } = await widgetToken(sql, id);
+    const stored = async (logId: string) =>
+      (
+        await sql<{ at: Date; day: string; now: Date }[]>`
+          select l.logged_at as at, l.local_date::text as day, private.app_now() as now
+          from public.drink_logs l where l.id = ${logId}`
+      )[0]!;
+    const send = async (body: Record<string, unknown>, why: string) => {
+      const res = await api(postLog(wt, body));
+      assertEquals(res.status, 200, why);
+      return await res.json();
+    };
+    const near = (a: Date, b: Date, ms: number, why: string) =>
+      assert(
+        Math.abs(a.getTime() - b.getTime()) <= ms,
+        `${why}: ${a.toISOString()} vs ${b.toISOString()}`,
+      );
+
+    // Phone clock 2 h fast: stored at server now, counted today, and its retry is a duplicate.
+    const fast = logBody({
+      loggedAt: isoSeconds(new Date(Date.now() + 2 * 3600_000)),
+      timeZone: 'Europe/London',
+    });
+    const r1 = await send(fast, 'phone clock 2 h fast');
+    assertEquals(r1.status, 'logged');
+    assertEquals(r1.today.drinks, 1, 'the clamped log counts today');
+    const s1 = await stored(fast.id as string);
+    near(s1.at, s1.now, 60_000, 'clamped to server now');
+    assert(s1.at.getTime() <= Date.now() + 5_000, 'never stored in the future');
+    assertEquals(s1.day, localDateAt(s1.at, 'Europe/London'));
+    assertEquals(r1.today.lastDrinkAt, isoSeconds(s1.at), 'the last drink is the clamped time');
+    assertEquals((await send(fast, 'retry')).status, 'duplicate', 'retry of the clamped log');
+
+    // 3 days offline: kept exactly as sent, on its own day in the device zone.
+    const offline = logBody({
+      loggedAt: isoSeconds(new Date(Date.now() - 3 * 86400_000)),
+      timeZone: 'America/Los_Angeles',
+      slot: null,
+    });
+    assertEquals((await send(offline, '3 days offline')).status, 'logged');
+    const s2 = await stored(offline.id as string);
+    assertEquals(isoSeconds(s2.at), offline.loggedAt, 'an offline log keeps its time');
+    assertEquals(s2.day, localDateAt(new Date(offline.loggedAt as string), 'America/Los_Angeles'));
+
+    // Beyond the 90-day window: stored at its oldest edge, still logged.
+    const ancient = logBody({
+      loggedAt: isoSeconds(new Date(Date.now() - 120 * 86400_000)),
+      drinkId: 'water.still',
+      category: 'water',
+      slot: null,
+    });
+    assertEquals((await send(ancient, 'beyond the window')).status, 'logged');
+    const s3 = await stored(ancient.id as string);
+    near(s3.at, new Date(s3.now.getTime() - 90 * 86400_000), 60_000, 'clamped to the window edge');
+    assertEquals((await send(ancient, 'retry')).status, 'duplicate');
+
+    // Far future, and a zone with an offset: still logged at now.
+    const far = logBody({ loggedAt: '2099-12-31T23:59:59+14:00' });
+    assertEquals((await send(far, 'year 2099')).status, 'logged');
+    const s4 = await stored(far.id as string);
+    near(s4.at, s4.now, 60_000, '2099 clamped to now');
+
+    // Today: the 2 h fast log and the 2099 one; neither of the old ones.
+    const today = (await send(fast, 'read today')).today;
+    assertEquals([today.drinks, today.water], [2, 0]);
+  } finally {
+    await cleanup(sql, [id]);
     await sql.end();
   }
 });

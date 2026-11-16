@@ -51,7 +51,13 @@ enum class ConfirmationKind(val key: String) {
   }
 }
 
-data class Confirmation(val kind: ConfirmationKind, val drinkShort: String?, val until: Instant)
+data class Confirmation(
+  val kind: ConfirmationKind,
+  val drinkShort: String?,
+  val until: Instant,
+  /** The logged drink's catalog id, so the confirmation can show its picture (polish pass). */
+  val drinkId: String? = null,
+)
 
 /** State the widget keeps for itself (widgetLocalSchema). */
 data class WidgetLocal(

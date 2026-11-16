@@ -10,7 +10,18 @@ import {
   type Verifier,
 } from '../_shared/auth.ts';
 import { base64url, decrypt, encrypt, phoneHmac, sha256, toBase64 } from '../_shared/crypto.ts';
-import { errorResponse, fromDbError, HttpError } from '../_shared/http.ts';
+import {
+  errorResponse,
+  fromDbError,
+  handle,
+  HttpError,
+  parseCorsOrigins,
+} from '../_shared/http.ts';
+import { completeSignup } from '../complete-signup/handler.ts';
+import { deleteAccount } from '../delete-account/handler.ts';
+import { registerDevice } from '../register-device/handler.ts';
+import { widgetApi } from '../widget-api/handler.ts';
+import type { Deps } from '../_shared/deps.ts';
 import {
   completeSignupInput,
   deleteAccountInput,
@@ -153,3 +164,79 @@ Deno.test(
     await assertRejects(() => jwksOnly.verify('not-a-jwt'), Error, 'malformed');
   },
 );
+
+Deno.test('db errors: CLOLD is retired, so a stray one is a retryable 500', () => {
+  assertEquals(fromDbError({ code: 'CLOLD', message: 'too_old' }), null);
+  assertEquals(errorResponse({ code: 'CLOLD', message: 'too_old' }).status, 500);
+});
+
+Deno.test('cors: the allow-list takes exact origins only', () => {
+  assertEquals(
+    parseCorsOrigins(' http://localhost:8081, https://clink.example ,*,https://a.example/path,'),
+    ['http://localhost:8081', 'https://clink.example'],
+  );
+  assertEquals(parseCorsOrigins(undefined), []);
+  assertEquals(parseCorsOrigins('null'), []);
+});
+
+Deno.test('cors: preflight before auth, allow-list only, widget-api never', async () => {
+  const LOCAL = 'http://localhost:8081';
+  // No database call happens before auth, so the handlers need no real dependencies here.
+  const deps = { corsOrigins: [LOCAL] } as unknown as Deps;
+  const preflight = (origin: string | null, path = 'x') =>
+    new Request(`http://local/${path}`, {
+      method: 'OPTIONS',
+      headers: {
+        ...(origin ? { origin } : {}),
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'authorization, apikey, content-type, x-client-info',
+      },
+    });
+
+  for (const [name, fn] of [
+    ['complete-signup', completeSignup(deps)],
+    ['register-device', registerDevice(deps)],
+    ['delete-account', deleteAccount(deps)],
+  ] as const) {
+    const ok = await fn(preflight(LOCAL));
+    assertEquals(ok.status, 204, `${name}: allowed origin, no token`);
+    assertEquals(ok.headers.get('access-control-allow-origin'), LOCAL, name);
+    assertEquals(ok.headers.get('access-control-allow-methods'), 'POST, OPTIONS', name);
+    for (const h of ['authorization', 'apikey', 'content-type', 'x-client-info']) {
+      assert(ok.headers.get('access-control-allow-headers')!.includes(h), `${name}: ${h}`);
+    }
+    assertEquals(ok.headers.get('vary'), 'Origin', name);
+
+    const evil = await fn(preflight('https://evil.example'));
+    assertEquals(evil.status, 403, `${name}: other origin`);
+    assertEquals(evil.headers.get('access-control-allow-origin'), null, name);
+    assertEquals((await fn(preflight(null))).status, 403, `${name}: no origin`);
+
+    // The real request without a token: 401, and an allowed origin can read it.
+    const real = await fn(
+      new Request('http://local/x', { method: 'POST', headers: { origin: LOCAL }, body: '{}' }),
+    );
+    assertEquals(real.status, 401, name);
+    assertEquals(real.headers.get('access-control-allow-origin'), LOCAL, name);
+    assertEquals(await real.json(), { error: 'unauthorized' }, name);
+    const foreign = await fn(
+      new Request('http://local/x', {
+        method: 'POST',
+        headers: { origin: 'https://evil.example' },
+        body: '{}',
+      }),
+    );
+    assertEquals(foreign.headers.get('access-control-allow-origin'), null, name);
+  }
+
+  // widget-api is native-only: OPTIONS is just a wrong method, with no CORS headers at all.
+  const w = await widgetApi(deps)(preflight(LOCAL, 'widget-api/log'));
+  assertEquals(w.status, 405);
+  assertEquals(w.headers.get('access-control-allow-origin'), null);
+
+  // handle() without the option adds nothing.
+  const plain = await handle(() => Promise.resolve(new Response('ok')))(
+    new Request('http://local/x', { headers: { origin: LOCAL } }),
+  );
+  assertEquals(plain.headers.get('access-control-allow-origin'), null);
+});

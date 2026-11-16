@@ -9,6 +9,7 @@ import {
   resolveWidgetView,
   widgetConfigSchema,
   widgetLocalSchema,
+  widgetStateReadSchema,
   widgetStateSchema,
   type WidgetState,
 } from './index';
@@ -83,9 +84,27 @@ describe('widget state fixtures W1 to W22 (QA_PLAN.md 4.1)', () => {
 });
 
 describe('invalid documents (QA_PLAN.md L6, ST8)', () => {
-  it.each(invalid)('%s is rejected, so the widget keeps its last good state', (_f, doc) => {
+  // xp-field.json is an unknown key: the server's strict check refuses to send it, and a decoder
+  // drops the key (add fields only, ARCHITECTURE.md 3.1). Every other document is broken for both.
+  const ONLY_AN_UNKNOWN_KEY = 'xp-field.json';
+
+  it.each(invalid)('%s is refused by the server-side (strict) schema', (_f, doc) => {
     expect(widgetStateSchema.safeParse(doc.state).success).toBe(false);
-    expect(decodeWidgetState(doc.state)).toBeNull();
+  });
+
+  it.each(invalid.filter(([f]) => f !== ONLY_AN_UNKNOWN_KEY))(
+    '%s is rejected by decoders too, so the widget keeps its last good state',
+    (_f, doc) => {
+      expect(widgetStateReadSchema.safeParse(doc.state).success).toBe(false);
+      expect(decodeWidgetState(doc.state)).toBeNull();
+    },
+  );
+
+  it('a decoder drops a leaked XP field, so it never reaches the widget', () => {
+    const doc = invalid.find(([f]) => f === ONLY_AN_UNKNOWN_KEY)![1];
+    const decoded = decodeWidgetState(doc.state);
+    expect(decoded?.state).toBe('ready');
+    expect(JSON.stringify(decoded)).not.toMatch(/xp/i);
   });
 
   it('covers an older and a newer version', () => {
@@ -164,5 +183,67 @@ describe('view rules beyond the fixtures', () => {
   it('reads the local date in the device zone', () => {
     expect(localDateAt(new Date('2026-11-17T23:30:00Z'), 'Europe/Berlin')).toBe('2026-11-18');
     expect(localDateAt(new Date('2026-11-17T23:30:00Z'), 'Europe/London')).toBe('2026-11-17');
+  });
+});
+
+describe('forward compatibility: add fields only, decoders ignore unknown keys', () => {
+  const base = () => JSON.parse(JSON.stringify(fixtures.find((f) => f.id === 'W13')!.state));
+
+  it('ignores a new key at every level and keeps everything else', () => {
+    const doc = base();
+    doc.newTopLevel = { anything: [1, 2] };
+    doc.me.newMeField = true;
+    doc.usual[0].newUsualField = 'x';
+    doc.today.newTodayField = 3;
+    if (doc.groups[0]) doc.groups[0].newGroupField = 1;
+    doc.auto.newAutoField = null;
+    doc.incoming[0].newIncomingField = 'y';
+    doc.incoming[0].myResponse = doc.incoming[0].myResponse ?? null;
+    if (doc.snaps[0]) doc.snaps[0].newSnapField = 1;
+    expect(widgetStateSchema.safeParse(doc).success).toBe(false);
+    const read = widgetStateReadSchema.safeParse(doc);
+    if (!read.success) throw new Error(JSON.stringify(read.error.issues));
+    expect(read.data).toEqual(widgetStateSchema.parse(base()));
+    expect(decodeWidgetState(doc)).toEqual(read.data);
+  });
+
+  it('ignores new keys inside flares, replies and outbox entries', () => {
+    const doc = JSON.parse(JSON.stringify(fixtures.find((f) => f.id === 'W10')!.state));
+    doc.myFlare.newFlareField = 1;
+    doc.myFlare.audience.newAudienceField = 1;
+    if (doc.myFlare.replies[0]) doc.myFlare.replies[0].newReplyField = 1;
+    doc.outbox = [
+      {
+        id: '6f1c2b2e-4a9f-4c3e-9d6b-0a1b2c3d4e5f',
+        op: 'log',
+        createdAt: '2026-11-17T09:00:00Z',
+        dropAt: null,
+        payload: {
+          drinkId: 'coffee.flat_white',
+          slot: null,
+          category: 'coffee',
+          loggedAt: '2026-11-17T09:00:00Z',
+          newPayloadField: 1,
+        },
+        newOutboxField: 1,
+      },
+    ];
+    expect(widgetStateSchema.safeParse(doc).success).toBe(false);
+    const read = widgetStateReadSchema.parse(doc);
+    expect(JSON.stringify(read)).not.toMatch(/new[A-Z]\w*Field/);
+  });
+
+  it("still refuses what isn't a new field: new states, new enum values, wrong types, a new v", () => {
+    const ready = base();
+    expect(widgetStateReadSchema.safeParse({ ...ready, state: 'paused' }).success).toBe(false);
+    expect(widgetStateReadSchema.safeParse({ ...ready, v: 2 }).success).toBe(false);
+    expect(
+      widgetStateReadSchema.safeParse({ ...ready, today: { ...ready.today, drinks: '3' } }).success,
+    ).toBe(false);
+    const { today: _t, ...noToday } = ready;
+    expect(widgetStateReadSchema.safeParse(noToday).success).toBe(false);
+    const doc = base();
+    doc.usual[0].category = 'cocoa';
+    expect(widgetStateReadSchema.safeParse(doc).success).toBe(false);
   });
 });

@@ -19,6 +19,7 @@
     <string name="clink_a11y_w_more" formatted="false">{n, plural, one {# more flare} other {# more flares}}</string>
     <string name="clink_a11y_w_pick" formatted="false">Log {drink}</string>
     <string name="clink_a11y_w_pick_water" formatted="false">Log water</string>
+    <string name="clink_a11y_w_plate" formatted="false">{drink}, your usual. Log a drink</string>
     <string name="clink_a11y_w_replied_bring" formatted="false">You asked for {drink}</string>
     <string name="clink_a11y_w_replied_in" formatted="false">You\'re in</string>
     <string name="clink_a11y_w_replies_none" formatted="false">No replies yet.</string>
@@ -28,7 +29,9 @@
     <string name="clink_a11y_w_signin" formatted="false">Open Clink to sign in</string>
     <string name="clink_a11y_w_snap" formatted="false">{name}\'s snap, {ago_words} ago. Opens snaps.</string>
     <string name="clink_a11y_w_tracker" formatted="false">{drinks, plural, one {# drink} other {# drinks}} and {water, plural, one {# water} other {# waters}} today. Last drink {ago_words} ago.</string>
+    <string name="clink_a11y_w_tracker_at" formatted="false">{drinks, plural, one {# drink} other {# drinks}} and {water, plural, one {# water} other {# waters}} today. Last drink at {time}.</string>
     <string name="clink_a11y_w_tracker_none" formatted="false">No drinks yet today.</string>
+    <string name="clink_a11y_w_tracker_water" formatted="false">{water, plural, one {# water} other {# waters}} today. No drinks yet.</string>
     <string name="clink_cat_coffee" formatted="false">Coffee</string>
     <string name="clink_cat_count" formatted="false">{n} drinks</string>
     <string name="clink_cat_matcha" formatted="false">Matcha</string>
@@ -63,11 +66,13 @@
     <string name="clink_wm_in_btn_in" formatted="false">I\'m in</string>
     <string name="clink_wm_in_done_bring" formatted="false">Asked for {drink_short}</string>
     <string name="clink_wm_in_done_in" formatted="false">You\'re in</string>
+    <string name="clink_wm_in_left" formatted="false">{timer} left</string>
     <string name="clink_wm_in_meta" formatted="false">{place} · {mins}</string>
     <string name="clink_wm_in_more" formatted="false">+{n}</string>
     <string name="clink_wm_in_title" formatted="false">{name} wants {wants}</string>
     <string name="clink_wm_invite" formatted="false">Invite friends</string>
     <string name="clink_wm_last" formatted="false">Last drink {ago} ago</string>
+    <string name="clink_wm_last_at" formatted="false">Last drink {time}</string>
     <string name="clink_wm_last_none" formatted="false">No drinks yet today</string>
     <string name="clink_wm_last_now" formatted="false">Last drink just now</string>
     <string name="clink_wm_live_chip_bring" formatted="false">{name} · {drink_short}</string>
@@ -89,14 +94,17 @@
     <string name="clink_wm_snap" formatted="false">{name} · {ago}</string>
     <string name="clink_wm_snap_none" formatted="false">Friends\' snaps land here</string>
     <string name="clink_wm_usual" formatted="false">{drink_short}</string>
+    <string name="clink_wm_usual_none" formatted="false">Pick your usual 3</string>
     <string name="clink_ws_drinks" formatted="false">{n, plural, one {# drink} other {# drinks}}</string>
     <string name="clink_ws_ended" formatted="false">Ended</string>
     <string name="clink_ws_failed" formatted="false">Tap to retry</string>
     <string name="clink_ws_in_btn" formatted="false">I\'m in</string>
     <string name="clink_ws_in_done" formatted="false">You\'re in</string>
+    <string name="clink_ws_in_left" formatted="false">{timer} left</string>
     <string name="clink_ws_in_sub" formatted="false">{cat_cap} · {mins}</string>
     <string name="clink_ws_in_title" formatted="false">{name}</string>
     <string name="clink_ws_last" formatted="false">Last {ago}</string>
+    <string name="clink_ws_last_at" formatted="false">Last {time}</string>
     <string name="clink_ws_last_none" formatted="false">No drinks yet</string>
     <string name="clink_ws_live" formatted="false">Your {cat}</string>
     <string name="clink_ws_live_counts" formatted="false">{in} in</string>

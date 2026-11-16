@@ -51,4 +51,52 @@ object DrinkIcons {
       "water.still" -> R.drawable.clink_icon_water_still
       else -> null
     }
+
+  /** Icon L (64 grid, shade and gleam) for a catalog drink id, or null for a custom drink. */
+  fun iconL(drinkId: String?): Int? =
+    when (drinkId) {
+      "coffee.americano" -> R.drawable.clink_icon_l_coffee_americano
+      "coffee.cappuccino" -> R.drawable.clink_icon_l_coffee_cappuccino
+      "coffee.cold_brew" -> R.drawable.clink_icon_l_coffee_cold_brew
+      "coffee.cortado" -> R.drawable.clink_icon_l_coffee_cortado
+      "coffee.espresso" -> R.drawable.clink_icon_l_coffee_espresso
+      "coffee.filter" -> R.drawable.clink_icon_l_coffee_filter
+      "coffee.flat_white" -> R.drawable.clink_icon_l_coffee_flat_white
+      "coffee.latte" -> R.drawable.clink_icon_l_coffee_latte
+      "coffee.macchiato" -> R.drawable.clink_icon_l_coffee_macchiato
+      "coffee.mocha" -> R.drawable.clink_icon_l_coffee_mocha
+      "matcha.blended" -> R.drawable.clink_icon_l_matcha_blended
+      "matcha.ceremonial" -> R.drawable.clink_icon_l_matcha_ceremonial
+      "matcha.coconut" -> R.drawable.clink_icon_l_matcha_coconut
+      "matcha.dirty" -> R.drawable.clink_icon_l_matcha_dirty
+      "matcha.hojicha" -> R.drawable.clink_icon_l_matcha_hojicha
+      "matcha.latte" -> R.drawable.clink_icon_l_matcha_latte
+      "matcha.lemonade" -> R.drawable.clink_icon_l_matcha_lemonade
+      "matcha.mango" -> R.drawable.clink_icon_l_matcha_mango
+      "matcha.strawberry" -> R.drawable.clink_icon_l_matcha_strawberry
+      "matcha.tonic" -> R.drawable.clink_icon_l_matcha_tonic
+      "smoothie_juice.acai" -> R.drawable.clink_icon_l_smoothie_juice_acai
+      "smoothie_juice.berry" -> R.drawable.clink_icon_l_smoothie_juice_berry
+      "smoothie_juice.carrot_ginger" -> R.drawable.clink_icon_l_smoothie_juice_carrot_ginger
+      "smoothie_juice.green_juice" -> R.drawable.clink_icon_l_smoothie_juice_green_juice
+      "smoothie_juice.green_smoothie" -> R.drawable.clink_icon_l_smoothie_juice_green_smoothie
+      "smoothie_juice.lemonade" -> R.drawable.clink_icon_l_smoothie_juice_lemonade
+      "smoothie_juice.mango" -> R.drawable.clink_icon_l_smoothie_juice_mango
+      "smoothie_juice.orange" -> R.drawable.clink_icon_l_smoothie_juice_orange
+      "smoothie_juice.strawberry_banana" -> R.drawable.clink_icon_l_smoothie_juice_strawberry_banana
+      "smoothie_juice.watermelon" -> R.drawable.clink_icon_l_smoothie_juice_watermelon
+      "tea.bubble" -> R.drawable.clink_icon_l_tea_bubble
+      "tea.chai_latte" -> R.drawable.clink_icon_l_tea_chai_latte
+      "tea.chamomile" -> R.drawable.clink_icon_l_tea_chamomile
+      "tea.earl_grey" -> R.drawable.clink_icon_l_tea_earl_grey
+      "tea.english_breakfast" -> R.drawable.clink_icon_l_tea_english_breakfast
+      "tea.ginger_lemon" -> R.drawable.clink_icon_l_tea_ginger_lemon
+      "tea.green" -> R.drawable.clink_icon_l_tea_green
+      "tea.jasmine" -> R.drawable.clink_icon_l_tea_jasmine
+      "tea.oolong" -> R.drawable.clink_icon_l_tea_oolong
+      "tea.peppermint" -> R.drawable.clink_icon_l_tea_peppermint
+      "water.sparkling" -> R.drawable.clink_icon_l_water_sparkling
+      "water.still" -> R.drawable.clink_icon_l_water_still
+      else -> null
+    }
 }

@@ -175,23 +175,56 @@ export const widgetLogResponse = z.strictObject({
 export type WidgetLogResponse = z.infer<typeof widgetLogResponse>;
 
 /**
- * widget-api error codes and what the widget does with each. `drop`: the request can never
- * succeed, remove it from the outbox. `retry`: keep it and try again (after `retryAfter` on 429).
- * `reauth`: keep it, read the stored token again (the app may have rotated it) and retry once;
- * if it still fails, wait for the app to register the device again.
+ * widget-api error codes and what the widget does with each (ARCHITECTURE.md 3.2, 4.4).
+ *
+ * `kind` says why the server refused:
+ * - `retryable`: the request is fine, but the server or the account can't take it now (token
+ *   rotated or revoked, suspended, rate limited, a server fault). The widget keeps it.
+ * - `malformed`: the request can never be valid as sent (schema, unknown drink, an id that belongs
+ *   to another account, wrong path, method or size). The widget drops it.
+ * - `stale`: it was valid when tapped, but what it points at is gone (the custom drink in that
+ *   usual slot changed). The widget drops it.
+ *
+ * `then`: `retry` keeps it and tries again (after `retryAfter` on 429); `reauth` keeps it, reads
+ * the stored token again (the app may have rotated it) and retries once, then waits for the app to
+ * register the device again; `drop` removes it from the outbox.
+ *
+ * No code is about time. The server owns time: a log's `loggedAt` is clamped into the 90-day
+ * window ending at server now (migration 0020), never refused, so the widget never drops a log
+ * because of the phone's clock. `too_old` (0019) is retired.
  */
 export const WIDGET_API_ERRORS = {
-  unauthorized: { status: 401, then: 'reauth' },
-  suspended: { status: 403, then: 'retry' },
-  rate_limited: { status: 429, then: 'retry' },
-  bad_input: { status: 400, then: 'drop' },
-  unknown_drink: { status: 422, then: 'drop' },
-  too_old: { status: 422, then: 'drop' },
-  usual_changed: { status: 409, then: 'drop' },
-  conflict: { status: 409, then: 'drop' },
-  not_found: { status: 404, then: 'drop' },
-  method_not_allowed: { status: 405, then: 'drop' },
-  too_large: { status: 413, then: 'drop' },
-  internal: { status: 500, then: 'retry' },
-} as const;
+  unauthorized: { status: 401, then: 'reauth', kind: 'retryable' },
+  suspended: { status: 403, then: 'retry', kind: 'retryable' },
+  rate_limited: { status: 429, then: 'retry', kind: 'retryable' },
+  internal: { status: 500, then: 'retry', kind: 'retryable' },
+  bad_input: { status: 400, then: 'drop', kind: 'malformed' },
+  unknown_drink: { status: 422, then: 'drop', kind: 'malformed' },
+  conflict: { status: 409, then: 'drop', kind: 'malformed' },
+  not_found: { status: 404, then: 'drop', kind: 'malformed' },
+  method_not_allowed: { status: 405, then: 'drop', kind: 'malformed' },
+  too_large: { status: 413, then: 'drop', kind: 'malformed' },
+  usual_changed: { status: 409, then: 'drop', kind: 'stale' },
+} as const satisfies Record<
+  string,
+  {
+    status: number;
+    then: 'retry' | 'reauth' | 'drop';
+    kind: 'retryable' | 'malformed' | 'stale';
+  }
+>;
 export type WidgetApiErrorCode = keyof typeof WIDGET_API_ERRORS;
+
+/**
+ * What a widget does with a widget-api answer that isn't 2xx: by code when the body names a known
+ * one, else by status (401 reauth; 403, 408, 429 and 5xx retry; any other 4xx drop). The Swift
+ * and Kotlin ports follow the same rule.
+ */
+export function widgetApiAction(status: number, code?: string | null): 'retry' | 'reauth' | 'drop' {
+  if (code && Object.hasOwn(WIDGET_API_ERRORS, code)) {
+    return WIDGET_API_ERRORS[code as WidgetApiErrorCode].then;
+  }
+  if (status === 401) return 'reauth';
+  if (status === 403 || status === 408 || status === 429 || status >= 500) return 'retry';
+  return 'drop';
+}

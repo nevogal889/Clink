@@ -8,7 +8,8 @@ import org.json.JSONObject
 
 // The widget's own outbox (ARCHITECTURE.md 3.2, PRD 3.20): a pure state machine, so the rules can
 // be tested with a fake clock.
-//   log      retries forever (the device-made UUID makes it idempotent), never dropped
+//   log      retries forever (the device-made UUID makes it idempotent), never dropped; a log the
+//            server refuses as malformed moves to `rejected` for the app to report
 //   flare    retries until accepted, dropped at tappedAt + 2 min
 //   respond  retries until accepted, dropped at the flare's expiresAt
 // Failed shows at createdAt + 30 s (Resolve.overlayFor; logs never show Failed). A tap retries the
@@ -25,24 +26,45 @@ data class AckedLog(val id: String, val payload: LogPayload, val ackedAt: Instan
 
 data class DroppedOp(val id: String, val op: String, val droppedAt: Instant)
 
+/**
+ * A log the server refused for good (WIDGET_API_ERRORS "drop": malformed or stale). Logs are never
+ * deleted silently (ARCHITECTURE.md 3.2): it waits here, whole, until the app reads and reports it.
+ */
+data class RejectedLog(
+  val entry: OutboxEntry.Log,
+  val status: Int,
+  /** The `error` code of the answer, or null when the body had none. */
+  val code: String?,
+  /** WIDGET_API_ERRORS `kind` ("malformed", "stale"), or null for a code the table doesn't list. */
+  val kind: String?,
+  val rejectedAt: Instant,
+)
+
 sealed class SendResult {
   /** 200 "logged" or "duplicate": remove it from the outbox. */
   data object Accepted : SendResult()
 
-  /** Offline, timeout, 403 suspended, 408, 429 or 5xx: try again later. */
+  /**
+   * Offline, timeout, or an answer WIDGET_API_ERRORS marks "retry" (403, 408, 429, 5xx, and any
+   * 4xx code the table lists as retryable): keep it and try again with backoff.
+   */
   data object RetryLater : SendResult()
 
   /** 401: the token is missing, rotated or revoked. Keep the op and wait for the app. */
   data object Unauthorized : SendResult()
 
-  /** Any other 4xx (400, 404, 405, 409, 413, 422): the server will never take it (WIDGET_API_ERRORS "drop"). */
-  data class Rejected(val status: Int) : SendResult()
+  /**
+   * Refused as malformed: a 4xx whose code the table marks "drop", or a 4xx code it doesn't list.
+   * A log moves to `rejected` for the app; a flare or reply moves to `dropped`.
+   */
+  data class Rejected(val status: Int, val code: String? = null, val kind: String? = null) : SendResult()
 }
 
 data class OutboxState(
   val items: List<OutboxItem> = emptyList(),
   val acked: List<AckedLog> = emptyList(),
   val dropped: List<DroppedOp> = emptyList(),
+  val rejected: List<RejectedLog> = emptyList(),
 ) {
   val entries: List<OutboxEntry>
     get() = items.map { it.entry }
@@ -91,7 +113,14 @@ object OutboxLogic {
       SendResult.RetryLater,
       SendResult.Unauthorized ->
         s.copy(items = s.items.map { if (it === item) it.copy(attempts = it.attempts + 1, lastAttemptAt = now) else it })
-      is SendResult.Rejected -> s.copy(items = s.items - item)
+      is SendResult.Rejected -> {
+        val entry = item.entry
+        if (entry is OutboxEntry.Log) {
+          s.copy(items = s.items - item, rejected = s.rejected + RejectedLog(entry, result.status, result.code, result.kind, now))
+        } else {
+          s.copy(items = s.items - item, dropped = s.dropped + DroppedOp(entry.id, entry.op, now))
+        }
+      }
     }
   }
 
@@ -99,13 +128,20 @@ object OutboxLogic {
   fun retryNow(s: OutboxState, id: String): OutboxState =
     s.copy(items = s.items.map { if (it.entry.id == id) it.copy(lastAttemptAt = null) else it })
 
-  /** Acked logs are dropped once a state that was received after the ack is stored. */
-  fun pruneAcked(s: OutboxState, stateReceivedAt: Instant?): OutboxState {
-    if (stateReceivedAt == null) return s
-    return s.copy(acked = s.acked.filter { it.ackedAt.isAfter(stateReceivedAt) })
+  /**
+   * Acked logs are dropped once a state is stored whose request started after the ack: only then
+   * can the server's counts include them. Pruning by receive time instead would drop a log acked
+   * while a state request was already on its way, and the count would dip until the next state.
+   */
+  fun pruneAcked(s: OutboxState, stateAsOf: Instant?): OutboxState {
+    if (stateAsOf == null) return s
+    return s.copy(acked = s.acked.filter { it.ackedAt.isAfter(stateAsOf) })
   }
 
   fun drainDropped(s: OutboxState): Pair<OutboxState, List<DroppedOp>> = s.copy(dropped = emptyList()) to s.dropped
+
+  /** Hands the rejected logs to the app and forgets them (it reports them). */
+  fun takeRejected(s: OutboxState): Pair<OutboxState, List<RejectedLog>> = s.copy(rejected = emptyList()) to s.rejected
 
   // -------------------------------------------------------------------------------------------
   // Persistence
@@ -139,7 +175,16 @@ object OutboxLogic {
           }
         ),
       )
+      .put("rejected", JSONArray(s.rejected.map(::rejectedJson)))
       .toString()
+
+  fun rejectedJson(r: RejectedLog): JSONObject =
+    JSONObject()
+      .put("entry", entryJson(r.entry))
+      .put("status", r.status)
+      .put("code", r.code ?: JSONObject.NULL)
+      .put("kind", r.kind ?: JSONObject.NULL)
+      .put("rejectedAt", r.rejectedAt.toString())
 
   /** Reads what toJson wrote; anything unreadable is skipped, never fatal. */
   fun fromJson(json: String?): OutboxState {
@@ -172,7 +217,17 @@ object OutboxLogic {
           dropped.add(DroppedOp(it.optString("id"), it.optString("op"), at))
         }
       }
-      OutboxState(items, acked, dropped)
+      val rejected = mutableListOf<RejectedLog>()
+      o.optJSONArray("rejected")?.let { a ->
+        for (i in 0 until a.length()) {
+          val it = a.optJSONObject(i) ?: continue
+          val entry = runCatching { WidgetStateDecoder.outboxEntry(it.getJSONObject("entry")) }.getOrNull() as? OutboxEntry.Log ?: continue
+          val at = WidgetStateDecoder.parseInstant(it.optString("rejectedAt")) ?: continue
+          fun opt(k: String) = it.optString(k).takeIf { v -> !it.isNull(k) && v.isNotEmpty() }
+          rejected.add(RejectedLog(entry, it.optInt("status"), opt("code"), opt("kind"), at))
+        }
+      }
+      OutboxState(items, acked, dropped, rejected)
     } catch (e: Exception) {
       OutboxState()
     }

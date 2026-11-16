@@ -118,3 +118,81 @@ The smoke run does the same end to end on clink-dev with the test number +1 201 
 - **A log undone in the app, then retried by the widget**: if the widget never got the first answer and retries after the undo, the log comes back. Rare (the retry is normally seconds later); a tombstone table would fix it if QA sees it.
 - **401s are not rate limited by IP**: tokens are 256-bit, so guessing is not a risk; revisit with the M6 security review.
 - **CORS on edge functions** (`app-supabase.md`, item 1) is still open; widgets are native and don't need it.
+
+## Polish pass (2026-11-16)
+
+Owner: CTO. Server time for logs, a forward-compatible widget-state contract, CORS, the offline sign-out retry, and the wiring and docs the M2 units asked for. Everything below is applied and deployed on clink-dev.
+
+### What changed
+
+| Part | Change |
+|---|---|
+| Migration `0020_log_time.sql` | `private.log_time()` clamps a log's time into the 90 days ending at `private.app_now()`; the `drink_logs` insert trigger clamps instead of refusing (app and widget logs); `widget_log_drink` now takes the device zone instead of a local date and works out the date from the clamped time. The 0019 signature is dropped; `CLOLD` is retired. |
+| `widget-api` | Passes the picked zone to `widget_log_drink`; an impossible date is `400 bad_input`; no time-based refusal remains. |
+| `_shared/http.ts` | CORS for `complete-signup`, `register-device`, `delete-account` (`handle(fn, { cors })`): `OPTIONS` answered before auth, exact allow-list from `CLINK_CORS_ORIGINS`; `CLOLD` mapping removed (a stray one would be a retried 500). |
+| `supabase/projects.json`, deploy script | `corsOrigins` per project (dev: `http://localhost:8081`); the deploy script validates it (https only outside dev, no wildcard, no path) and sets `CLINK_CORS_ORIGINS` next to `CLINK_ENV`. |
+| `packages/shared/src/api` | `WIDGET_API_ERRORS` gains `kind` (`retryable`, `malformed`, `stale`), loses `too_old`; `widgetApiAction(status, code)` is the shared fallback rule. Exported from the `@clink/shared` entry. |
+| `packages/shared/src/widget-state` | One definition builds two sets: strict (`widgetStateSchema`, the server's output and the fixtures) and tolerant (`widgetStateReadSchema`, unknown keys dropped). `decodeWidgetState` uses the tolerant one. |
+| `app/src/lib/api/supabase.ts` | Imports from `@clink/shared` only; reads `widget-api/state` with `widgetStateReadSchema`; an offline sign-out leaves `signout_pending` = `{ installId }` in the plain store, sent before the next launch's `register-device`. |
+| `e2e/widget-api` | Imports from `@clink/shared`; `npm run test:e2e:widget` runs it. |
+| Root `package.json` | `check:gen` also runs the three Android generator checks (`check:gen:android`); `ci` runs `test:scripts` (`gen-android.test.mjs`, `supabase/supabase.test.mjs`). |
+| `scripts/README.md` | Lists every script. |
+| `docs/ARCHITECTURE.md` | 0 principle 8, 1.1 (no Glance config plugin), 2 (npm workspaces, shared paths), 3.1 (contract rule, app's token copy, offline patch, suspension 401), 3.2 (x-region, error rule, Log time), 3.6 step 3, 4.4 (register-device once per launch and account, CL codes, widget-api error table, CORS), 4.8 (install_history, revoked credentials), 5 (AsyncStorage), 8.4, 8.5 (`extra.supabaseRegion`), 8.7 (`allowBackup=false`). |
+
+The error table earlier in this note is superseded where it says `loggedAt` over 5 min in the future is `bad_input` and older than 90 days is `too_old`: both are now logged (ARCHITECTURE.md 4.4 has the current table).
+
+### Log time (ARCHITECTURE.md 3.2)
+
+| `loggedAt` as sent | Stored as |
+|---|---|
+| Later than server now, by any amount | server now |
+| Within the last 90 days | as sent |
+| Older than 90 days | server now minus 90 days |
+
+The local date comes from the stored time in the device zone, else the saved zone, else UTC. The device id keeps retries idempotent. A log clamped to the oldest edge goes in the next nightly retention run, like any 90-day-old log.
+
+### Decisions (one line each)
+
+- **Clamp, never refuse, for every log**, app included: the app's offline queue also dropped a log refused for a fast clock, and one rule in the trigger covers both paths.
+- **The window is the 90-day `drink_logs` retention**, so "older" means exactly what the purge already deletes; no second number to keep in step.
+- **A clamped future log is stored at server now, not at now minus the skew**: the server can't know the true tap time, and now is the only time it can vouch for.
+- **The local date is computed in SQL from the clamped time** (device zone passed in), so the clamp and the date can't disagree; a zone Postgres doesn't know falls back to the saved zone instead of failing.
+- **The 0019 `widget_log_drink` signature is dropped, not overloaded**: same arity with `date` vs `text` invites ambiguous calls. Between apply and deploy the old call answers 500, which the widget retries; nothing is lost.
+- **`WIDGET_API_ERRORS.kind` has three values**, not two: `stale` (`usual_changed`) is neither a server fault nor a malformed request, and QA should tell them apart.
+- **Server output strict, decoders tolerant, built from one definition**: a field can't leave the server by accident (xp-field), and an older app survives a newer server; two hand-written schemas would drift.
+- **A new state, enum value, removed field or type change bumps `v`**: "add fields only" covers fields, nothing else.
+- **The pending sign-out keeps the install id only, in the plain store**, and runs before `register-device`: a token or session must not outlive sign-out, and a retry after the new registration would undo it.
+- **A network, server or rate-limit failure keeps the marker; any other answer clears it**: those are the only answers a later call could change.
+- **CORS only on the three app-facing functions, answered before auth, exact origins from `projects.json`**: browsers send no credentials with a preflight, and `widget-api` is native-only (OPTIONS stays 405).
+- **A refused origin gets `403` on the preflight, while the real request still runs without CORS headers**: CORS protects browsers, not the server; auth does that.
+- **`check:gen` runs the Android generator checks** and `ci` runs the script tests, so a stale generated resource fails locally, not only in the Android CI job.
+
+### Results (2026-11-16)
+
+| Check | Command | Result |
+|---|---|---|
+| pgTAP local, Postgres 16 | `PGHOST=/tmp/clink-cto-pg PGPORT=55460 PGUSER=postgres npm run test:db` | 14 files, 391/391 (new `13_log_time`: 28) |
+| Deno | `deno lint`, `deno check */index.ts`, `deno test --allow-env --allow-net tests/` with `CLINK_TEST_DB_URL` | clean, 23/23 (new: clamp test, 2 CORS tests, CLOLD) |
+| Apply | `node scripts/supabase-apply.mjs` | 0020 applied |
+| Deploy | `node scripts/supabase-deploy-functions.mjs` | 4 ACTIVE (`complete-signup`, `delete-account`, `register-device` v14, `widget-api` v9 after the last redeploy); `CLINK_CORS_ORIGINS=http://localhost:8081` |
+| pgTAP on clink-dev | `node scripts/supabase-pgtap.mjs` | 14 files, 391/391, rolled back |
+| Smoke | `node scripts/supabase-smoke.mjs` | 49/49 (new: 7 CORS preflights, a signed-in call from the web origin, 3 log-time cases); 3 test users created, 0 left |
+| Live widget run | `npm run test:e2e:widget` (0105) | 10/10, median 215 ms per widget-api call |
+| Advisors | `node scripts/supabase-advisors.mjs` | no blocking findings |
+| Script tests | `npm run test:scripts` | 7/7 and 14/14 (new: CORS allow-list) |
+| Shared and app Jest | `npm test` | green (new: error kinds, no time code, `widgetApiAction`, forward compatibility at every level, entry exports, pending sign-out: 3) |
+| Data left on clink-dev | Management API query | 0 auth users except +1 201 555 0106 (the CEO's, untouched), 0 logs, devices, orphan install or rate rows, ownerless events, clock offsets; no `tests` schema |
+
+**The real preflight.** The Supabase gateway passes `OPTIONS` to the function even with `verify_jwt` on, so the function's answer is what the browser gets: `204` with the origin echoed for `http://localhost:8081`, `403` without CORS headers for any other origin, `405` from `widget-api`.
+
+### For other owners
+
+- **Android** (in progress in parallel): the Kotlin decoder ignores unknown keys like `widgetStateReadSchema`; the worker can follow `WIDGET_API_ERRORS.kind` and `widgetApiAction` (no change needed if it already uses the status rule: no time code is left).
+- **QA / Shared fixtures**: `packages/shared/fixtures/README.md` says every decoder must reject `invalid/xp-field.json`. Under the contract rule only the server's strict check refuses it; decoders drop the key. The shared tests now assert exactly that.
+- **Head of Development**: `e2e/real-backend/run.mjs` can drop its preflight shim (the functions answer CORS for `http://localhost:8081` now). `lib/widget/host.ts` (the preview host) still decodes strictly; switch it to `widgetStateReadSchema` to mirror the native decoders.
+- **Web**: add the web domain to `corsOrigins` in `supabase/projects.json` when it exists, then redeploy.
+
+### Not done, and why
+
+- **iOS**: unchanged (no Apple account or Mac).
+- **A fresh-container setup script** for this environment: the tools here (JDK 17, Android SDK, Deno in the scratchpad, Postgres 16 with pgTAP) were already installed; the local Postgres runs under `/tmp/clink-cto-pg` because the scratchpad lost its permissions mid-run.

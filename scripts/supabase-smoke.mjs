@@ -32,10 +32,13 @@ function check(name, ok, detail = '') {
   console.log(`${ok ? 'ok    ' : 'FAIL  '} ${name}${detail ? `  (${detail})` : ''}`);
 }
 
-async function call(pathname, { method = 'POST', token, body, apikey = true, region } = {}) {
+async function call(
+  pathname,
+  { method = 'POST', token, body, apikey = true, region, headers: extra = {} } = {},
+) {
   // widget-api is called the way a widget calls it: the widget token only, no apikey header, and
   // x-region so the function runs next to the database.
-  const headers = { 'content-type': 'application/json' };
+  const headers = { 'content-type': 'application/json', ...extra };
   if (apikey) headers.apikey = project.publishableKey;
   if (region) headers['x-region'] = region;
   if (token) headers.authorization = `Bearer ${token}`;
@@ -52,7 +55,29 @@ async function call(pathname, { method = 'POST', token, body, apikey = true, reg
   } catch {
     json = { raw: text.slice(0, 200) };
   }
-  return { status: res.status, json, ms: Math.round(performance.now() - started) };
+  return {
+    status: res.status,
+    json,
+    ms: Math.round(performance.now() - started),
+    allowOrigin: res.headers.get('access-control-allow-origin'),
+    allowHeaders: res.headers.get('access-control-allow-headers') ?? '',
+  };
+}
+
+/** The dev web origin in supabase/projects.json `corsOrigins` (expo start --web). */
+const WEB_ORIGIN = 'http://localhost:8081';
+
+/** A browser's CORS preflight, exactly as Chrome sends it for supabase-js functions.invoke. */
+function preflight(pathname, origin) {
+  return call(pathname, {
+    method: 'OPTIONS',
+    apikey: false,
+    headers: {
+      origin,
+      'access-control-request-method': 'POST',
+      'access-control-request-headers': 'apikey,authorization,content-type,x-client-info',
+    },
+  });
 }
 
 const fn = (name, opts) => call(`/functions/v1/${name}`, opts);
@@ -105,6 +130,33 @@ async function main() {
         .slice(0, 3)
         .map(([p]) => literal(p))
         .join(',')})`,
+    );
+
+    // CORS (app-supabase.md item 1): a real preflight, answered before auth, only for the dev
+    // web origin, and never by widget-api (native-only).
+    for (const name of ['complete-signup', 'register-device', 'delete-account']) {
+      const pf = await preflight(`/functions/v1/${name}`, WEB_ORIGIN);
+      check(
+        `${name} answers the preflight from ${WEB_ORIGIN}`,
+        pf.status === 204 &&
+          pf.allowOrigin === WEB_ORIGIN &&
+          ['apikey', 'authorization', 'content-type', 'x-client-info'].every((h) =>
+            pf.allowHeaders.includes(h),
+          ),
+        `${pf.status} ${pf.allowOrigin}`,
+      );
+      const evil = await preflight(`/functions/v1/${name}`, 'https://evil.example');
+      check(
+        `${name} gives another origin no CORS headers`,
+        evil.status === 403 && evil.allowOrigin === null,
+        `${evil.status} ${evil.allowOrigin}`,
+      );
+    }
+    const wpf = await preflight('/functions/v1/widget-api/log', WEB_ORIGIN);
+    check(
+      'widget-api answers no preflight (native only)',
+      wpf.status !== 204 && wpf.allowOrigin === null,
+      `${wpf.status} ${wpf.allowOrigin}`,
     );
 
     // Refusals before sign-in.
@@ -164,6 +216,17 @@ async function main() {
       'the private schema is not reachable through the Data API',
       priv.status === 404 || priv.status === 401 || priv.status === 403,
       `${priv.status}`,
+    );
+
+    const fromWeb = await fn('register-device', {
+      token: a.token,
+      body: { action: 'signout', installId: randomUUID() },
+      headers: { origin: WEB_ORIGIN },
+    });
+    check(
+      'a signed-in call from the web origin can be read by the browser',
+      fromWeb.status === 200 && fromWeb.allowOrigin === WEB_ORIGIN,
+      `${fromWeb.status} ${fromWeb.allowOrigin}`,
     );
 
     // register-device.
@@ -323,6 +386,49 @@ async function main() {
       'widget-api state shows the counts',
       wAfter.json?.today?.drinks === 1 && wAfter.json?.today?.water === 1,
       `${wAfter.json?.today?.drinks} ${wAfter.json?.today?.water}`,
+    );
+
+    // The server owns time (ARCHITECTURE.md 3.2 "Log time", 0020): no loggedAt is refused.
+    const timed = async (offsetMs, extra = {}) => {
+      const id = randomUUID();
+      const sent = isoNow(offsetMs);
+      const res = await widget('log', {
+        token: wt,
+        body: { ...logBody, id, loggedAt: sent, ...extra },
+      });
+      const [row] = await query(
+        ref,
+        `select extract(epoch from logged_at)::float8 as at, extract(epoch from now())::float8 as now
+           from public.drink_logs where id = ${literal(id)}`,
+      );
+      return { res, sentSec: Date.parse(sent) / 1000, row };
+    };
+    const fast = await timed(2 * 3600_000);
+    check(
+      'a log from a phone clock 2 h fast is logged at server now',
+      fast.res.status === 200 &&
+        fast.res.json?.status === 'logged' &&
+        fast.res.json?.today?.drinks === 2 &&
+        Math.abs(fast.row?.at - fast.row?.now) < 120,
+      `${fast.res.status} ${fast.res.json?.status ?? fast.res.json?.error}`,
+    );
+    const offline = await timed(-3 * 86400_000, { slot: null });
+    check(
+      'a log replayed after 3 days offline keeps its time',
+      offline.res.status === 200 && offline.row?.at === offline.sentSec,
+      `${offline.res.status} ${offline.res.json?.status ?? offline.res.json?.error}`,
+    );
+    const ancient = await timed(-120 * 86400_000, {
+      drinkId: 'water.still',
+      slot: null,
+      category: 'water',
+    });
+    check(
+      'a log older than the 90-day window is logged at its oldest edge',
+      ancient.res.status === 200 &&
+        ancient.res.json?.status === 'logged' &&
+        Math.abs(ancient.row?.at - (ancient.row?.now - 90 * 86400)) < 120,
+      `${ancient.res.status} ${ancient.res.json?.status ?? ancient.res.json?.error}`,
     );
 
     const out = await fn('register-device', {

@@ -46,32 +46,33 @@ data class TrackerModel(
   val waterWord: String,
   /** The whole water count as COPY.md writes it ("4 waters"). */
   val waterText: String,
-  /** null: nothing today, `noneText` is shown instead. */
-  val lastDrinkAt: Instant?,
-  /** The Chronometer format: the COPY.md line with {ago} as %s. */
-  val lastFormat: String,
-  /** The same line as minute text, for the fallback and for tests. */
-  val lastText: String,
+  /**
+   * The last drink as a time of day ("Last drink 7:30 AM"; small "Last 7:30"): exact, never stale,
+   * so no ticking and no per-minute redraws. null with no drink today: `noneText` shows instead.
+   */
+  val lastText: String?,
   val noneText: String,
   val a11y: String,
 )
 
-data class UsualLine(val icon: Int, val text: String)
+/** The usual #1 as a line (small tall widget): its picture and its short name. */
+data class UsualLine(val art: Int, val text: String)
 
-sealed class SnapTileModel {
-  abstract val a11y: String?
+/**
+ * The tile beside the tracker on the idle medium widget (DESIGN.md 5.2, polish pass): a friend's
+ * snap when there is one today, otherwise your usual #1 drink on its tint, otherwise the nudge to
+ * pick your usual 3.
+ */
+sealed class MediaTile {
+  abstract val a11y: String
   abstract val tap: Tap
 
-  data class Empty(val text: String, override val tap: Tap, override val a11y: String? = null) : SnapTileModel()
+  data class Photo(val file: String, val caption: String, override val tap: Tap, override val a11y: String) : MediaTile()
 
-  data class Invite(val text: String, override val tap: Tap, override val a11y: String) : SnapTileModel()
+  /** Usual #1 (or the herbal tea note after 4 caffeinated drinks): Icon L on its category plate. */
+  data class Drink(val art: Int, val name: String, val background: Int, override val tap: Tap, override val a11y: String) : MediaTile()
 
-  data class Photo(
-    val file: String,
-    val caption: String,
-    override val tap: Tap,
-    override val a11y: String,
-  ) : SnapTileModel()
+  data class PickUsual(val text: String, override val tap: Tap, override val a11y: String) : MediaTile()
 }
 
 data class ButtonModel(
@@ -88,7 +89,8 @@ data class ButtonModel(
 sealed class OverlayModel {
   abstract val a11y: String
 
-  data class Confirm(val text: String, val detail: String?, override val a11y: String) : OverlayModel()
+  /** `art`: the logged drink's Icon L, shown at the end of the row. */
+  data class Confirm(val text: String, val detail: String?, override val a11y: String, val art: Int? = null) : OverlayModel()
 
   data class Sending(val text: String, override val a11y: String) : OverlayModel()
 
@@ -96,7 +98,8 @@ sealed class OverlayModel {
 }
 
 data class PickerCell(
-  val icon: Int,
+  /** Icon L of the drink (the main thing in the cell). */
+  val art: Int,
   val label: String,
   val background: Int,
   val tap: Tap,
@@ -110,8 +113,9 @@ sealed class Content {
 
   data class Idle(
     val tracker: TrackerModel,
+    val media: MediaTile,
+    /** Usual #1 as a line, where a layout has room for it beside the counts. */
     val usual: UsualLine?,
-    val snap: SnapTileModel,
     val log: ButtonModel,
     val camera: ButtonModel,
     val whoJoins: ButtonModel,
@@ -151,6 +155,8 @@ sealed class Content {
     val subTitle: String,
     val meta: String,
     val expiresAt: Instant,
+    /** Chronometer format for the countdown: COPY.md `wm.in.left` / `ws.in.left` with %s. */
+    val leftFormat: String,
     val more: String?,
     val moreA11y: String?,
     val join: ButtonModel?,

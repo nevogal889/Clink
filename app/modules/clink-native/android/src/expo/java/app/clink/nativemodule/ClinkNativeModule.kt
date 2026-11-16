@@ -45,6 +45,8 @@ class ClinkNativeModule : Module() {
 
     AsyncFunction("drainOutbox") Coroutine { -> bridge.drainOutbox() }
 
+    AsyncFunction("takeRejected") Coroutine { -> bridge.takeRejected() }
+
     AsyncFunction("clearAll") Coroutine { -> bridge.clearAll() }
   }
 }

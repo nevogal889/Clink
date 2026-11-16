@@ -3,7 +3,9 @@ package app.clink.widget
 import androidx.test.core.app.ApplicationProvider
 import app.clink.widget.model.SendResult
 import app.clink.widget.model.WidgetState
+import app.clink.widget.net.ErrorAction
 import app.clink.widget.net.HttpWidgetApi
+import app.clink.widget.net.WidgetApiErrors
 import app.clink.widget.net.LogResult
 import app.clink.widget.net.StateQuery
 import app.clink.widget.net.StateResult
@@ -120,12 +122,66 @@ class SyncTest {
   }
 
   @Test
-  fun rejectedLogsAreDropped() = runTest {
+  fun aMalformedLogMovesToTheRejectedListForTheApp() = runTest {
+    seed()
+    val e = LogDrink.log(context, 7, 1)!!
+    LogDrink.log(context, 7, 2)
+    env.api.logAnswers = ArrayDeque(listOf(LogResult(HttpWidgetApi.classify(400, "bad_input"))))
+    val out = Sync.flush(context)
+    // The second log still went: a rejection doesn't stop the flush.
+    assertEquals(1, out.sent)
+    val snap = env.store.snapshot().outbox
+    assertTrue(snap.items.isEmpty())
+    assertEquals(e, snap.rejected.single().entry)
+    assertEquals("bad_input", snap.rejected.single().code)
+    assertEquals("malformed", snap.rejected.single().kind)
+    // The app reads it, then takes it to report.
+    val bridge = WidgetBridge(context)
+    @Suppress("UNCHECKED_CAST")
+    val listed = bridge.getOutbox()["rejected"] as List<Map<String, Any?>>
+    assertEquals(400, listed.single()["status"])
+    val taken = bridge.takeRejected()
+    assertEquals(e.id, (taken.single()["entry"] as Map<*, *>)["id"])
+    assertTrue(env.store.snapshot().outbox.rejected.isEmpty())
+  }
+
+  @Test
+  fun aRetryableRefusalKeepsTheLogAndRetriesWithBackoff() = runTest {
     seed()
     LogDrink.log(context, 7, 1)
-    env.api.defaultLog = LogResult(SendResult.Rejected(422))
+    env.api.defaultLog = LogResult(HttpWidgetApi.classify(429, "rate_limited"))
+    val out = Sync.flush(context)
+    assertTrue("WorkManager retries with backoff", out.retry)
+    assertEquals(1, env.store.snapshot().outbox.items.single().attempts)
+    assertTrue(env.store.snapshot().outbox.rejected.isEmpty())
+  }
+
+  @Test
+  fun aStateRequestedBeforeAnAckDoesNotUndoTheCount() = runTest {
+    seed()
+    LogDrink.log(context, 7, 1)
+    env.api.defaultLog = LogResult(SendResult.Accepted)
+    // Another state request (the app's, or a refresh) left before the ack and lands after it,
+    // built before the server saw the log (still 3 drinks).
+    val asked = env.clock.instant()
+    env.clock.advance(Duration.ofSeconds(1))
     Sync.flush(context)
-    assertTrue(env.store.snapshot().outbox.items.isEmpty())
+    env.clock.advance(Duration.ofSeconds(1))
+    env.store.putStateJson(Fixtures.widgetStates().first { it.id == "W4" }.stateJson, env.clock.instant(), asOf = asked)
+    val snap = env.store.snapshot()
+    assertEquals(1, snap.outbox.acked.size)
+    val shown = app.clink.widget.model.Optimistic.apply(snap.state, snap.outbox, snap.countsReceivedAt, env.clock.instant(), env.clock.zone)
+    assertEquals(4, (shown as WidgetState.Ready).today.drinks)
+  }
+
+  @Test
+  fun signOutForgetsReportedWidgets() = runTest {
+    seed()
+    env.store.markReported(42)
+    assertTrue(42 in env.store.snapshot().reported)
+    env.store.clearAll(env.clock.instant())
+    assertTrue(env.store.snapshot().reported.isEmpty())
+    assertTrue(env.store.snapshot().state is WidgetState.SignedOut)
   }
 
   @Test
@@ -179,7 +235,47 @@ class SyncTest {
     assertEquals(SendResult.Unauthorized, HttpWidgetApi.classify(401))
     for (c in listOf(403, 408, 429, 500, 503)) assertEquals("$c", SendResult.RetryLater, HttpWidgetApi.classify(c))
     for (c in listOf(400, 404, 405, 409, 413, 422)) assertEquals("$c", SendResult.Rejected(c), HttpWidgetApi.classify(c))
+    // By code: the table decides, whatever the status.
+    for ((code, rule) in WidgetApiErrors.TABLE) {
+      val expected =
+        when (rule.action) {
+          ErrorAction.REAUTH -> SendResult.Unauthorized
+          ErrorAction.RETRY -> SendResult.RetryLater
+          ErrorAction.REJECT -> SendResult.Rejected(rule.status, code, rule.kind.key)
+        }
+      assertEquals(code, expected, HttpWidgetApi.classify(rule.status, code))
+    }
+    // A code this build doesn't know is judged by its status.
+    assertEquals(SendResult.Rejected(422, "new_code"), HttpWidgetApi.classify(422, "new_code"))
+    // A stale custom slot is kept for the app too, never deleted.
+    assertEquals(SendResult.Rejected(409, "usual_changed", "stale"), HttpWidgetApi.classify(409, "usual_changed"))
+    // The retired too_old is a 422 like any unknown code: kept for the app, not dropped.
+    assertEquals(SendResult.Rejected(422, "too_old"), HttpWidgetApi.classify(422, "too_old"))
+    assertEquals(SendResult.RetryLater, HttpWidgetApi.classify(503, "new_code"))
     assertEquals("", HttpWidgetApi.queryString(StateQuery()))
     assertEquals("?instance=7&size=small&tz=Europe%2FLondon", HttpWidgetApi.queryString(StateQuery("7", "small", "Europe/London")))
+  }
+
+  @Test
+  fun theKotlinErrorTableMatchesWidgetApiErrors() {
+    // packages/shared/src/api/index.ts, next to the fixtures this test already reads.
+    val src = java.io.File(Fixtures.dir, "../src/api/index.ts").readText()
+    val block = src.substringAfter("export const WIDGET_API_ERRORS = {").substringBefore("} as const")
+    val rows =
+      Regex("""(\w+):\s*\{\s*status:\s*(\d+),\s*then:\s*'(\w+)',\s*kind:\s*'(\w+)'\s*\}""").findAll(block).associate { m ->
+        val action =
+          when (val then = m.groupValues[3]) {
+            "reauth" -> ErrorAction.REAUTH
+            "retry" -> ErrorAction.RETRY
+            "drop", "reject" -> ErrorAction.REJECT
+            else -> throw AssertionError("WIDGET_API_ERRORS.${m.groupValues[1]}: unknown then '$then'")
+          }
+        val kind =
+          app.clink.widget.net.ErrorKind.entries.firstOrNull { it.key == m.groupValues[4] }
+            ?: throw AssertionError("WIDGET_API_ERRORS.${m.groupValues[1]}: unknown kind '${m.groupValues[4]}'")
+        m.groupValues[1] to app.clink.widget.net.ErrorRule(m.groupValues[2].toInt(), action, kind)
+      }
+    assertTrue("parsed the shared table", rows.size >= 10)
+    assertEquals(rows, WidgetApiErrors.TABLE)
   }
 }

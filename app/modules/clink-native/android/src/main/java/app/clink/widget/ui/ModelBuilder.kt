@@ -62,7 +62,7 @@ class ModelBuilder(private val copy: Copy) {
     val scale = textScale(fontScale)
     val idleBg = R.drawable.clink_bg_widget_idle
     fun model(bg: Int, tap: Tap, content: Content) = WidgetModel(layout, scale, compact, fontScale, bg, tap, content)
-    val overlay = overlay(view.overlay, local.confirmation, layout)
+    val overlay = overlay(view.overlay, local.confirmation, layout, ready)
 
     return when (view) {
       is WidgetView.SignedOut ->
@@ -83,7 +83,8 @@ class ModelBuilder(private val copy: Copy) {
             copy.t(R.string.clink_a11y_w_setup),
           ),
         )
-      is WidgetView.Picker -> model(idleBg, Tap.Open(AppRoute.HOME), picker(ready!!, layout, overlay))
+      // A tap beside the cells closes the picker (the 4x2 and 2x2 grids have no room for a ✕).
+      is WidgetView.Picker -> model(idleBg, Tap.ClosePicker, picker(ready!!, layout, overlay))
       is WidgetView.Idle -> model(idleBg, Tap.Open(AppRoute.HOME), idle(ready!!, view, sized, layout, fontScale, now, zone, overlay))
       is WidgetView.MyFlareView -> myFlare(ready!!, layout, now, overlay).let { model(it.background, Tap.Open(AppRoute.HOME), it) }
       is WidgetView.Incoming -> incoming(ready!!, view, layout, now, overlay).let { model(it.background, Tap.Open(AppRoute.HOME), it) }
@@ -93,7 +94,7 @@ class ModelBuilder(private val copy: Copy) {
 
   // -------------------------------------------------------------------------------------------
 
-  private fun overlay(o: Overlay?, c: Confirmation?, layout: Layout): OverlayModel? {
+  private fun overlay(o: Overlay?, c: Confirmation?, layout: Layout, s: WidgetState.Ready?): OverlayModel? {
     val small = layout.small
     return when (o) {
       null -> null
@@ -108,8 +109,16 @@ class ModelBuilder(private val copy: Copy) {
             ConfirmationKind.ENDED -> copy.t(if (small) R.string.clink_ws_ended else R.string.clink_wm_ended)
           }
         val detail = if (o.kind == ConfirmationKind.LOGGED) c?.drinkShort else null
+        // The logged drink's picture: by id, else the usual slot with that name, else water.
+        val art =
+          if (o.kind != ConfirmationKind.LOGGED) null
+          else if (c?.drinkShort == null) DrinkIcons.iconL(LogDrink.WATER_ID)
+          else {
+            val u = s?.usual?.firstOrNull { it.drinkId == c.drinkId && c.drinkId != null } ?: s?.usual?.firstOrNull { it.drinkShort == c.drinkShort }
+            DrinkIcons.iconL(c.drinkId) ?: u?.let { Res.art(it.drinkId, LogCategory.of(it.category)) }
+          }
         // a11y.w.confirm: the visible confirmation text ("Logged Flat White").
-        OverlayModel.Confirm(text, detail, listOfNotNull(text, detail).joinToString(" "))
+        OverlayModel.Confirm(text, detail, listOfNotNull(text, detail).joinToString(" "), art)
       }
       is Overlay.Sending -> {
         val text = copy.t(if (small) R.string.clink_ws_sending else R.string.clink_wm_sending)
@@ -127,9 +136,9 @@ class ModelBuilder(private val copy: Copy) {
   private fun minutesBetween(a: Instant, b: Instant): Long = Duration.between(a, b).toMinutes()
 
   private fun tracker(s: WidgetState.Ready, v: WidgetView.Idle, layout: Layout, fontScale: Float, now: Instant, zone: ZoneId): TrackerModel {
-    // The full "Last drink … ago" line needs the wide medium; narrower sizes use the small
-    // string (COPY.md 6: Android uses the small strings below the medium breakpoint).
-    val small = !layout.wide || fontScale >= COMPACT_FONT_SCALE
+    // Only the small widget uses the short line ("Last 7:30"); every 4x2 has room for
+    // "Last drink 7:30 AM" in the tracker column (polish pass).
+    val small = layout.small
     val drinks = copy.t(R.string.clink_ws_drinks, "n" to v.drinks)
     val water = copy.t(R.string.clink_ws_water, "n" to v.water)
     val (dn, dw) = Copy.splitCount(drinks)
@@ -139,22 +148,18 @@ class ModelBuilder(private val copy: Copy) {
       s.today.lastDrinkAt?.takeIf {
         s.today.localDate == Resolve.localDateAt(now, zone) && Resolve.localDateAt(it, zone) == s.today.localDate
       }
-    val agoMin = last?.let { maxOf(0L, minutesBetween(it, now)) }
-    val lineKey = if (small) R.string.clink_ws_last else R.string.clink_wm_last
+    // The time of day of the last drink (Head of Product, polish pass): exact and never stale, so
+    // the widget needs no ticking text. Midnight clears it with the counts.
     val lastText =
-      when {
-        agoMin == null -> ""
-        !small && agoMin < 1 -> copy.t(R.string.clink_wm_last_now)
-        else -> copy.t(lineKey, "ago" to copy.ago(agoMin))
+      last?.let {
+        if (small) copy.t(R.string.clink_ws_last_at, "time" to copy.time(it, zone, short = true))
+        else copy.t(R.string.clink_wm_last_at, "time" to copy.time(it, zone))
       }
     val a11y =
-      if (last == null && v.drinks == 0 && v.water == 0) {
-        copy.t(R.string.clink_a11y_w_tracker_none)
-      } else if (agoMin != null) {
-        copy.t(R.string.clink_a11y_w_tracker, "drinks" to v.drinks, "water" to v.water, "ago_words" to copy.words(agoMin))
-      } else {
-        // Counts but no drink today (water only): the counts, without a last-drink sentence.
-        copy.t(R.string.clink_a11y_w_tracker, "drinks" to v.drinks, "water" to v.water, "ago_words" to "").substringBefore(". ") + "."
+      when {
+        last != null -> copy.t(R.string.clink_a11y_w_tracker_at, "drinks" to v.drinks, "water" to v.water, "time" to copy.time(last, zone))
+        v.water > 0 -> copy.t(R.string.clink_a11y_w_tracker_water, "water" to v.water)
+        else -> copy.t(R.string.clink_a11y_w_tracker_none)
       }
     return TrackerModel(
       drinksNum = dn,
@@ -162,8 +167,6 @@ class ModelBuilder(private val copy: Copy) {
       waterNum = wn,
       waterWord = ww,
       waterText = water,
-      lastDrinkAt = last,
-      lastFormat = copy.raw(lineKey).replace("{ago}", "%s"),
       lastText = lastText,
       noneText = copy.t(if (small) R.string.clink_ws_last_none else R.string.clink_wm_last_none),
       a11y = a11y,
@@ -199,41 +202,54 @@ class ModelBuilder(private val copy: Copy) {
   ): Content.Idle {
     val small = layout.small
     val first = s.usual.firstOrNull()
-    val usual =
+    // Usual #1, or the neutral herbal tea note after 4 caffeinated drinks (PRD 3.11): the note
+    // shows a chamomile, the one herbal tea in the catalog pictures.
+    val drinkTile: MediaTile.Drink? =
       when {
-        // The usual #1 line drops second (DESIGN.md 5.1); only the wide medium has room for it.
-        !layout.wide -> null
-        v.caffeineNote -> UsualLine(R.drawable.clink_glyph_tea_ink, copy.t(R.string.clink_wm_caff))
+        v.caffeineNote ->
+          MediaTile.Drink(
+            DrinkIcons.iconL("tea.chamomile") ?: R.drawable.clink_glyph_tea_ink,
+            copy.t(R.string.clink_wm_caff),
+            Res.of(LogCategory.TEA).plate,
+            Tap.OpenPicker,
+            copy.t(R.string.clink_a11y_w_log),
+          )
         first != null ->
-          UsualLine(
-            Res.icon(first.drinkId, LogCategory.of(first.category)),
+          MediaTile.Drink(
+            Res.art(first.drinkId, LogCategory.of(first.category)),
             copy.t(R.string.clink_wm_usual, "drink_short" to Copy.truncate(first.drinkShort, Copy.DRINK_SHORT)),
+            Res.of(first.category).plate,
+            Tap.OpenPicker,
+            copy.t(R.string.clink_a11y_w_plate, "drink" to first.name),
           )
         else -> null
       }
-    val snap =
+    val usual = drinkTile?.let { UsualLine(it.art, it.name) }
+    val media: MediaTile =
       when {
-        v.noFriends ->
-          SnapTileModel.Invite(copy.t(R.string.clink_wm_nofriends), Tap.Open(AppRoute.SETTINGS), copy.t(R.string.clink_a11y_w_invite))
         v.snapId != null -> {
           val sn = s.snaps.first { it.id == v.snapId }
           val ago = maxOf(0L, minutesBetween(sn.createdAt, now))
-          SnapTileModel.Photo(
+          MediaTile.Photo(
             sn.thumbFile,
             copy.t(R.string.clink_wm_snap, "name" to Copy.truncate(sn.senderName, Copy.NAME), "ago" to copy.ago(ago)),
             Tap.Open(AppRoute.CAMERA),
             copy.t(R.string.clink_a11y_w_snap, "name" to sn.senderName, "ago_words" to copy.words(ago)),
           )
         }
-        else -> SnapTileModel.Empty(copy.t(R.string.clink_wm_snap_none), Tap.Open(AppRoute.CAMERA))
+        drinkTile != null -> drinkTile
+        else -> {
+          val text = copy.t(R.string.clink_wm_usual_none)
+          MediaTile.PickUsual(text, Tap.Open(AppRoute.USUAL), text)
+        }
       }
     val log =
       ButtonModel(
         label = copy.t(if (small) R.string.clink_ws_log else R.string.clink_wm_log),
-        // "+1" already carries the plus, so no glyph beside it.
+        // "+1" already carries the plus, so no glyph beside it. Brand chrome: cobalt on its tint.
         icon = null,
-        background = R.drawable.clink_bg_pill_tonal,
-        textColor = R.color.clink_ink_primary,
+        background = R.drawable.clink_bg_pill_cobalt_tint,
+        textColor = R.color.clink_cobalt,
         // No usual 3: +1 Drink opens the app on the usual 3 editor (PRD 3.3).
         tap = if (v.noUsual) Tap.Open(AppRoute.USUAL) else Tap.OpenPicker,
         a11y = copy.t(R.string.clink_a11y_w_log),
@@ -241,9 +257,9 @@ class ModelBuilder(private val copy: Copy) {
     val camera =
       ButtonModel(
         label = copy.t(R.string.clink_wm_camera),
-        icon = R.drawable.clink_ui_camera,
-        background = R.drawable.clink_bg_pill_tonal,
-        textColor = R.color.clink_ink_primary,
+        icon = R.drawable.clink_ui_camera_cobalt,
+        background = R.drawable.clink_bg_pill_cobalt_tint,
+        textColor = R.color.clink_cobalt,
         tap = Tap.Open(AppRoute.CAMERA),
         a11y = copy.t(R.string.clink_a11y_w_camera),
       )
@@ -295,7 +311,7 @@ class ModelBuilder(private val copy: Copy) {
           subLabel = label,
         )
       }
-    return Content.Idle(tracker(s, v, layout, fontScale, now, zone), usual, snap, log, camera, whoJoins, overlay)
+    return Content.Idle(tracker(s, v, layout, fontScale, now, zone), media, usual, log, camera, whoJoins, overlay)
   }
 
   private fun picker(s: WidgetState.Ready, layout: Layout, overlay: OverlayModel?): Content.Picker {
@@ -303,7 +319,7 @@ class ModelBuilder(private val copy: Copy) {
     val cells =
       s.usual.map { u ->
         PickerCell(
-          icon = Res.icon(u.drinkId, LogCategory.of(u.category)),
+          art = Res.art(u.drinkId, LogCategory.of(u.category)),
           label = Copy.truncate(u.drinkShort, Copy.DRINK_SHORT),
           background = Res.of(u.category).cell,
           tap = Tap.Log(u.slot),
@@ -311,7 +327,7 @@ class ModelBuilder(private val copy: Copy) {
         )
       } +
         PickerCell(
-          icon = DrinkIcons.iconS("water.still") ?: R.drawable.clink_glyph_water_ink,
+          art = DrinkIcons.iconL(LogDrink.WATER_ID) ?: R.drawable.clink_glyph_water_ink,
           label = copy.t(if (small) R.string.clink_ws_pick_water else R.string.clink_wm_pick_water),
           background = R.drawable.clink_bg_cell_water,
           tap = Tap.Log(null),
@@ -439,6 +455,7 @@ class ModelBuilder(private val copy: Copy) {
         if (f.place != null) copy.t(R.string.clink_wm_in_meta, "place" to Copy.truncate(f.place, Copy.PLACE), "mins" to copy.mins(toMeet))
         else copy.mins(toMeet, capital = true),
       expiresAt = f.expiresAt,
+      leftFormat = copy.raw(if (small) R.string.clink_ws_in_left else R.string.clink_wm_in_left).replace("{timer}", "%s"),
       more = v.more.takeIf { it > 0 }?.let { copy.t(if (small) R.string.clink_ws_more else R.string.clink_wm_in_more, "n" to it) },
       moreA11y = v.more.takeIf { it > 0 }?.let { copy.t(R.string.clink_a11y_w_more, "n" to it) },
       join = if (replied == null) join else null,
@@ -455,7 +472,7 @@ class ModelBuilder(private val copy: Copy) {
     val cells =
       s.usual.map { u ->
         PickerCell(
-          icon = Res.icon(u.drinkId, LogCategory.of(u.category)),
+          art = Res.art(u.drinkId, LogCategory.of(u.category)),
           label = Copy.truncate(u.drinkShort, Copy.DRINK_SHORT),
           background = Res.flare(u.category).cellRaised,
           tap = Tap.Open(AppRoute.HOME),

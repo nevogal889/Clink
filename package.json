@@ -20,11 +20,14 @@
     "test:shared": "jest --selectProjects shared",
     "test:app": "jest --selectProjects app",
     "test:db": "bash scripts/run-pgtap.sh",
-    "check:gen": "npm run gen:check --workspace @clink/shared",
+    "check:gen": "npm run gen:check --workspace @clink/shared && npm run check:gen:android",
+    "check:gen:android": "node scripts/gen-android-strings.mjs --check && node scripts/gen-android-colors.mjs --check && node scripts/gen-drink-assets.mjs --check",
     "check:icons": "node app/assets/art/icons/_source/check-icons.mjs",
     "test:art": "node --test scripts/gen-art-gallery.test.mjs",
+    "test:scripts": "node --test scripts/gen-android.test.mjs scripts/supabase/supabase.test.mjs",
+    "test:e2e:widget": "CLINK_E2E=1 jest -c e2e/widget-api/jest.config.js",
     "export:web": "npm run export:web --workspace @clink/app",
-    "ci": "npm run typecheck && npm run lint && npm run format:check && npm run check:gen && npm run check:icons && npm test && npm run test:art"
+    "ci": "npm run typecheck && npm run lint && npm run format:check && npm run check:gen && npm run check:icons && npm test && npm run test:art && npm run test:scripts"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

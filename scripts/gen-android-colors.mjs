@@ -176,7 +176,16 @@ export function shapeList() {
       'cell',
       (r) => rimmed('surfaceRaised', `${cat}_ink`, '2dp', r),
     ]);
+    // The usual #1 tile on the idle widget (polish pass): a drink container, so its tint with a
+    // 3 dp rim in the drink's ink (DESIGN.md 1.2 rule 1, 5.2).
+    list.push([
+      `clink_bg_plate_${cat}`,
+      'inner',
+      (r) => rimmed(`${cat}_tint`, `${cat}_ink`, '3dp', r),
+    ]);
   }
+  // No usual 3 yet: the same tile in brand colours, a cobalt rim on the cobalt tint.
+  list.push(['clink_bg_plate_cobalt', 'inner', (r) => rimmed('cobaltTint', 'cobalt', '3dp', r)]);
   for (const cat of CATEGORIES) {
     list.push([
       `clink_bg_cell_${cat}`,
@@ -186,6 +195,9 @@ export function shapeList() {
   }
   list.push(['clink_bg_pill_tonal', 'pill', (r) => plain('surfaceSunk', r)]);
   list.push(['clink_bg_pill_cobalt', 'pill', (r) => plain('cobalt', r)]);
+  // +1 Drink and the camera (polish pass): brand chrome is cobalt, so the tonal controls use the
+  // cobalt tint with cobalt labels (8.1:1 light, 6.8:1 dark), next to the drink-coloured Who joins?.
+  list.push(['clink_bg_pill_cobalt_tint', 'pill', (r) => plain('cobaltTint', r)]);
   list.push(['clink_bg_pill_raised', 'pill', (r) => plain('surfaceRaised', r)]);
   list.push(['clink_bg_pill_ink', 'pill', (r) => plain('inkPrimary', r)]);
   list.push(['clink_bg_tile_sunk', 'inner', (r) => plain('surfaceSunk', r)]);

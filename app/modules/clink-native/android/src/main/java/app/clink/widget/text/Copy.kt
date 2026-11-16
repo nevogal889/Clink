@@ -1,14 +1,19 @@
 package app.clink.widget.text
 
 import android.content.Context
+import android.text.format.DateFormat
 import app.clink.nativemodule.R
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 // Every user-facing widget string comes from COPY.md through the generated resources
 // (scripts/gen-android-strings.mjs: key "wm.pick.title" is R.string.clink_wm_pick_title). The time
 // variables follow app/src/lib/format.ts: {ago}, {mins}, {ago_words} / {left_words} (COPY.md 4.27).
 
-class Copy(private val lookup: (Int) -> String) {
-  constructor(context: Context) : this({ id -> context.getString(id) })
+class Copy(private val lookup: (Int) -> String, private val is24Hour: () -> Boolean = { true }) {
+  constructor(context: Context) : this({ id -> context.getString(id) }, { DateFormat.is24HourFormat(context) })
 
   fun t(id: Int, vararg vars: Pair<String, Any>): String = Icu.render(lookup(id), mapOf(*vars))
 
@@ -25,6 +30,15 @@ class Copy(private val lookup: (Int) -> String) {
       m == 0L -> t(R.string.clink_fmt_ago_h, "h" to h)
       else -> t(R.string.clink_fmt_ago_hm, "h" to h, "m" to m)
     }
+  }
+
+  /**
+   * {time}: a clock time in the device's 12/24 h setting (COPY.md 0.3), "7:30" or "7:30 AM".
+   * `short` drops AM/PM for the small widget (COPY.md `ws.last_at`).
+   */
+  fun time(at: Instant, zone: ZoneId, short: Boolean = false): String {
+    val pattern = if (is24Hour()) "H:mm" else if (short) "h:mm" else "h:mm a"
+    return DateTimeFormatter.ofPattern(pattern, Locale.US).withZone(zone).format(at)
   }
 
   /** {ago_words} / {left_words}: spoken at minute precision, never per second (DESIGN.md 5.6). */

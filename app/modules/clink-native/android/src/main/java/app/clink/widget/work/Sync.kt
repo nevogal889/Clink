@@ -14,8 +14,10 @@ import java.time.Instant
 // One flush of the widget outbox, then a state refresh when something was sent or the state is
 // older than 10 minutes. Runs inside SyncWorker (expedited, network constraint) and
 // RefreshWorker. Plain suspend code, so tests call it with a fake API and a fixed clock.
-// Error handling follows WIDGET_API_ERRORS (packages/shared/src/api): 401 reads the token again
-// and retries once, then waits for the app; 403, 429 and 5xx retry later; other 4xx drop the op.
+// Error handling follows WIDGET_API_ERRORS (packages/shared/src/api, WidgetApiErrors): 401 reads
+// the token again and retries once, then waits for the app; "retry" codes keep the log and try again
+// with backoff; "drop" codes (malformed or stale) move the log to the rejected list for the app,
+// never deleted. No code is about time: the server clamps loggedAt (migration 0020).
 
 object Sync {
   data class Outcome(
@@ -51,6 +53,7 @@ object Sync {
         queue.removeFirst()
         continue
       }
+      val sentAt = now()
       val answer = api.postLog(token!!, entry, tz)
       if (answer.result == SendResult.Unauthorized && !reauthed) {
         // The app may have rotated the token since this job started: read it again, once.
@@ -66,7 +69,8 @@ object Sync {
       when (answer.result) {
         SendResult.Accepted -> {
           sent++
-          answer.todayJson?.let { store.putToday(it, now()) }
+          // The answer's counts include every log acked before this request started.
+          answer.todayJson?.let { store.putToday(it, now(), asOf = sentAt) }
         }
         SendResult.RetryLater -> retry = true
         SendResult.Unauthorized -> unauthorized = true
@@ -85,9 +89,10 @@ object Sync {
       val unreported = snap.configs.entries.firstOrNull { it.key !in snap.reported }
       if (sent > 0 || forceRefresh || stale || unreported != null) {
         val q = StateQuery(unreported?.key?.toString(), unreported?.value?.size?.key, tz)
+        val askedAt = now()
         when (val r = api.getState(token!!, q)) {
           is StateResult.Ok -> {
-            refreshed = store.putStateJson(r.json, now())
+            refreshed = store.putStateJson(r.json, now(), asOf = askedAt)
             if (refreshed && unreported != null) store.markReported(unreported.key)
           }
           StateResult.Unauthorized -> unauthorized = true

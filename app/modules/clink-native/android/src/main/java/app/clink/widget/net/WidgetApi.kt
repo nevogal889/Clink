@@ -34,6 +34,39 @@ data class LogResult(
   val retryAfterSec: Long? = null,
 )
 
+enum class ErrorAction { REAUTH, RETRY, REJECT }
+
+/** WIDGET_API_ERRORS `kind`: why the server refused. */
+enum class ErrorKind(val key: String) {
+  RETRYABLE("retryable"),
+  MALFORMED("malformed"),
+  STALE("stale"),
+}
+
+data class ErrorRule(val status: Int, val action: ErrorAction, val kind: ErrorKind)
+
+/**
+ * Port of WIDGET_API_ERRORS (packages/shared/src/api): what the widget does with each error code.
+ * "drop" there is REJECT here: a log is never deleted, it moves to the rejected list with its code
+ * and kind for the app to report. SyncTest compares this table with the shared one.
+ */
+object WidgetApiErrors {
+  val TABLE: Map<String, ErrorRule> =
+    mapOf(
+      "unauthorized" to ErrorRule(401, ErrorAction.REAUTH, ErrorKind.RETRYABLE),
+      "suspended" to ErrorRule(403, ErrorAction.RETRY, ErrorKind.RETRYABLE),
+      "rate_limited" to ErrorRule(429, ErrorAction.RETRY, ErrorKind.RETRYABLE),
+      "internal" to ErrorRule(500, ErrorAction.RETRY, ErrorKind.RETRYABLE),
+      "bad_input" to ErrorRule(400, ErrorAction.REJECT, ErrorKind.MALFORMED),
+      "unknown_drink" to ErrorRule(422, ErrorAction.REJECT, ErrorKind.MALFORMED),
+      "conflict" to ErrorRule(409, ErrorAction.REJECT, ErrorKind.MALFORMED),
+      "not_found" to ErrorRule(404, ErrorAction.REJECT, ErrorKind.MALFORMED),
+      "method_not_allowed" to ErrorRule(405, ErrorAction.REJECT, ErrorKind.MALFORMED),
+      "too_large" to ErrorRule(413, ErrorAction.REJECT, ErrorKind.MALFORMED),
+      "usual_changed" to ErrorRule(409, ErrorAction.REJECT, ErrorKind.STALE),
+    )
+}
+
 sealed class StateResult {
   data class Ok(val json: String) : StateResult()
 
@@ -66,8 +99,8 @@ class HttpWidgetApi(private val functionsUrl: String, private val region: String
       c.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
       val code = c.responseCode
       val text = read(c)
-      val result = classify(code)
       val json = text?.let { runCatching { JSONObject(it) }.getOrNull() }
+      val result = classify(code, json?.optString("error")?.takeIf { it.isNotEmpty() })
       LogResult(
         result,
         todayJson = if (result == SendResult.Accepted) json?.optJSONObject("today")?.toString() else null,
@@ -128,14 +161,27 @@ class HttpWidgetApi(private val functionsUrl: String, private val region: String
 
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
 
-    /** WIDGET_API_ERRORS: 401 re-auth, 403/429/5xx retry, every other 4xx (409 included) drop. */
-    fun classify(code: Int): SendResult =
-      when {
-        code in 200..299 -> SendResult.Accepted
-        code == 401 -> SendResult.Unauthorized
-        code == 403 || code == 408 || code == 429 || code >= 500 -> SendResult.RetryLater
-        code in 400..499 -> SendResult.Rejected(code)
-        else -> SendResult.RetryLater
+    /**
+     * widgetApiAction() in packages/shared/src/api: by the answer's `error` code when the table
+     * lists it ("reauth", "retry": kept and retried with backoff, "drop": a log moves to `rejected`,
+     * never deleted), else by status: 401 re-auth; 403, 408, 429 and 5xx retry; any other 4xx is
+     * rejected.
+     */
+    fun classify(status: Int, code: String? = null): SendResult {
+      if (status in 200..299) return SendResult.Accepted
+      val rule = code?.let { WidgetApiErrors.TABLE[it] }
+      if (rule == null && status == 401) return SendResult.Unauthorized
+      return when (rule?.action) {
+        ErrorAction.REAUTH -> SendResult.Unauthorized
+        ErrorAction.RETRY -> SendResult.RetryLater
+        ErrorAction.REJECT -> SendResult.Rejected(status, code, rule.kind.key)
+        null ->
+          when {
+            status == 403 || status == 408 || status == 429 || status >= 500 -> SendResult.RetryLater
+            status in 400..499 -> SendResult.Rejected(status, code)
+            else -> SendResult.RetryLater
+          }
       }
+    }
   }
 }

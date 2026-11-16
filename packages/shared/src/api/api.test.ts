@@ -1,6 +1,7 @@
 import {
   WIDGET_API_ERRORS,
   WIDGET_TOKEN_RE,
+  widgetApiAction,
   registerDeviceInput,
   registerDeviceResponse,
   widgetLogInput,
@@ -123,6 +124,54 @@ describe('widget-api log', () => {
       expect(code).toMatch(/^[a-z_]+$/);
       expect(e.status).toBeGreaterThanOrEqual(400);
       expect(['drop', 'retry', 'reauth']).toContain(e.then);
+      expect(['retryable', 'malformed', 'stale']).toContain(e.kind);
     }
+  });
+
+  it('keeps every retryable code and drops only malformed or stale ones', () => {
+    for (const e of Object.values(WIDGET_API_ERRORS)) {
+      if (e.kind === 'retryable') expect(e.then).not.toBe('drop');
+      else expect(e.then).toBe('drop');
+    }
+  });
+
+  it('has no time-based code, so a log is never dropped for its loggedAt', () => {
+    const codes = Object.keys(WIDGET_API_ERRORS);
+    expect(codes).not.toContain('too_old');
+    for (const c of codes) expect(c).not.toMatch(/old|future|time|late|early|clock/);
+  });
+
+  it('accepts a loggedAt hours ahead or months old: the server clamps it', () => {
+    expect(widgetLogInput.safeParse({ ...log, loggedAt: '2099-01-01T00:00:00Z' }).success).toBe(
+      true,
+    );
+    expect(
+      widgetLogInput.safeParse({ ...log, loggedAt: '2020-01-01T00:00:00+02:00' }).success,
+    ).toBe(true);
+  });
+
+  it('refuses impossible dates as malformed', () => {
+    expect(widgetLogInput.safeParse({ ...log, loggedAt: '2026-02-30T09:12:00Z' }).success).toBe(
+      false,
+    );
+    expect(widgetLogInput.safeParse({ ...log, loggedAt: '2026-11-17T25:00:00Z' }).success).toBe(
+      false,
+    );
+  });
+
+  it('tells the widget what to do by code, else by status', () => {
+    expect(widgetApiAction(401, 'unauthorized')).toBe('reauth');
+    expect(widgetApiAction(429, 'rate_limited')).toBe('retry');
+    expect(widgetApiAction(409, 'usual_changed')).toBe('drop');
+    expect(widgetApiAction(422, 'unknown_drink')).toBe('drop');
+    // Unknown or missing codes fall back to the status rule, as the native ports do.
+    expect(widgetApiAction(422, 'too_old')).toBe('drop');
+    expect(widgetApiAction(503, null)).toBe('retry');
+    expect(widgetApiAction(504)).toBe('retry');
+    expect(widgetApiAction(408)).toBe('retry');
+    expect(widgetApiAction(403)).toBe('retry');
+    expect(widgetApiAction(401)).toBe('reauth');
+    expect(widgetApiAction(400)).toBe('drop');
+    expect(widgetApiAction(410, 'toString')).toBe('drop');
   });
 });

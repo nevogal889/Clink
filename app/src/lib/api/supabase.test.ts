@@ -336,6 +336,88 @@ describe('account', () => {
     expect(fake.signOuts).toEqual([{ scope: 'local' }]);
   });
 
+  const registered = (token: string) => ({
+    status: 200,
+    body: {
+      status: 'registered',
+      deviceId: '20000000-0000-4000-8000-000000000001',
+      widgetToken: token,
+      inviteCode: 'K7Q2M9XD',
+      minIosBuild: 0,
+      minAndroidBuild: 0,
+    },
+  });
+
+  it('keeps an offline sign-out pending with the install id only, and sends it on the next launch', async () => {
+    const { api, fake, plain } = setup({ platform: 'android' });
+    fake.signedIn();
+    fake.onInvoke = () => 'offline';
+    await api.signOut();
+    const install = await plain.getItem('install_id');
+    expect(JSON.parse((await plain.getItem('signout_pending'))!)).toEqual({ installId: install });
+    expect(fake.signOuts).toEqual([{ scope: 'local' }]);
+
+    // Next launch, still offline: nothing is lost.
+    fake.signedIn();
+    expect(await api.registerDevice()).toBeNull();
+    expect(await plain.getItem('signout_pending')).not.toBeNull();
+
+    // Next launch online: the sign-out goes first, then this launch's registration.
+    fake.invokes.length = 0;
+    fake.onInvoke = (name, body) =>
+      (body as { action?: string }).action === 'signout'
+        ? { status: 200, body: { status: 'signed_out', removed: true } }
+        : registered('B'.repeat(43));
+    expect(await api.registerDevice()).toEqual({ widgetToken: 'B'.repeat(43) });
+    expect(fake.invokes.map((i) => (i.body as { action: string }).action)).toEqual([
+      'signout',
+      'register',
+    ]);
+    expect(fake.invokes[0]!.body).toEqual({ action: 'signout', installId: install });
+    expect(await plain.getItem('signout_pending')).toBeNull();
+
+    // Once sent, the next launch only registers.
+    fake.invokes.length = 0;
+    await api.registerDevice();
+    expect(fake.invokes.map((i) => (i.body as { action: string }).action)).toEqual(['register']);
+  });
+
+  it('drops a pending sign-out the server refuses for good, and clears it on an online sign-out', async () => {
+    const { api, fake, plain } = setup({ platform: 'ios' });
+    fake.signedIn();
+    fake.onInvoke = () => 'offline';
+    await api.signOut();
+    expect(await plain.getItem('signout_pending')).not.toBeNull();
+    fake.signedIn();
+    fake.onInvoke = (name, body) =>
+      (body as { action?: string }).action === 'signout'
+        ? { status: 400, body: { error: 'bad_input' } }
+        : registered('C'.repeat(43));
+    expect(await api.registerDevice()).toEqual({ widgetToken: 'C'.repeat(43) });
+    expect(await plain.getItem('signout_pending')).toBeNull();
+
+    await plain.setItem('signout_pending', JSON.stringify({ installId: 'not-an-id' }));
+    fake.invokes.length = 0;
+    await api.registerDevice();
+    expect(fake.invokes.map((i) => (i.body as { action: string }).action)).toEqual(['register']);
+    expect(await plain.getItem('signout_pending')).toBeNull();
+
+    fake.onInvoke = () => 'offline';
+    await api.signOut();
+    fake.signedIn();
+    fake.onInvoke = () => ({ status: 200, body: { status: 'signed_out', removed: false } });
+    await api.signOut();
+    expect(await plain.getItem('signout_pending')).toBeNull();
+  });
+
+  it('never keeps a pending sign-out on the web', async () => {
+    const { api, fake, plain } = setup({ platform: 'web' });
+    fake.signedIn();
+    fake.onInvoke = () => 'offline';
+    await api.signOut();
+    expect(await plain.getItem('signout_pending')).toBeNull();
+  });
+
   it('tells the app when the session ends on its own', async () => {
     const { api, fake } = setup();
     fake.signedIn();
@@ -967,7 +1049,11 @@ describe('widget token and widget-api/state', () => {
     expect(e).toMatchObject({ code: 'rate_limited', retryAfterSec: 120 });
     next = json(500, { error: 'internal' });
     expect(await codeOf(api.getWidgetState('UTC'))).toBe('server');
+    // Add fields only (ARCHITECTURE.md 3.1): a newer server's extra key is ignored and dropped,
+    // but a field of the wrong type is still refused.
     next = json(200, { ...readyState, extra: 1 });
+    expect(await api.getWidgetState('UTC')).toEqual(readyState);
+    next = json(200, { ...readyState, updatedAt: 42 });
     expect(await codeOf(api.getWidgetState('UTC'))).toBe('server');
   });
 

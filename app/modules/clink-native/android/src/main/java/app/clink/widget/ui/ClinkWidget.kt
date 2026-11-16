@@ -171,7 +171,7 @@ object LogDrink {
         mode = LocalMode.IDLE,
         modeFlareId = null,
         modeOpenedAt = null,
-        confirmation = Confirmation(ConfirmationKind.LOGGED, short, now.plusSeconds(Timers.WIDGET_CONFIRMATION_SEC)),
+        confirmation = Confirmation(ConfirmationKind.LOGGED, short, now.plusSeconds(Timers.WIDGET_CONFIRMATION_SEC), payload.drinkId),
       )
     }
     return entry

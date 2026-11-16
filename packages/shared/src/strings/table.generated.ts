@@ -663,6 +663,10 @@ export const STRINGS = {
   'a11y.w.tracker':
     '{drinks, plural, one {# drink} other {# drinks}} and {water, plural, one {# water} other {# waters}} today. Last drink {ago_words} ago.',
   'a11y.w.tracker_none': 'No drinks yet today.',
+  'a11y.w.tracker_at':
+    '{drinks, plural, one {# drink} other {# drinks}} and {water, plural, one {# water} other {# waters}} today. Last drink at {time}.',
+  'a11y.w.tracker_water': '{water, plural, one {# water} other {# waters}} today. No drinks yet.',
+  'a11y.w.plate': '{drink}, your usual. Log a drink',
   'a11y.w.log': 'Log a drink',
   'a11y.w.pick': 'Log {drink}',
   'a11y.w.pick_water': 'Log water',
@@ -746,6 +750,7 @@ export const STRINGS = {
   'ws.drinks': '{n, plural, one {# drink} other {# drinks}}',
   'ws.water': '{n, plural, one {# water} other {# waters}}',
   'ws.last': 'Last {ago}',
+  'ws.last_at': 'Last {time}',
   'ws.last_none': 'No drinks yet',
   'ws.log': '+1 Drink',
   'ws.pick.water': 'Water',
@@ -755,6 +760,7 @@ export const STRINGS = {
   'ws.live.counts': '{in} in',
   'ws.in.title': '{name}',
   'ws.in.sub': '{cat_cap} · {mins}',
+  'ws.in.left': '{timer} left',
   'ws.in.btn': "I'm in",
   'ws.in.done': "You're in",
   'ws.more': '+{n}',
@@ -765,9 +771,11 @@ export const STRINGS = {
   'wm.signin': 'Sign in to Clink',
   'wm.counts': '{drinks} · {water}',
   'wm.last': 'Last drink {ago} ago',
+  'wm.last_at': 'Last drink {time}',
   'wm.last_now': 'Last drink just now',
   'wm.last_none': 'No drinks yet today',
   'wm.usual': '{drink_short}',
+  'wm.usual_none': 'Pick your usual 3',
   'wm.caff': 'Herbal tea next?',
   'wm.snap': '{name} · {ago}',
   'wm.snap_none': "Friends' snaps land here",
@@ -794,6 +802,7 @@ export const STRINGS = {
   'wm.live.more': '+{n} more',
   'wm.in.title': '{name} wants {wants}',
   'wm.in.meta': '{place} · {mins}',
+  'wm.in.left': '{timer} left',
   'wm.in.btn_in': "I'm in",
   'wm.in.btn_bring': 'Bring me one',
   'wm.in.more': '+{n}',
@@ -5413,6 +5422,48 @@ export const STRING_META: Record<
     max: null,
     placeholders: [],
   },
+  'a11y.w.tracker_at': {
+    section: '4.26',
+    context:
+      'Tracker block, one element (Android widget: the last drink as a time of day, which never goes stale)',
+    max: null,
+    placeholders: [
+      {
+        name: 'drinks',
+        type: 'plural',
+      },
+      {
+        name: 'water',
+        type: 'plural',
+      },
+      {
+        name: 'time',
+        type: 'simple',
+      },
+    ],
+  },
+  'a11y.w.tracker_water': {
+    section: '4.26',
+    context: 'Tracker block, water only so far',
+    max: null,
+    placeholders: [
+      {
+        name: 'water',
+        type: 'plural',
+      },
+    ],
+  },
+  'a11y.w.plate': {
+    section: '4.26',
+    context: 'Usual #1 tile on the idle widget (opens the picker)',
+    max: null,
+    placeholders: [
+      {
+        name: 'drink',
+        type: 'simple',
+      },
+    ],
+  },
   'a11y.w.log': {
     section: '4.26',
     context: '+1 Drink',
@@ -6224,11 +6275,23 @@ export const STRING_META: Record<
   },
   'ws.last': {
     section: '6.1',
-    context: 'Idle, last drink',
+    context: 'Idle, last drink (iOS; Android uses `ws.last_at`)',
     max: 12,
     placeholders: [
       {
         name: 'ago',
+        type: 'simple',
+      },
+    ],
+  },
+  'ws.last_at': {
+    section: '6.1',
+    context:
+      'Idle, last drink as a time of day. The small widget writes `{time}` without AM/PM ("Last 7:30")',
+    max: 10,
+    placeholders: [
+      {
+        name: 'time',
         type: 'simple',
       },
     ],
@@ -6311,6 +6374,18 @@ export const STRING_META: Record<
       },
     ],
   },
+  'ws.in.left': {
+    section: '6.1',
+    context:
+      'Friend\'s flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS',
+    max: 10,
+    placeholders: [
+      {
+        name: 'timer',
+        type: 'simple',
+      },
+    ],
+  },
   'ws.in.btn': {
     section: '6.1',
     context: 'Button',
@@ -6381,11 +6456,23 @@ export const STRING_META: Record<
   },
   'wm.last': {
     section: '6.2',
-    context: 'Idle',
+    context: 'Idle (iOS; Android uses `wm.last_at`)',
     max: 22,
     placeholders: [
       {
         name: 'ago',
+        type: 'simple',
+      },
+    ],
+  },
+  'wm.last_at': {
+    section: '6.2',
+    context:
+      "Idle, last drink as a time of day in the device's 12/24 h format. Exact, never stale, no ticking",
+    max: 22,
+    placeholders: [
+      {
+        name: 'time',
         type: 'simple',
       },
     ],
@@ -6412,6 +6499,12 @@ export const STRING_META: Record<
         type: 'simple',
       },
     ],
+  },
+  'wm.usual_none': {
+    section: '6.2',
+    context: 'Idle drink tile, no usual 3 yet (opens the usual 3 editor)',
+    max: 18,
+    placeholders: [],
   },
   'wm.caff': {
     section: '6.2',
@@ -6639,6 +6732,18 @@ export const STRING_META: Record<
       },
       {
         name: 'mins',
+        type: 'simple',
+      },
+    ],
+  },
+  'wm.in.left': {
+    section: '6.2',
+    context:
+      'Friend\'s flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS',
+    max: 16,
+    placeholders: [
+      {
+        name: 'timer',
         type: 'simple',
       },
     ],
@@ -7982,6 +8087,9 @@ export interface StringParams {
   'perm.notif.again.body': Record<string, never>;
   'a11y.w.tracker': { drinks: number; water: number; ago_words: string | number };
   'a11y.w.tracker_none': Record<string, never>;
+  'a11y.w.tracker_at': { drinks: number; water: number; time: string | number };
+  'a11y.w.tracker_water': { water: number };
+  'a11y.w.plate': { drink: string | number };
   'a11y.w.log': Record<string, never>;
   'a11y.w.pick': { drink: string | number };
   'a11y.w.pick_water': Record<string, never>;
@@ -8084,6 +8192,7 @@ export interface StringParams {
   'ws.drinks': { n: number };
   'ws.water': { n: number };
   'ws.last': { ago: string | number };
+  'ws.last_at': { time: string | number };
   'ws.last_none': Record<string, never>;
   'ws.log': Record<string, never>;
   'ws.pick.water': Record<string, never>;
@@ -8093,6 +8202,7 @@ export interface StringParams {
   'ws.live.counts': { in: string | number };
   'ws.in.title': { name: string | number };
   'ws.in.sub': { cat_cap: string | number; mins: string | number };
+  'ws.in.left': { timer: string | number };
   'ws.in.btn': Record<string, never>;
   'ws.in.done': Record<string, never>;
   'ws.more': { n: string | number };
@@ -8103,9 +8213,11 @@ export interface StringParams {
   'wm.signin': Record<string, never>;
   'wm.counts': { drinks: string | number; water: string | number };
   'wm.last': { ago: string | number };
+  'wm.last_at': { time: string | number };
   'wm.last_now': Record<string, never>;
   'wm.last_none': Record<string, never>;
   'wm.usual': { drink_short: string | number };
+  'wm.usual_none': Record<string, never>;
   'wm.caff': Record<string, never>;
   'wm.snap': { name: string | number; ago: string | number };
   'wm.snap_none': Record<string, never>;
@@ -8132,6 +8244,7 @@ export interface StringParams {
   'wm.live.more': { n: string | number };
   'wm.in.title': { name: string | number; wants: string | number };
   'wm.in.meta': { place: string | number; mins: string | number };
+  'wm.in.left': { timer: string | number };
   'wm.in.btn_in': Record<string, never>;
   'wm.in.btn_bring': Record<string, never>;
   'wm.in.more': { n: string | number };
@@ -8220,12 +8333,12 @@ export const STRING_REFERENCES = [
   {
     key: 'a11y.w.confirm',
     note: 'the visible confirmation text ("Logged {drink}", "Sent to {audience}")',
-    line: 1221,
+    line: 1224,
   },
   {
     key: 'a11y.react',
     note: 'uses `snapv.react.a11y`',
-    line: 1249,
+    line: 1252,
   },
 ] as const;
 

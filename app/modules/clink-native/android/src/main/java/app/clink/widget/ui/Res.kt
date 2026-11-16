@@ -18,6 +18,8 @@ data class CategoryRes(
   val hero: Int,
   val cell: Int,
   val word: Int,
+  /** The idle widget's drink tile: tint with a 3 dp ink rim (water has none: it's never a usual). */
+  val plate: Int,
 )
 
 data class FlareRes(
@@ -44,6 +46,7 @@ object Res {
           R.drawable.clink_hero_coffee,
           R.drawable.clink_bg_cell_coffee,
           R.string.clink_cat_coffee,
+          R.drawable.clink_bg_plate_coffee,
         )
       LogCategory.MATCHA ->
         CategoryRes(
@@ -57,6 +60,7 @@ object Res {
           R.drawable.clink_hero_matcha,
           R.drawable.clink_bg_cell_matcha,
           R.string.clink_cat_matcha,
+          R.drawable.clink_bg_plate_matcha,
         )
       LogCategory.TEA ->
         CategoryRes(
@@ -70,6 +74,7 @@ object Res {
           R.drawable.clink_hero_tea,
           R.drawable.clink_bg_cell_tea,
           R.string.clink_cat_tea,
+          R.drawable.clink_bg_plate_tea,
         )
       LogCategory.SMOOTHIE_JUICE ->
         CategoryRes(
@@ -83,6 +88,7 @@ object Res {
           R.drawable.clink_hero_smoothie_juice,
           R.drawable.clink_bg_cell_smoothie_juice,
           R.string.clink_cat_smoothie_juice,
+          R.drawable.clink_bg_plate_smoothie_juice,
         )
       LogCategory.WATER ->
         CategoryRes(
@@ -96,6 +102,7 @@ object Res {
           R.drawable.clink_hero_water,
           R.drawable.clink_bg_cell_water,
           R.string.clink_wm_pick_water,
+          R.drawable.clink_bg_plate_cobalt,
         )
     }
 
@@ -144,4 +151,11 @@ object Res {
   /** Icon S for a catalog drink: R.drawable.clink_icon_<category>_<slug>, or the category glyph. */
   fun icon(drinkId: String?, category: LogCategory): Int =
     DrinkIcons.iconS(drinkId) ?: of(category).glyphInk
+
+  /**
+   * Icon L (shade tone and gleam) for a catalog drink; a custom drink gets its category glyph in
+   * category ink (DESIGN.md 3.4 "Custom drinks").
+   */
+  fun art(drinkId: String?, category: LogCategory): Int =
+    DrinkIcons.iconL(drinkId) ?: of(category).glyphInk
 }

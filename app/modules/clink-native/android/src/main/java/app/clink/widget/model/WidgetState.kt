@@ -9,10 +9,14 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
 
-// Kotlin port of packages/shared/src/widget-state (ARCHITECTURE.md 3.1). The decoder is as strict
-// as the zod schema: unknown keys, wrong types, over-budget text and zone-less timestamps are all
-// refused, so a bad document never replaces the last good one (QA_PLAN.md ST8). Every fixture in
-// packages/shared/fixtures/widget-states is decoded by WidgetStateDecoderTest.
+// Kotlin port of packages/shared/src/widget-state (ARCHITECTURE.md 3.1). Forward compatible
+// (CTO decision, polish pass 2026-11-16): unknown keys are ignored and an unknown enum value drops
+// only the item that carries it (a reply, a flare, a usual slot, an outbox op), so the first
+// additive server field never freezes an older widget. It stays strict on what it reads: types,
+// required fields, text budgets, list sizes, the version and timestamps with a zone, so a broken
+// document never replaces the last good one (QA_PLAN.md ST8). An unknown `state` is refused: the
+// widget can't draw it. Every fixture in packages/shared/fixtures/widget-states is decoded by
+// DecoderAndResolveTest.
 
 const val WIDGET_STATE_VERSION = 1
 
@@ -199,6 +203,9 @@ sealed class WidgetState {
 /** Thrown for any document the schema would refuse. The message names the field. */
 class WidgetStateException(message: String) : Exception(message)
 
+/** An enum value this build doesn't know: the item that carries it is skipped, not the document. */
+private class UnknownValue : Exception()
+
 object WidgetStateDecoder {
   private val ISO_INSTANT_RE =
     Regex("""^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$""")
@@ -242,11 +249,9 @@ object WidgetStateDecoder {
     val updatedAt = r.instant("updatedAt")
     return when (val s = r.string("state")) {
       "signed_out" -> {
-        r.only("v", "state", "updatedAt")
         WidgetState.SignedOut(updatedAt)
       }
       "setup" -> {
-        r.only("v", "state", "updatedAt")
         WidgetState.Setup(updatedAt)
       }
       "ready" -> ready(r, updatedAt)
@@ -255,32 +260,14 @@ object WidgetStateDecoder {
   }
 
   private fun ready(r: Reader, updatedAt: Instant): WidgetState.Ready {
-    r.only(
-      "v",
-      "state",
-      "updatedAt",
-      "me",
-      "usual",
-      "today",
-      "groups",
-      "auto",
-      "lastPlace",
-      "myFlare",
-      "incoming",
-      "snaps",
-      "outbox",
-    )
     val me = r.obj("me")
-    me.only("initial", "friendsCount")
     val today = r.obj("today")
-    today.only("localDate", "drinks", "water", "caffeinated", "lastDrinkAt")
     val auto = r.obj("auto")
-    auto.only("daytimeGroupId", "otherGroupId")
     return WidgetState.Ready(
       updatedAt = updatedAt,
       meInitial = me.string("initial", minUtf16 = 1, maxUtf16 = 2),
       friendsCount = me.count("friendsCount", max = 20),
-      usual = r.array("usual", max = 3).map { usual(it) },
+      usual = r.array("usual", max = 3).knownEach { usual(it) },
       today =
         Today(
           localDate = today.localDate("localDate"),
@@ -292,19 +279,18 @@ object WidgetStateDecoder {
       groups = r.array("groups", max = 10).map { group(it) },
       auto = AutoSettings(auto.idOrNull("daytimeGroupId"), auto.idOrNull("otherGroupId")),
       lastPlace = r.textOrNull("lastPlace", PLACE),
-      myFlare = r.objOrNull("myFlare")?.let { myFlare(it) },
-      incoming = r.array("incoming", max = 20).map { incoming(it) },
+      myFlare = r.objOrNull("myFlare")?.let { f -> known { myFlare(f) } },
+      incoming = r.array("incoming", max = 20).knownEach { incoming(it) },
       snaps = r.array("snaps", max = 20).map { snap(it) },
-      outbox = r.array("outbox", max = 100).map { outboxEntry(it) },
+      outbox = r.array("outbox", max = 100).knownEach { outboxEntry(it) },
     )
   }
 
   private fun usual(r: Reader): UsualSlot {
-    r.only("slot", "drinkId", "category", "name", "drinkShort", "summary", "hasDetails")
     return UsualSlot(
       slot = r.int("slot", 1, 3),
       drinkId = r.idOrNull("drinkId"),
-      category = r.flareCategory("category"),
+      category = r.knownFlareCategory("category"),
       name = r.text("name", CUSTOM_DRINK_NAME),
       drinkShort = r.text("drinkShort", 15),
       summary = r.string("summary", maxUtf16 = 200),
@@ -313,7 +299,6 @@ object WidgetStateDecoder {
   }
 
   private fun group(r: Reader): Group {
-    r.only("id", "name", "emoji", "memberCount", "avatarFiles")
     return Group(
       id = r.id("id"),
       name = r.text("name", GROUP_NAME),
@@ -326,39 +311,22 @@ object WidgetStateDecoder {
   private fun reply(r: Reader): Reply {
     return when (val kind = r.string("kind")) {
       "in" -> {
-        r.only("name", "kind")
         Reply.In(r.firstName("name"))
       }
       "bring" -> {
-        r.only("name", "kind", "drinkShort", "hasNotes")
         Reply.Bring(r.firstName("name"), r.text("drinkShort", 15), r.bool("hasNotes"))
       }
-      else -> throw WidgetStateException("${r.path}kind: unknown \"$kind\"")
+      else -> throw UnknownValue()
     }
   }
 
   private fun myFlare(r: Reader): MyFlare {
-    r.only(
-      "id",
-      "category",
-      "label",
-      "drinkName",
-      "place",
-      "audience",
-      "createdAt",
-      "meetAt",
-      "expiresAt",
-      "replies",
-    )
     val aud = r.obj("audience")
-    aud.only("type", "groupId")
-    val type = aud.string("type")
-    if (type != "group" && type != "everyone") {
-      throw WidgetStateException("${aud.path}type: unknown \"$type\"")
-    }
+    // An unknown audience type is kept as it came: the widget only shows the flare, never edits it.
+    val type = aud.string("type", minUtf16 = 1, maxUtf16 = 32)
     return MyFlare(
       id = r.id("id"),
-      category = r.flareCategory("category"),
+      category = r.knownFlareCategory("category"),
       label = r.string("label", minUtf16 = 1, maxUtf16 = 10),
       drinkName = r.text("drinkName", CUSTOM_DRINK_NAME),
       place = r.textOrNull("place", PLACE),
@@ -366,45 +334,30 @@ object WidgetStateDecoder {
       createdAt = r.instant("createdAt"),
       meetAt = r.instant("meetAt"),
       expiresAt = r.instant("expiresAt"),
-      replies = r.array("replies", max = 20).map { reply(it) },
+      replies = r.array("replies", max = 20).knownEach { reply(it) },
     )
   }
 
   private fun incoming(r: Reader): IncomingFlare {
-    r.only(
-      "flareId",
-      "senderName",
-      "avatarFile",
-      "category",
-      "wants",
-      "label",
-      "drinkName",
-      "place",
-      "photoFile",
-      "sentAt",
-      "meetAt",
-      "expiresAt",
-      "myResponse",
-    )
     val resp =
       r.objOrNull("myResponse")?.let { m ->
         when (val kind = m.string("kind")) {
           "in" -> {
-            m.only("kind")
             MyResponse.In
           }
           "bring" -> {
-            m.only("kind", "drinkShort")
             MyResponse.Bring(m.text("drinkShort", 15))
           }
-          else -> throw WidgetStateException("${m.path}kind: unknown \"$kind\"")
+          // A reply kind this build doesn't know: the flare shows without it, and the app has
+          // the truth when the friend opens it.
+          else -> null
         }
       }
     return IncomingFlare(
       flareId = r.id("flareId"),
       senderName = r.firstName("senderName"),
       avatarFile = r.stringOrNull("avatarFile")?.let { r.file(it, "avatarFile") },
-      category = r.flareCategory("category"),
+      category = r.knownFlareCategory("category"),
       wants = r.string("wants", minUtf16 = 1, maxUtf16 = 10),
       label = r.string("label", minUtf16 = 1, maxUtf16 = 10),
       drinkName = r.text("drinkName", CUSTOM_DRINK_NAME),
@@ -418,7 +371,6 @@ object WidgetStateDecoder {
   }
 
   private fun snap(r: Reader): Snap {
-    r.only("id", "senderName", "thumbFile", "place", "createdAt", "expiresAt")
     return Snap(
       id = r.id("id"),
       senderName = r.firstName("senderName"),
@@ -429,10 +381,10 @@ object WidgetStateDecoder {
     )
   }
 
-  fun outboxEntry(o: JSONObject): OutboxEntry = outboxEntry(Reader(o, ""))
+  /** One outbox entry; null when its op or category is one this build doesn't know. */
+  fun outboxEntry(o: JSONObject): OutboxEntry? = known { outboxEntry(Reader(o, "")) }
 
   private fun outboxEntry(r: Reader): OutboxEntry {
-    r.only("id", "op", "createdAt", "dropAt", "payload")
     val id = r.string("id")
     if (!UUID_RE.matches(id)) throw WidgetStateException("${r.path}id: not a UUID")
     val createdAt = r.instant("createdAt")
@@ -440,10 +392,7 @@ object WidgetStateDecoder {
     return when (val op = r.string("op")) {
       "log" -> {
         if (!r.isNull("dropAt")) throw WidgetStateException("${r.path}dropAt: must be null for logs")
-        p.only("drinkId", "slot", "category", "loggedAt")
-        val category =
-          LogCategory.of(p.string("category"))
-            ?: throw WidgetStateException("${p.path}category: unknown")
+        val category = LogCategory.of(p.string("category")) ?: throw UnknownValue()
         OutboxEntry.Log(
           id,
           createdAt,
@@ -451,7 +400,6 @@ object WidgetStateDecoder {
         )
       }
       "flare" -> {
-        p.only("audience", "timingMin", "tappedAt", "timeZone")
         val audience = p.string("audience")
         if (audience != "auto" && audience != "everyone") p.checkId(audience, "audience")
         val timing = p.int("timingMin")
@@ -467,9 +415,8 @@ object WidgetStateDecoder {
         )
       }
       "respond" -> {
-        p.only("flareId", "kind", "slot")
         val kind = p.string("kind")
-        if (kind != "in" && kind != "bring") throw WidgetStateException("${p.path}kind: unknown")
+        if (kind != "in" && kind != "bring") throw UnknownValue()
         OutboxEntry.Respond(
           id,
           createdAt,
@@ -479,9 +426,19 @@ object WidgetStateDecoder {
           p.intOrNull("slot", 1, 3),
         )
       }
-      else -> throw WidgetStateException("${r.path}op: unknown \"$op\"")
+      else -> throw UnknownValue()
     }
   }
+
+  /** The value, or null when it carries an enum value this build doesn't know. */
+  private fun <T> known(block: () -> T): T? =
+    try {
+      block()
+    } catch (e: UnknownValue) {
+      null
+    }
+
+  private fun <T> List<Reader>.knownEach(block: (Reader) -> T): List<T> = mapNotNull { r -> known { block(r) } }
 
   fun parseInstant(s: String): Instant? {
     if (!ISO_INSTANT_RE.matches(s)) return null
@@ -497,11 +454,6 @@ object WidgetStateDecoder {
 
   private class Reader(val o: JSONObject, val path: String) {
     private fun fail(key: String, why: String): Nothing = throw WidgetStateException("$path$key: $why")
-
-    fun only(vararg keys: String) {
-      val allowed = keys.toSet()
-      for (k in o.keys()) if (k !in allowed) fail(k, "unknown key")
-    }
 
     private fun raw(key: String): Any {
       if (!o.has(key)) fail(key, "missing")
@@ -587,8 +539,8 @@ object WidgetStateDecoder {
       }
     }
 
-    fun flareCategory(key: String): FlareCategory =
-      FlareCategory.of(string(key)) ?: fail(key, "not a flare category")
+    /** A flare category; one this build doesn't know (water included) skips the item. */
+    fun knownFlareCategory(key: String): FlareCategory = FlareCategory.of(string(key)) ?: throw UnknownValue()
 
     fun obj(key: String): Reader = Reader(raw(key) as? JSONObject ?: fail(key, "not an object"), "$path$key.")
 

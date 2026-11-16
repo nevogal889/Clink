@@ -88,12 +88,35 @@ class OutboxAndTimersTest {
   }
 
   @Test
-  fun rejectedOpsLeaveAndUnauthorizedStay() {
+  fun rejectedLogsMoveToTheRejectedListAndUnauthorizedStay() {
     var s = OutboxLogic.enqueue(OutboxLogic.enqueue(OutboxState(), log(uuid(4), t0)), log(uuid(5), t0))
-    s = OutboxLogic.onResult(s, uuid(4), SendResult.Rejected(400), t0)
+    s = OutboxLogic.onResult(s, uuid(4), SendResult.Rejected(400, "bad_input", "malformed"), t0)
     s = OutboxLogic.onResult(s, uuid(5), SendResult.Unauthorized, t0)
     assertEquals(listOf(uuid(5)), s.items.map { it.entry.id })
     assertTrue(s.acked.isEmpty())
+    // Never deleted: the whole log waits for the app, with the reason.
+    val r = s.rejected.single()
+    assertEquals(log(uuid(4), t0), r.entry)
+    assertEquals(400, r.status)
+    assertEquals("bad_input", r.code)
+    assertEquals("malformed", r.kind)
+    assertTrue("a rejected log is not a dropped flare", s.dropped.isEmpty())
+    // It survives a restart, and the app takes it once.
+    val back = OutboxLogic.fromJson(OutboxLogic.toJson(s))
+    assertEquals(s.rejected, back.rejected)
+    val (rest, taken) = OutboxLogic.takeRejected(back)
+    assertEquals(listOf(r), taken)
+    assertTrue(rest.rejected.isEmpty())
+    assertEquals(listOf(uuid(5)), rest.items.map { it.entry.id })
+  }
+
+  @Test
+  fun aRejectedFlareIsReportedAsDropped() {
+    var s = OutboxLogic.enqueue(OutboxState(), flare(uuid(14), t0))
+    s = OutboxLogic.onResult(s, uuid(14), SendResult.Rejected(409, "conflict"), t0)
+    assertTrue(s.items.isEmpty())
+    assertEquals("flare", s.dropped.single().op)
+    assertTrue(s.rejected.isEmpty())
   }
 
   @Test
@@ -143,6 +166,16 @@ class OutboxAndTimersTest {
     // A state stored after the ack already has it.
     assertEquals(3, (Optimistic.apply(s, acked, t0.plusSeconds(5), t0.plusSeconds(6), london) as WidgetState.Ready).today.drinks)
     assertTrue(OutboxLogic.pruneAcked(acked, t0.plusSeconds(5)).acked.isEmpty())
+  }
+
+  @Test
+  fun aStateWhoseRequestStartedBeforeTheAckKeepsTheAckedLog() {
+    // The state request leaves at t0, the log is acked at t0 + 1 s, the state lands at t0 + 2 s
+    // without it. Pruning goes by when the request started, so the log still counts.
+    val s = ready()
+    val acked = OutboxState(acked = listOf(AckedLog(uuid(15), log(uuid(15), t0).payload, t0.plusSeconds(1))))
+    assertEquals(1, OutboxLogic.pruneAcked(acked, t0).acked.size)
+    assertEquals(4, (Optimistic.apply(s, acked, t0, t0.plusSeconds(2), london) as WidgetState.Ready).today.drinks)
   }
 
   @Test

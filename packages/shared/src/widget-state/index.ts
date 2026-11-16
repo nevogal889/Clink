@@ -25,156 +25,199 @@ const count = z.number().int().min(0);
 /** A friend's first name as the widget gets it: already cut to 12 (COPY.md 0.2, 6). */
 const firstName = maxText(12).pipe(z.string().min(1));
 
-export const usualSlotSchema = z.strictObject({
-  slot: z.number().int().min(1).max(3),
-  /** null for a custom drink ("Add your own"). */
-  drinkId: id.nullable(),
-  category: flareCategorySchema,
-  name: maxText(TEXT_LIMITS.customDrinkName),
-  drinkShort: maxText(15),
-  /** `{summary}` (COPY.md 4.9), empty when no details are set. */
-  summary: z.string().max(200),
-  hasDetails: z.boolean(),
-});
+// Forward compatibility (ARCHITECTURE.md 3.1 "Changing the widget state"): the contract only ever
+// gains fields within a version. The server's own output is checked strictly (an unknown key there
+// is our bug, and xp-field.json proves no XP field can leave), while every decoder of server data
+// ignores keys it doesn't know, so an older app or widget keeps working when a newer server adds a
+// field. New states, new enum values, a removed field or a changed type are breaking: they bump `v`.
+// Both sets are built from the same definitions, so they can't drift apart.
+type ObjectFn = typeof z.object;
 
-export const groupSchema = z.strictObject({
-  id,
-  name: maxText(TEXT_LIMITS.groupName),
-  emoji: z.string().max(TEXT_LIMITS.groupEmoji).nullable(),
-  /** Current, unblocked friends in the group. 0 means Automatic skips it. */
-  memberCount: count.max(20),
-  avatarFiles: z.array(file).max(3),
-});
-
-export const replySchema = z.discriminatedUnion('kind', [
-  z.strictObject({ name: firstName, kind: z.literal('in') }),
-  z.strictObject({
-    name: firstName,
-    kind: z.literal('bring'),
+function stateSchemas(obj: ObjectFn) {
+  const usualSlotSchema = obj({
+    slot: z.number().int().min(1).max(3),
+    /** null for a custom drink ("Add your own"). */
+    drinkId: id.nullable(),
+    category: flareCategorySchema,
+    name: maxText(TEXT_LIMITS.customDrinkName),
     drinkShort: maxText(15),
-    hasNotes: z.boolean(),
-  }),
-]);
+    /** `{summary}` (COPY.md 4.9), empty when no details are set. */
+    summary: z.string().max(200),
+    hasDetails: z.boolean(),
+  });
 
-export const myFlareSchema = z.strictObject({
-  id,
-  category: flareCategorySchema,
-  /** `{cat}` word for "Your {cat} flare" (COPY.md 0.2: coffee, matcha, tea, smoothie, juice …). */
-  label: z.string().min(1).max(10),
-  drinkName: maxText(TEXT_LIMITS.customDrinkName),
-  place: maxText(TEXT_LIMITS.place).nullable(),
-  /** Who it went to, for "Sent to Work". groupId is null for Everyone. */
-  audience: z.strictObject({ type: z.enum(['group', 'everyone']), groupId: id.nullable() }),
-  createdAt: iso,
-  meetAt: iso,
-  /** Close time. Every countdown counts to this. */
-  expiresAt: iso,
-  replies: z.array(replySchema).max(20),
-});
+  const groupSchema = obj({
+    id,
+    name: maxText(TEXT_LIMITS.groupName),
+    emoji: z.string().max(TEXT_LIMITS.groupEmoji).nullable(),
+    /** Current, unblocked friends in the group. 0 means Automatic skips it. */
+    memberCount: count.max(20),
+    avatarFiles: z.array(file).max(3),
+  });
 
-export const myResponseSchema = z
-  .discriminatedUnion('kind', [
-    z.strictObject({ kind: z.literal('in') }),
-    z.strictObject({ kind: z.literal('bring'), drinkShort: maxText(15) }),
-  ])
-  .nullable();
-
-export const incomingFlareSchema = z.strictObject({
-  flareId: id,
-  senderName: firstName,
-  avatarFile: file.nullable(),
-  category: flareCategorySchema,
-  /** `{wants}` for "Maya wants matcha" and `{cat}` for the small widget (COPY.md 0.2). */
-  wants: z.string().min(1).max(10),
-  label: z.string().min(1).max(10),
-  drinkName: maxText(TEXT_LIMITS.customDrinkName),
-  place: maxText(TEXT_LIMITS.place).nullable(),
-  /** Present only for recipients of a flare with a photo (ARCHITECTURE.md 3.1). */
-  photoFile: file.nullable(),
-  /** When the server accepted it. "Newest" in the priority rule means the latest sentAt. */
-  sentAt: iso,
-  meetAt: iso,
-  expiresAt: iso,
-  myResponse: myResponseSchema,
-});
-
-export const snapSchema = z.strictObject({
-  id,
-  senderName: firstName,
-  thumbFile: file,
-  place: maxText(TEXT_LIMITS.place).nullable(),
-  createdAt: iso,
-  expiresAt: iso,
-});
-
-const outboxBase = { id: z.uuid(), createdAt: iso };
-export const outboxEntrySchema = z.discriminatedUnion('op', [
-  z.strictObject({
-    ...outboxBase,
-    op: z.literal('log'),
-    /** Logs retry forever (ARCHITECTURE.md 3.2). */
-    dropAt: z.null(),
-    payload: z.strictObject({
-      drinkId: id.nullable(),
-      /** The usual slot for a custom drink; null for catalog drinks and water. */
-      slot: z.number().int().min(1).max(3).nullable(),
-      category: logCategorySchema,
-      loggedAt: iso,
+  const replySchema = z.discriminatedUnion('kind', [
+    obj({ name: firstName, kind: z.literal('in') }),
+    obj({
+      name: firstName,
+      kind: z.literal('bring'),
+      drinkShort: maxText(15),
+      hasNotes: z.boolean(),
     }),
-  }),
-  z.strictObject({
-    ...outboxBase,
-    op: z.literal('flare'),
-    /** tappedAt + 2 min. */
-    dropAt: iso,
-    payload: z.strictObject({
-      audience: z.union([z.literal('auto'), z.literal('everyone'), id]),
-      timingMin: z.literal(0),
-      tappedAt: iso,
-      timeZone: z.string().min(1).max(64),
-    }),
-  }),
-  z.strictObject({
-    ...outboxBase,
-    op: z.literal('respond'),
-    /** The flare's expiresAt. */
-    dropAt: iso,
-    payload: z.strictObject({
-      flareId: id,
-      kind: z.enum(['in', 'bring']),
-      slot: z.number().int().min(1).max(3).nullable(),
-    }),
-  }),
-]);
+  ]);
 
-const header = { v: z.literal(WIDGET_STATE_VERSION), updatedAt: iso };
+  const myFlareSchema = obj({
+    id,
+    category: flareCategorySchema,
+    /** `{cat}` word for "Your {cat} flare" (COPY.md 0.2: coffee, matcha, tea, smoothie, juice …). */
+    label: z.string().min(1).max(10),
+    drinkName: maxText(TEXT_LIMITS.customDrinkName),
+    place: maxText(TEXT_LIMITS.place).nullable(),
+    /** Who it went to, for "Sent to Work". groupId is null for Everyone. */
+    audience: obj({ type: z.enum(['group', 'everyone']), groupId: id.nullable() }),
+    createdAt: iso,
+    meetAt: iso,
+    /** Close time. Every countdown counts to this. */
+    expiresAt: iso,
+    replies: z.array(replySchema).max(20),
+  });
 
-export const widgetStateSchema = z.discriminatedUnion('state', [
-  z.strictObject({ ...header, state: z.literal('signed_out') }),
-  /** Signed in, onboarding unfinished. */
-  z.strictObject({ ...header, state: z.literal('setup') }),
-  z.strictObject({
-    ...header,
-    state: z.literal('ready'),
-    me: z.strictObject({ initial: z.string().min(1).max(2), friendsCount: count.max(20) }),
-    usual: z.array(usualSlotSchema).max(3),
-    today: z.strictObject({
-      localDate,
-      drinks: count,
-      water: count,
-      caffeinated: count,
-      lastDrinkAt: iso.nullable(),
+  const myResponseSchema = z
+    .discriminatedUnion('kind', [
+      obj({ kind: z.literal('in') }),
+      obj({ kind: z.literal('bring'), drinkShort: maxText(15) }),
+    ])
+    .nullable();
+
+  const incomingFlareSchema = obj({
+    flareId: id,
+    senderName: firstName,
+    avatarFile: file.nullable(),
+    category: flareCategorySchema,
+    /** `{wants}` for "Maya wants matcha" and `{cat}` for the small widget (COPY.md 0.2). */
+    wants: z.string().min(1).max(10),
+    label: z.string().min(1).max(10),
+    drinkName: maxText(TEXT_LIMITS.customDrinkName),
+    place: maxText(TEXT_LIMITS.place).nullable(),
+    /** Present only for recipients of a flare with a photo (ARCHITECTURE.md 3.1). */
+    photoFile: file.nullable(),
+    /** When the server accepted it. "Newest" in the priority rule means the latest sentAt. */
+    sentAt: iso,
+    meetAt: iso,
+    expiresAt: iso,
+    myResponse: myResponseSchema,
+  });
+
+  const snapSchema = obj({
+    id,
+    senderName: firstName,
+    thumbFile: file,
+    place: maxText(TEXT_LIMITS.place).nullable(),
+    createdAt: iso,
+    expiresAt: iso,
+  });
+
+  const outboxBase = { id: z.uuid(), createdAt: iso };
+  const outboxEntrySchema = z.discriminatedUnion('op', [
+    obj({
+      ...outboxBase,
+      op: z.literal('log'),
+      /** Logs retry forever (ARCHITECTURE.md 3.2). */
+      dropAt: z.null(),
+      payload: obj({
+        drinkId: id.nullable(),
+        /** The usual slot for a custom drink; null for catalog drinks and water. */
+        slot: z.number().int().min(1).max(3).nullable(),
+        category: logCategorySchema,
+        loggedAt: iso,
+      }),
     }),
-    groups: z.array(groupSchema).max(10),
-    auto: z.strictObject({ daytimeGroupId: id.nullable(), otherGroupId: id.nullable() }),
-    lastPlace: maxText(TEXT_LIMITS.place).nullable(),
-    /** Present only while the flare is live. */
-    myFlare: myFlareSchema.nullable(),
-    incoming: z.array(incomingFlareSchema).max(20),
-    snaps: z.array(snapSchema).max(20),
-    outbox: z.array(outboxEntrySchema).max(100),
-  }),
-]);
+    obj({
+      ...outboxBase,
+      op: z.literal('flare'),
+      /** tappedAt + 2 min. */
+      dropAt: iso,
+      payload: obj({
+        audience: z.union([z.literal('auto'), z.literal('everyone'), id]),
+        timingMin: z.literal(0),
+        tappedAt: iso,
+        timeZone: z.string().min(1).max(64),
+      }),
+    }),
+    obj({
+      ...outboxBase,
+      op: z.literal('respond'),
+      /** The flare's expiresAt. */
+      dropAt: iso,
+      payload: obj({
+        flareId: id,
+        kind: z.enum(['in', 'bring']),
+        slot: z.number().int().min(1).max(3).nullable(),
+      }),
+    }),
+  ]);
+
+  const header = { v: z.literal(WIDGET_STATE_VERSION), updatedAt: iso };
+
+  const widgetStateSchema = z.discriminatedUnion('state', [
+    obj({ ...header, state: z.literal('signed_out') }),
+    /** Signed in, onboarding unfinished. */
+    obj({ ...header, state: z.literal('setup') }),
+    obj({
+      ...header,
+      state: z.literal('ready'),
+      me: obj({ initial: z.string().min(1).max(2), friendsCount: count.max(20) }),
+      usual: z.array(usualSlotSchema).max(3),
+      today: obj({
+        localDate,
+        drinks: count,
+        water: count,
+        caffeinated: count,
+        lastDrinkAt: iso.nullable(),
+      }),
+      groups: z.array(groupSchema).max(10),
+      auto: obj({ daytimeGroupId: id.nullable(), otherGroupId: id.nullable() }),
+      lastPlace: maxText(TEXT_LIMITS.place).nullable(),
+      /** Present only while the flare is live. */
+      myFlare: myFlareSchema.nullable(),
+      incoming: z.array(incomingFlareSchema).max(20),
+      snaps: z.array(snapSchema).max(20),
+      outbox: z.array(outboxEntrySchema).max(100),
+    }),
+  ]);
+
+  return {
+    usualSlotSchema,
+    groupSchema,
+    replySchema,
+    myFlareSchema,
+    myResponseSchema,
+    incomingFlareSchema,
+    snapSchema,
+    outboxEntrySchema,
+    widgetStateSchema,
+  };
+}
+
+/** Strict: what the server may send. widget-api validates its output with these; fixtures too. */
+const strict = stateSchemas(z.strictObject as unknown as ObjectFn);
+/** Tolerant: what a decoder of server data accepts. Unknown keys are dropped, everything else is as strict. */
+const tolerant = stateSchemas(z.object);
+
+export const usualSlotSchema = strict.usualSlotSchema;
+export const groupSchema = strict.groupSchema;
+export const replySchema = strict.replySchema;
+export const myFlareSchema = strict.myFlareSchema;
+export const myResponseSchema = strict.myResponseSchema;
+export const incomingFlareSchema = strict.incomingFlareSchema;
+export const snapSchema = strict.snapSchema;
+export const outboxEntrySchema = strict.outboxEntrySchema;
+/** The widget state as the server sends it: strict, unknown keys refused. */
+export const widgetStateSchema = strict.widgetStateSchema;
+/**
+ * The widget state as a client reads it from the server (the app's widget-api read, any stored
+ * copy): unknown keys are ignored and dropped, every other rule is the same as widgetStateSchema.
+ */
+export const widgetStateReadSchema = tolerant.widgetStateSchema;
 
 export type WidgetState = z.infer<typeof widgetStateSchema>;
 export type ReadyWidgetState = Extract<WidgetState, { state: 'ready' }>;
@@ -413,8 +456,11 @@ export function resolveWidgetView(input: ResolveInput): WidgetView {
   };
 }
 
-/** Decodes stored JSON. A wrong `v` or a malformed document returns null: keep the last good state. */
+/**
+ * Decodes stored or received JSON like every widget decoder: unknown keys are ignored. A wrong `v`
+ * or a malformed document returns null: keep the last good state.
+ */
 export function decodeWidgetState(json: unknown): WidgetState | null {
-  const r = widgetStateSchema.safeParse(json);
+  const r = widgetStateReadSchema.safeParse(json);
   return r.success ? r.data : null;
 }

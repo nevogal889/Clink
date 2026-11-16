@@ -14,7 +14,11 @@ import {
   isCaffeinated,
   isFlareDrink,
   LOG_CATEGORIES,
-  widgetStateSchema,
+  registerDeviceResponse,
+  WIDGET_API_PATHS,
+  WIDGET_API_REGION_HEADER,
+  WIDGET_API_TIMEOUT_MS,
+  widgetStateReadSchema,
   xpKindSchema,
   type DrinkDetails,
   type FlareCategory,
@@ -22,16 +26,6 @@ import {
   type WidgetState,
 } from '@clink/shared';
 import type { Session as AuthSession, SupabaseClient } from '@supabase/supabase-js';
-
-// The widget-api and register-device schemas. @clink/shared doesn't export its api module from
-// the package entry yet (docs/build-notes/widget-app.md, for the Shared owner); until it does the
-// app reads the same file directly.
-import {
-  registerDeviceResponse,
-  WIDGET_API_PATHS,
-  WIDGET_API_REGION_HEADER,
-  WIDGET_API_TIMEOUT_MS,
-} from '../../../../packages/shared/src/api';
 
 import { readJson, writeJson, type KeyValue } from '../kv';
 import { ApiError, type ApiErrorCode } from './errors';
@@ -406,11 +400,36 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
     return null;
   }
 
+  // A sign-out whose register-device call didn't reach the server (ARCHITECTURE.md 3.6 step 3).
+  // The plain store keeps only the install id, never a token; the call is sent again on the next
+  // launch that has a session, before that launch's register-device.
+  const PENDING_SIGNOUT = 'signout_pending';
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const transient = (e: unknown) =>
+    !(e instanceof ApiError) || ['network', 'server', 'rate_limited'].includes(e.code);
+
+  async function retryPendingSignOut(): Promise<void> {
+    const pending = await readJson<{ installId?: unknown }>(deps.plain, PENDING_SIGNOUT);
+    if (!pending) return;
+    const id = typeof pending.installId === 'string' ? pending.installId : '';
+    if (UUID_RE.test(id)) {
+      try {
+        await invoke('register-device', { action: 'signout', installId: id });
+      } catch (e) {
+        // Still offline: keep the marker for the next launch. Any other answer is final.
+        if (transient(e)) return;
+      }
+    }
+    await deps.plain.removeItem(PENDING_SIGNOUT);
+  }
+
   /** register-device, native only (its schema takes ios or android). Never throws. */
   async function registerDevice(): Promise<DeviceRegistration | null> {
     if (deps.platform === 'web') return null;
     try {
       const u = await uid();
+      // First the sign-out an earlier launch couldn't send, so it can't undo this registration.
+      await retryPendingSignOut().catch(() => undefined);
       const res = await invoke<unknown>('register-device', {
         action: 'register',
         installId: await installId(),
@@ -475,7 +494,8 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
     if (res.status === 403) throw new ApiError('suspended');
     if (res.status >= 502 && res.status <= 504) throw new ApiError('network');
     if (!res.ok) throw new ApiError('server');
-    const parsed = widgetStateSchema.safeParse(body);
+    // Add fields only (ARCHITECTURE.md 3.1): a newer server's extra keys are ignored and dropped.
+    const parsed = widgetStateReadSchema.safeParse(body);
     if (!parsed.success) throw new ApiError('server');
     return parsed.data;
   }
@@ -510,7 +530,8 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
           else await deleteLog(u, op.id);
         } catch (e) {
           if (e instanceof ApiError && e.code === 'network') break;
-          // Refused for good (bad row, a time too far ahead): drop it rather than block the rest.
+          // Refused for good (a bad row): drop it rather than block the rest. A time is never the
+          // reason: the server clamps it (ARCHITECTURE.md 3.2 "Log time").
         }
         ops = ops.slice(1);
         await writeOutbox(u, ops);
@@ -656,10 +677,15 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
     async signOut() {
       const s = await authSession().catch(() => null);
       if (deps.platform !== 'web') {
+        const install = await installId();
         try {
-          await invoke('register-device', { action: 'signout', installId: await installId() });
+          await invoke('register-device', { action: 'signout', installId: install });
+          await deps.plain.removeItem(PENDING_SIGNOUT);
         } catch {
-          // Signing out still works offline; the device row ages out (4.8).
+          // Signing out still works offline. The server call is sent again on the next launch
+          // with a session (3.6 step 3); until then any register-device on this install revokes
+          // this account's widget token (0019).
+          await writeJson(deps.plain, PENDING_SIGNOUT, { installId: install });
         }
       }
       if (s) await forgetWidgetToken(s.user.id);

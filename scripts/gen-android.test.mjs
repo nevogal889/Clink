@@ -86,10 +86,14 @@ test('drawables: every master converts, icons have night variants, Kotlin lookup
   const icons = readdirSync(join(REPO_ROOT, 'app/assets/art/icons')).filter((f) =>
     f.endsWith('.24.svg'),
   );
-  assert.equal(day.filter((f) => f.startsWith('clink_icon_')).length, icons.length);
-  for (const f of day) if (f !== 'clink_mark.xml') assert.ok(night.has(f), `${f} has no night`);
+  const iconS = day.filter((f) => f.startsWith('clink_icon_') && !f.startsWith('clink_icon_l_'));
+  assert.equal(iconS.length, icons.length);
+  // Icon L for every drink too (widget tile, picker, confirmation).
+  assert.equal(day.filter((f) => f.startsWith('clink_icon_l_')).length, icons.length);
+  for (const f of day) assert.ok(night.has(f), `${f} has no night`);
   const kt = buildIconsKotlin();
   assert.ok(kt.includes('"coffee.flat_white" -> R.drawable.clink_icon_coffee_flat_white'));
+  assert.ok(kt.includes('"coffee.flat_white" -> R.drawable.clink_icon_l_coffee_flat_white'));
   assert.ok(kt.includes('"water.still" -> R.drawable.clink_icon_water_still'));
 });
 
@@ -142,4 +146,41 @@ test('config plugin: public meta-data only', () => {
     join(REPO_ROOT, 'app'),
   );
   assert.equal(mock['app.clink.FUNCTIONS_URL'], null);
+});
+
+test('config plugin: Android backup and device transfer are off', () => {
+  const require = createRequire(import.meta.url);
+  const plugin = require('../app/modules/clink-native/app.plugin.js');
+  const manifest = {
+    manifest: {
+      $: { 'xmlns:android': 'http://schemas.android.com/apk/res/android' },
+      application: [{ $: { 'android:name': '.MainApplication', 'android:allowBackup': 'true' } }],
+    },
+  };
+  plugin.applyNoBackup(manifest);
+  const app = manifest.manifest.application[0].$;
+  assert.equal(app['android:allowBackup'], 'false');
+  assert.equal(app['android:dataExtractionRules'], '@xml/clink_data_extraction_rules');
+  assert.deepEqual(app['tools:replace'].split(',').sort(), [
+    'android:allowBackup',
+    'android:dataExtractionRules',
+  ]);
+  assert.equal(manifest.manifest.$['xmlns:tools'], 'http://schemas.android.com/tools');
+  const rules = readFileSync(
+    join(
+      REPO_ROOT,
+      'app/modules/clink-native/android/src/main/res/xml/clink_data_extraction_rules.xml',
+    ),
+    'utf8',
+  );
+  for (const section of ['cloud-backup', 'device-transfer']) {
+    const body = rules.split(`<${section}>`)[1].split(`</${section}>`)[0];
+    for (const domain of ['root', 'file', 'database', 'sharedpref', 'external']) {
+      assert.match(
+        body,
+        new RegExp(`<exclude domain="${domain}" path="\\." />`),
+        `${section} ${domain}`,
+      );
+    }
+  }
 });

@@ -8,6 +8,7 @@ import type {
   DroppedOp,
   InstalledWidget,
   OutboxSnapshot,
+  RejectedLog,
   WidgetSize,
   WidgetState,
 } from './ClinkNative.types';
@@ -21,6 +22,7 @@ interface NativeShape {
   reloadWidgets(): Promise<void>;
   getOutbox(): Promise<OutboxSnapshot>;
   drainOutbox(): Promise<DroppedOp[]>;
+  takeRejected?(): Promise<RejectedLog[]>;
   clearAll(): Promise<void>;
 }
 
@@ -58,11 +60,17 @@ export const ClinkNative: ClinkNativeApi = {
   },
 
   async getOutbox() {
-    return native ? native.getOutbox() : { pending: [], dropped: [] };
+    if (!native) return { pending: [], dropped: [], rejected: [] };
+    const out = await native.getOutbox();
+    return { ...out, rejected: out.rejected ?? [] };
   },
 
   async drainOutbox() {
     return native ? native.drainOutbox() : [];
+  },
+
+  async takeRejected() {
+    return native?.takeRejected ? native.takeRejected() : [];
   },
 
   async clearAll() {

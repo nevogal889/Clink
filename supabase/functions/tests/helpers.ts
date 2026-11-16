@@ -68,6 +68,7 @@ export function fakes(sql: postgres.Sql, opts: { now?: Date; apple?: boolean } =
     apple: opts.apple === false ? null : apple,
     phonePepper: new Uint8Array(32).fill(7),
     now: () => opts.now ?? new Date(),
+    corsOrigins: ['http://localhost:8081'],
   };
   return { deps, deleted, removed, pushes, apple: appleLog };
 }

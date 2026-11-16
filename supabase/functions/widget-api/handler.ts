@@ -7,6 +7,8 @@
 //        A new instance records widget_added once (3.5).
 //   POST /widget-api/log   { id, drinkId, slot, category, loggedAt, timeZone? }
 //        200 { status: 'logged' | 'duplicate', id, today }. Idempotent on the device-made id.
+//        loggedAt is clamped, never refused: later than server now becomes now, older than the
+//        90-day tracker window becomes its oldest edge (migration 0020).
 //
 // Errors are `{ error: code }` (plus retryAfter on 429); the codes and what the widget does with
 // each are WIDGET_API_ERRORS in packages/shared/src/api.
@@ -86,12 +88,16 @@ async function postLog(deps: Deps, req: Request, caller: WidgetCaller): Promise<
     caffeinated = logCaffeinated(null, b.category, slot.details ?? {});
   }
 
+  // The server owns time (ARCHITECTURE.md 3.2 "Log time"): widget_log_drink clamps loggedAt into
+  // the 90-day window ending at server now and works out the local date in this zone. A
+  // well-formed log is never refused for its time.
   const zone = pickZone(b.timeZone, ctx.timezone);
   const loggedAt = new Date(b.loggedAt);
+  if (Number.isNaN(loggedAt.getTime())) throw new HttpError(400, 'bad_input');
   const status = await asService(deps.sql, async (tx) => {
     const [r] = await tx<{ status: 'logged' | 'duplicate' }[]>`
       select private.widget_log_drink(${caller.userId}, ${b.id}, ${b.drinkId}, ${name}, ${b.category},
-                                      ${caffeinated}, ${loggedAt}, ${localDateAt(loggedAt, zone)}::date) as status`;
+                                      ${caffeinated}, ${loggedAt}, ${zone}::text) as status`;
     return r!.status;
   });
 

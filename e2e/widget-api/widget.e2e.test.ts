@@ -15,7 +15,7 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { widgetStateSchema, type WidgetState } from '@clink/shared';
+import { widgetLogResponse, widgetStateSchema, type WidgetState } from '@clink/shared';
 // supabase-js is the app workspace's dependency (jest.config.js modulePaths).
 // eslint-disable-next-line import/no-unresolved
 import { createClient } from '@supabase/supabase-js';
@@ -23,7 +23,6 @@ import { createClient } from '@supabase/supabase-js';
 import { createSupabaseApi } from '../../app/src/lib/api/supabase';
 import type { ClinkApi } from '../../app/src/lib/api/types';
 import { memoryStore } from '../../app/src/lib/kv';
-import { widgetLogResponse } from '../../packages/shared/src/api';
 
 const ROOT = path.resolve(__dirname, '../..');
 const project = JSON.parse(readFileSync(path.join(ROOT, 'supabase/projects.json'), 'utf8')).dev as {

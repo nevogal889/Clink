@@ -24,64 +24,67 @@ type Prepared = {
 };
 
 export function deleteAccount(deps: Deps): Handler {
-  return handle(async (req) => {
-    const claims = await requireUser(req, deps.verifier);
-    const parsed = deleteAccountInput.safeParse(await readJson(req));
-    if (!parsed.success) throw new HttpError(400, 'bad_input');
-    const userId = claims.sub;
+  return handle(
+    async (req) => {
+      const claims = await requireUser(req, deps.verifier);
+      const parsed = deleteAccountInput.safeParse(await readJson(req));
+      if (!parsed.success) throw new HttpError(400, 'bad_input');
+      const userId = claims.sub;
 
-    // 1. Fresh session, or a fresh Apple code (which also gives a token to revoke).
-    let freshAppleToken: string | null = null;
-    if (parsed.data.appleAuthorizationCode && deps.apple) {
-      try {
-        freshAppleToken = await deps.apple.exchangeCode(parsed.data.appleAuthorizationCode);
-      } catch {
+      // 1. Fresh session, or a fresh Apple code (which also gives a token to revoke).
+      let freshAppleToken: string | null = null;
+      if (parsed.data.appleAuthorizationCode && deps.apple) {
+        try {
+          freshAppleToken = await deps.apple.exchangeCode(parsed.data.appleAuthorizationCode);
+        } catch {
+          throw new HttpError(401, 'reauth_required');
+        }
+      }
+      if (!freshAppleToken && !isFreshSession(claims, Math.floor(deps.now().getTime() / 1000))) {
         throw new HttpError(401, 'reauth_required');
       }
-    }
-    if (!freshAppleToken && !isFreshSession(claims, Math.floor(deps.now().getTime() / 1000))) {
-      throw new HttpError(401, 'reauth_required');
-    }
 
-    // 2. Database half.
-    const prep = await asService(deps.sql, async (tx) => {
-      const [r] = await tx<
-        { j: Prepared }[]
-      >`select private.prepare_account_deletion(${userId}) as j`;
-      return r!.j;
-    });
+      // 2. Database half.
+      const prep = await asService(deps.sql, async (tx) => {
+        const [r] = await tx<
+          { j: Prepared }[]
+        >`select private.prepare_account_deletion(${userId}) as j`;
+        return r!.j;
+      });
 
-    // 3. Apple. A failure here doesn't stop deletion; support finishes it within 30 days (M-10).
-    if (deps.apple) {
-      try {
-        if (freshAppleToken) {
-          await deps.apple.revoke(freshAppleToken);
-        } else if (prep.apple_refresh_token_enc) {
-          await deps.apple.revoke(
-            await deps.apple.openToken(fromBase64(prep.apple_refresh_token_enc)),
-          );
+      // 3. Apple. A failure here doesn't stop deletion; support finishes it within 30 days (M-10).
+      if (deps.apple) {
+        try {
+          if (freshAppleToken) {
+            await deps.apple.revoke(freshAppleToken);
+          } else if (prep.apple_refresh_token_enc) {
+            await deps.apple.revoke(
+              await deps.apple.openToken(fromBase64(prep.apple_refresh_token_enc)),
+            );
+          }
+        } catch (e) {
+          console.error('apple_revoke_failed', (e as Error).message);
         }
-      } catch (e) {
-        console.error('apple_revoke_failed', (e as Error).message);
       }
-    }
 
-    // 4. Friends' widgets drop this user's photo, snaps and flares now (3.3).
-    if (prep.clear_devices.length > 0) {
-      await deps.push.send(prep.clear_devices, { type: 'clear_user', userId });
-    }
+      // 4. Friends' widgets drop this user's photo, snaps and flares now (3.3).
+      if (prep.clear_devices.length > 0) {
+        await deps.push.send(prep.clear_devices, { type: 'clear_user', userId });
+      }
 
-    // 5. Files, grouped by bucket.
-    const byBucket = new Map<string, string[]>();
-    for (const o of prep.objects)
-      byBucket.set(o.bucket, [...(byBucket.get(o.bucket) ?? []), o.name]);
-    for (const [bucket, names] of byBucket) await deps.storage.remove(bucket, names);
+      // 5. Files, grouped by bucket.
+      const byBucket = new Map<string, string[]>();
+      for (const o of prep.objects)
+        byBucket.set(o.bucket, [...(byBucket.get(o.bucket) ?? []), o.name]);
+      for (const [bucket, names] of byBucket) await deps.storage.remove(bucket, names);
 
-    // 6 and 7.
-    await deps.admin.deleteUser(userId);
-    await asService(deps.sql, async (tx) => {
-      await tx`select private.purge_auth_audit(${userId})`;
-    });
-    return json(200, { status: 'deleted' });
-  });
+      // 6 and 7.
+      await deps.admin.deleteUser(userId);
+      await asService(deps.sql, async (tx) => {
+        await tx`select private.purge_auth_audit(${userId})`;
+      });
+      return json(200, { status: 'deleted' });
+    },
+    { cors: deps.corsOrigins },
+  );
 }

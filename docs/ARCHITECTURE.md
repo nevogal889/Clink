@@ -1,7 +1,7 @@
 # Clink: architecture and build plan
 
 Owner: CTO, with the Head of Development and the IT Specialist.
-Status: v1 plan, revised 2026-11-15 after the Risk review (`RISK_REVIEW.md`) and the QA review (`QA_PLAN.md`). `DECISIONS.md` overrides this file. Product behaviour lives in `PRD.md`, visuals in `DESIGN.md`, words in `COPY.md`. This file says how we build it. Finding ids in brackets (M-02, QF-S4) point to the resolution log in `RISK_REVIEW.md`.
+Status: v1 plan, revised 2026-11-15 after the Risk review (`RISK_REVIEW.md`) and the QA review (`QA_PLAN.md`); M2 polish 2026-11-16 (log time, widget-state compatibility, CORS, what M2 built). `DECISIONS.md` overrides this file. Product behaviour lives in `PRD.md`, visuals in `DESIGN.md`, words in `COPY.md`. This file says how we build it. Finding ids in brackets (M-02, QF-S4) point to the resolution log in `RISK_REVIEW.md`.
 
 Decisions made here are marked **Decision:** with a one-line reason. Facts we could not confirm while writing (prices, version numbers, quotas) are marked **(verify)**.
 
@@ -16,7 +16,7 @@ Decisions made here are marked **Decision:** with a one-line reason. Facts we co
 5. **Privacy by table, not by column.** Postgres RLS is per row. Anything a friend must never see (phone hash, notification settings, which group a flare went to) lives in a separate table with owner-only or no client access.
 6. **Push is the real-time channel. Widget refresh is best effort.** Both OSes throttle widget reloads. Notifications and the Live Activity are what make a flare feel instant.
 7. **No quiet hours anywhere.** No column, no setting, no server check (CEO guideline 5). The prototype's F23 quiet-hours row is removed.
-8. **The server owns time.** `meet_at`, XP local dates and expiry checks use server time (`private.app_now()`, which a dev-only offset can move for tests). Clients send durations and a tap time, never deadlines.
+8. **The server owns time.** `meet_at`, XP local dates and expiry checks use server time (`private.app_now()`, which a dev-only offset can move for tests). Clients send durations and a tap time, never deadlines. A tap time the server can't believe is clamped, never refused (3.2 "Log time").
 
 ---
 
@@ -59,7 +59,7 @@ We use Continuous Native Generation: `ios/` and `android/` are **not committed**
 
 - The Glance widget, its `GlanceAppWidgetReceiver`, the configuration activity, the FCM service and WorkManager workers all live in the same local module, `app/modules/clink-native/android/`.
 - The module's own `AndroidManifest.xml` declares the receiver, the configuration activity and the `appwidget-provider` XML. Gradle's manifest merger puts them into the app, so we don't need a plugin to edit the manifest.
-- A small config plugin, `app/plugins/with-android-glance.ts`, handles what the module can't: the Compose compiler Gradle plugin on the root build classpath, and the Glance and WorkManager dependency versions.
+- No separate Glance config plugin. The module's own `build.gradle` adds the Compose compiler plugin to its buildscript the same way `expo-modules-core` does, and pins the Glance, WorkManager and DataStore versions in `android/clink-widget.gradle`; its `app.plugin.js` only writes the manifest meta-data (functions URL, region, scheme). **Decision:** this replaces the planned `app/plugins/with-android-glance.ts`, because no root Gradle edit is needed (`docs/build-notes/android-widget.md`).
 
 **Why not a JS-rendered widget library.** `react-native-android-widget` and similar render widgets from JS. The CEO approved native Glance, and we want widget buttons to work without starting JS (principle 1).
 
@@ -71,7 +71,7 @@ We use Continuous Native Generation: `ios/` and `android/` are **not committed**
 | The Live Activity attributes type must exist in both the app (our Expo module) and the widget extension. | Keep one `FlareActivityAttributes.swift` in `targets/widget/Shared/`. A prebuild step copies it into the module's iOS sources. CI fails if the two copies differ. |
 | Two `FirebaseMessagingService`s (ours and `expo-notifications`') conflict on Android. | Our service extends the Expo one and calls `super` for anything that isn't ours. Prove this in the M0 spike. |
 | APNs needs HTTP/2. Edge functions run on Deno. | Deno's `fetch` negotiates HTTP/2. Prove it against APNs sandbox in M0. Fallback: a tiny Node push worker on a free-tier container host. |
-| Kotlin and Compose versions have to match the React Native Gradle setup. | Read the Kotlin version from the RN template. Don't override it. The plugin sets only what Glance needs. |
+| Kotlin and Compose versions have to match the React Native Gradle setup. | Read the Kotlin version from the RN template. Don't override it. The module sets only what Glance needs. |
 | EAS build images move Xcode versions. | Pin the EAS image in `eas.json` per profile. Bump on purpose. |
 | OTA updates can't touch Swift or Kotlin. | Widget code ships only with store builds. See section 10. |
 
@@ -79,7 +79,7 @@ We use Continuous Native Generation: `ios/` and `android/` are **not committed**
 
 ## 2. Repo layout
 
-One GitHub repo, pnpm workspaces. **Decision:** pnpm with `node-linker=hoisted`. React Native native module resolution still trips over isolated `node_modules` in some libraries, and hoisting removes that class of bug.
+One GitHub repo, **npm workspaces** (`app`, `packages/*`, one root `package-lock.json`). **Decision:** npm, not the pnpm planned here: npm hoists by default, which React Native native module resolution needs, Expo and EAS support it with no extra settings, and M0 shipped on it. Root scripts: `npm run ci` (typecheck, lint, format, generator checks, Jest, script tests), `npm run test:db` (pgTAP); `scripts/README.md` lists every script.
 
 ```
 clink/
@@ -100,7 +100,7 @@ clink/
         android/                Kotlin: Glance widget, config activity, FCM service, workers,
                                 ongoing notification, install referrer, encrypted store
         src/                    TS bindings + web stubs
-    plugins/                    our config plugins (glance gradle, attributes copy, etc.)
+    plugins/                    our config plugins (attributes copy, etc.)
     assets/drinks/              generated drink images for app screens
   packages/
     shared/
@@ -110,15 +110,15 @@ clink/
       src/audience.ts           "Automatic" group rule (weekday 08:00-18:00)
       src/limits.ts             PRD text limits as zod schemas (shared by app and functions)
       src/events.ts             app_events names and props (PRD 6) as a zod enum
-      src/widget-state.ts       zod schema of the widget JSON
-      src/api.ts                request/response schemas for edge functions
+      src/widget-state/         zod schema of the widget JSON (strict for the server, tolerant for decoders, 3.1)
+      src/api/                  request/response schemas for edge functions, widget-api error table
       src/db.types.ts           generated by `supabase gen types`
       fixtures/                 widget states (W1 to W22), audience cases (T22 to T33), shared by TS, Swift, Kotlin
   supabase/
     config.toml
     migrations/                 SQL, one file per change, never edited after merge
     functions/
-      _shared/                  auth, push (apns.ts, fcm.ts), rate limit, generated/ (copied from packages/shared)
+      _shared/                  auth, push (apns.ts, fcm.ts), http (errors, CORS), shared/ (copied from packages/shared)
       complete-signup/  register-device/  widget-api/  delete-account/
       send-flare/  respond-flare/  close-flare/  flare-tick/
       share-snap/  react-snap/  snap-cleanup/
@@ -136,7 +136,7 @@ clink/
   .github/workflows/
 ```
 
-**Sharing TS with edge functions.** Supabase's function bundler and Deno resolve imports differently from Metro. **Decision:** `scripts/sync-shared-to-functions` copies the dependency-free files from `packages/shared/src` into `supabase/functions/_shared/generated/`. CI fails if the copy is stale. It's crude, and it never breaks a deploy.
+**Sharing TS with edge functions.** Supabase's function bundler and Deno resolve imports differently from Metro. **Decision:** `scripts/supabase/sync-shared.mjs` copies the files the functions need from `packages/shared/src` into `supabase/functions/_shared/shared/`. CI and the deploy script fail if the copy is stale. It's crude, and it never breaks a deploy. The app imports everything, `api` included, from the package entry `@clink/shared`.
 
 **Sharing the catalog with Swift and Kotlin.** `scripts/gen-native-catalog` writes `catalog.json` (ids, names, widget names, categories, caffeine flags, option fields from `COPY.md` 2) into the widget target and the Android module's assets. Widgets look up drink names and images by id (`coffee.cortado`) from that file. `scripts/gen-strings` builds the string table for the app and both widget targets from `COPY.md` keys, so no string is typed in Swift, Kotlin or TS.
 
@@ -146,7 +146,7 @@ clink/
 
 ### 3.1 What the widget shows and where it reads it
 
-Both widgets render from one JSON document, the **widget state**, defined once in `packages/shared/src/widget-state.ts`. Swift and Kotlin decode it. The same fixture files test all three decoders.
+Both widgets render from one JSON document, the **widget state**, defined once in `packages/shared/src/widget-state`. Swift and Kotlin decode it. The same fixture files test all three decoders.
 
 ```jsonc
 {
@@ -176,6 +176,8 @@ Both widgets render from one JSON document, the **widget state**, defined once i
 - `incoming[].photoFile` exists only for recipients of that flare, because `widget-api` builds it from RLS-checked reads (4.4).
 - Usual names are base drinks (`COPY.md` 2.1). Details travel in `summary` and `hasDetails`.
 
+**Changing the widget state. Decision:** add fields only; decoders ignore unknown keys. Within one `v` the server may add a field (at any level) and nothing else, so an app or widget from an older store build keeps decoding a newer server's state. Every decoder of server data drops keys it doesn't know and keeps every other rule: the app reads `widget-api/state` with `widgetStateReadSchema`, and the Kotlin and Swift decoders do the same. The server's own output stays strict: `widget-api` validates with `widgetStateSchema`, which refuses unknown keys, so a field can't leave by accident (fixture `invalid/xp-field.json`). A new `state`, a new enum value, a removed or renamed field, or a changed type is breaking: bump `v`, and decoders keep their last good state until they ship support. Reason: widget code only changes with store builds (10), and both platforms must survive the server moving first.
+
 | | iOS | Android |
 |---|---|---|
 | State JSON | App Group `UserDefaults(suiteName:)`, key `widget.state.v1` | Jetpack DataStore (Preferences) in the app process. The widget runs in the app process, so no cross-process store is needed. |
@@ -183,9 +185,13 @@ Both widgets render from one JSON document, the **widget state**, defined once i
 | Per-widget config (which group) | `SelectGroupIntent` parameter (`GroupEntity` from App Group data: Automatic, Everyone, each group). An id not in `groups` is treated as Automatic. | Glance state per `appWidgetId`, set by the configuration activity. `widgetFeatures="reconfigurable|configuration_optional"`. Same unknown-id rule. |
 | Widget auth token | Shared Keychain access group, `kSecAttrAccessibleAfterFirstUnlock` | Android Keystore-wrapped key. Jetpack Security Crypto is deprecated, so use Keystore directly (or Tink). |
 
-**Widget token. Decision:** at sign-in the app registers the device and gets a random 256-bit **widget token**, stored hashed in `private.widget_credentials`. It authorises only `widget-api`, for that one user. Sharing the Supabase refresh token with the widget would break, because refresh tokens rotate and two processes refreshing at once log the user out. The token is revoked on sign-out (3.6), account deletion, suspension, and when another account registers the same device.
+**Widget token. Decision:** at sign-in the app registers the device and gets a random 256-bit **widget token**, stored hashed in `private.widget_credentials`. It authorises only `widget-api`, for that one user. Sharing the Supabase refresh token with the widget would break, because refresh tokens rotate and two processes refreshing at once log the user out. The token is revoked on sign-out (3.6), account deletion, suspension, and when another account registers the same device or install (0019). Every `register-device` call issues a new token and revokes the device's previous one at once. A suspended account's widget therefore gets `401 unauthorized`, not `403`: its tokens are gone, and lifting the suspension doesn't restore them; the app's next launch registers again (and sees `403 suspended` from `register-device` while the suspension lasts).
 
-**What the app writes.** On every foreground, after any change to usual drinks, groups, the tracker or flares, and after any push it handles, the app fetches `widget-api/state`, writes the JSON, downloads missing images, deletes files no longer referenced, then calls `WidgetCenter.shared.reloadAllTimelines()` (iOS) or `GlanceAppWidget.updateAll()` (Android). Reloads requested while the app is in the foreground don't count against the iOS budget.
+**The app's copy of the token. Decision:** `widget-api` accepts only the widget token, so the app keeps its own copy to read `widget-api/state` for the widget: in memory and in the sealed store (5), per user, dropped on sign-out and deletion, never logged or sent anywhere else. Reason: a launch whose `register-device` failed (offline) can still refresh the widget with the last good token.
+
+**What the app writes.** On every foreground, after any change to usual drinks, groups, the tracker or flares, and after any push it handles, the app fetches `widget-api/state`, writes the JSON, downloads missing images, deletes files no longer referenced, then calls `WidgetCenter.shared.reloadAllTimelines()` (iOS) or `GlanceAppWidget.updateAll()` (Android). Reloads requested while the app is in the foreground don't count against the iOS budget. Pushes are debounced (600 ms) and run one at a time, since every read counts toward the widget's 120 calls an hour (8.3).
+
+**Offline. Decision:** when the state read fails (offline, no token yet), the app patches the last server state it holds with its own usual 3 and today's counts, and builds one from app data only when it has none. Reason: a rebuilt state would wipe friends' parts (groups, flares, snaps) that only the server knows. Unsent widget logs are left out of the pushed counts, because the widget adds its own pending logs (no double count).
 
 **The Automatic label offline.** The widget label shows what Automatic resolves to now (PRD 3.3 group configuration rule 4), and it must flip at 08:00 and 18:00 with no network. Swift and Kotlin each port the 4.6 rule, reading `auto`, `groups[].memberCount` and the device clock. All three ports (TS, Swift, Kotlin) run against `packages/shared/fixtures/audience.json` (QA_PLAN 6.3, T22 to T33). The server still decides the real recipients (4.6).
 
@@ -208,7 +214,23 @@ Both widgets render from one JSON document, the **widget state**, defined once i
 
 - At `createdAt` + 30 s without success, the widget shows the Failed state ("Couldn't send. Tap to retry."). A timeline entry (iOS) or a WorkManager job (Android) at + 30 s draws it. A tap retries the same op in place.
 - The outbox flushes on the next intent, on app open, and on a connectivity callback (Android WorkManager network constraint; iOS has no widget connectivity callback, so the next intent or timeline run).
-- Every widget call has an 8 s timeout.
+- Every widget call has an 8 s timeout and sends `Authorization: Bearer <widget token>` and `x-region: <project region>` (`WIDGET_API_REGION_HEADER`; the region comes from `supabase/projects.json`, public). **Decision:** `x-region` on every widget call, because without it the function runs near the caller and each database round trip crosses regions: about 2.5 s per call instead of about 0.2 s on clink-dev.
+- What the widget does with each error is `WIDGET_API_ERRORS` in `packages/shared/src/api` (table in 4.4): `retryable` codes keep the op, `malformed` and `stale` codes drop it. An unknown code falls back to the status: 401 re-reads the token once, 403, 408, 429 and 5xx retry, any other 4xx drops (`widgetApiAction`; Kotlin and Swift follow the same rule).
+
+**Log time. Decision:** the server owns a log's time, so a well-formed log is never refused because of its `loggedAt`. The device sends its tap time; the server (`private.log_time()`, migration 0020) stores:
+
+| `loggedAt` as sent | Stored as |
+|---|---|
+| Later than server now (`private.app_now()`), by any amount | Server now |
+| Within the 90 days before server now | As sent |
+| Older than 90 days (the `drink_logs` retention, 4.8) | Server now minus 90 days |
+
+- The local date is worked out from the stored time: in the device zone the widget sends (`timeZone`), else the account's saved zone, else UTC. A zone the database doesn't know falls back the same way.
+- The same rule runs in the `drink_logs` insert trigger, so app logs (the app's offline queue) are clamped too; when the trigger moves a time, the local date follows the saved zone.
+- The device UUID keeps every retry idempotent, so a clamped log retried later is still a `duplicate`.
+- A log clamped to the oldest edge is purged by the next nightly retention run, like any 90-day-old log. It was accepted, so the outbox clears.
+- XP keeps its own rule (4.5): `daily_log` only for a stored time within 36 hours, so a clamped log can't farm it.
+- Reason: a phone clock running fast, or a phone offline for days, must never lose a drink (PRD 3.20 "never dropped"), and no time-based refusal can make the widget drop a log. `too_old` (0019) is retired; the 5-minute future check in the 0007 trigger is replaced.
 
 Widget reloads that follow an App Intent or Glance action are part of the interaction, so they aren't throttled the way background reloads are.
 
@@ -269,7 +291,7 @@ Both OSes decide when a widget actually redraws. A notification shows within sec
 
 1. The app calls `register-device` with `action: "signout"` before it clears the session. The server deletes the `push_devices` row, its `private.widget_credentials` and `private.live_activity_tokens`.
 2. The app ends any local Live Activity, clears the App Group / DataStore state, cached images and the Keychain or Keystore widget token, writes `state: "signed_out"`, and reloads widgets.
-3. Offline at sign-out: local state is cleared anyway, and the server call is retried on next launch. Until then the old token is stale; the next account's `register-device` upsert on the same push token moves ownership and revokes the previous owner's credentials (4.4).
+3. Offline at sign-out: local state is cleared anyway, and the server call is retried on the next launch that has a session. The app keeps only a marker with the install id in its plain store (`signout_pending`, never a token) and sends `{action: "signout", installId}` before that launch's `register-device`, so the retry can't undo the new registration; a network or server failure keeps the marker, any other answer clears it. Until then the old token is stale, and the widget no longer holds it (cleared in step 2). Any `register-device` on that install (another account, or the same one again) revokes the previous credentials anyway: the push-token move (4.4) and the same-install trigger (0019).
 
 ---
 
@@ -872,7 +894,7 @@ Devices cache the files, so short URLs cost nothing. A signed URL is a bearer li
 ### 4.4 Edge functions
 
 Every function:
-- validates input with the zod schemas in `packages/shared/src/api.ts` and the PRD limits in `limits.ts`
+- validates input with the zod schemas in `packages/shared/src/api` and the PRD limits in `limits`
 - checks the user JWT, or the widget token for `widget-api`
 - refuses a suspended caller with `403 suspended` (the app shows `err.suspended`)
 - runs `private.check_text()` on any text another person will see (display name, place, custom drink name, Note, Plan B, one-time note) and refuses with `422 text_blocked`
@@ -883,8 +905,8 @@ Every function:
 | Function | Called by | Does |
 |---|---|---|
 | `complete-signup` | App, once after sign-in | Takes birth month and year, compares with the minimum (CEO question 1), discards them. Old enough: creates `profiles`, `user_settings`, `private.user_private` (`age_confirmed_at`, `min_age_version`) and the first invite code, exchanges the Apple authorization code and stores the encrypted refresh token. Under the minimum: deletes the auth user (`auth.admin.deleteUser`), revokes the Apple token, returns `under_age`; the app keeps the refused screen for 24 h with a Keychain / Keystore flag (M-05). |
-| `register-device` | App, every launch; sign-out | Upserts `push_devices` on `push_token`; if the token belonged to another account, moves it and revokes that account's widget credentials for the device. Updates `timezone` (and `tz_changed_at` when it changed), `notif_permission`, app version, APNs env. Issues or rotates the widget token. Rotates the invite code silently when expired. On a new `install_id` for the account, notifies the account's other devices (`n.new_signin`, 5). `action: "signout"` deletes the device row and its credentials and Live Activity tokens (3.6). Returns `app_config` minimums. |
-| `widget-api` | Widgets, NSE, notification actions, app | `GET state` (the widget JSON; records `widget_added` per new instance), `POST log`, `POST flare` (409 `live_flare_exists` if one is live), `POST respond`, `POST accept-request` (Android notification action). Widget-token auth, reads as the user (above). Wraps the same internals as the functions below. |
+| `register-device` | App, once per launch and account, on every platform (iOS and Android, with or without a widget); sign-out. One owner in the app (`lib/widget/sync.ts`), because every call rotates the widget token | Upserts `push_devices` on `push_token`; if the token belonged to another account, moves it and revokes that account's widget credentials for the device. Updates `timezone` (and `tz_changed_at` when it changed), `notif_permission`, app version, APNs env. Issues or rotates the widget token. Rotates the invite code silently when expired. On a new `install_id` for the account, notifies the account's other devices (`n.new_signin`, 5). `action: "signout"` deletes the device row and its credentials and Live Activity tokens (3.6). Returns `app_config` minimums. |
+| `widget-api` | Widgets, NSE, notification actions, app | `GET state` (the widget JSON; records `widget_added` per new instance), `POST log` (idempotent on the device id; `loggedAt` clamped, never refused, 3.2 "Log time"), `POST flare` (409 `live_flare_exists` if one is live), `POST respond`, `POST accept-request` (Android notification action). Widget-token auth, reads as the user (above). Wraps the same internals as the functions below. |
 | `send-flare` | App, `widget-api` | Input: `category`, `place`, `timingMin` (0 to 60), `tappedAt`, `audience`, optional `photo` paths, `replace` (app only). One transaction: if a flare is live, refuse with 409 unless `replace` is true, in which case set it `replaced`; set `meet_at = now() + timingMin`; resolve the audience (4.6) minus blocks and suspended users; insert `flares`, `flare_audience`, `flare_recipients`, and `flare_photos` if a photo came. Image screening (8.4) runs on the photo before fan-out once it's live. After commit, fan out: alert push to recipients with `notify_flares` and permission; background push (plus WidgetKit push on iOS 26+) to the rest. The 4th and later flares from this sender in 60 minutes go out with silent payloads (iOS no sound, `interruption-level: passive`; Android `setSilent(true)`) (PRD 3.5 rule 15). At most 20 recipients, so inline with `EdgeRuntime.waitUntil`, no queue. Push-to-start the sender's Live Activity if the flare came from a widget. |
 | `respond-flare` | App, `widget-api` | Requires `status = 'live'`, `expires_at > now()`, a recipient row and `private.are_friends(sender, caller)`; otherwise 404 `flare_ended`. Upserts or withdraws a response. For `bring`, copies the order from `usual_drinks` (plus `one_time_note` from the app). Notifies the sender (if `notify_replies`), updates the Live Activity or Android ongoing notification, refreshes the sender's widget. Withdrawing a Bring me one sends the sender one silent notification. |
 | `close-flare` | App | Sender taps "We're going" (`going`) or cancels (`cancelled`). Ends the Live Activity, clears recipients' widgets, calls `settle_flare()`. On `going`, sends `n.closed_replier` to each standing replier (PRD 3.16). On `cancelled`, one silent notification to each replier. |
@@ -898,6 +920,41 @@ Every function:
 | `invite-preview` | Landing page (public) | Returns the inviter's first name only, or the same "unknown" answer for every bad code. 60 per hour per IP. |
 | `report` | App | Derives `target_user` from the snap, flare photo or person (never from the client). Copies the item to `moderation`, hides it for the reporter at once, auto-hides it for everyone at 3 distinct reporters, marks `not_consented` as priority, emails the moderation inbox with the report id, reason and a Studio link only (no image, no signed URL). 20 per day per user. |
 | `delete-account` | App, web deletion page | Section 4.7. |
+
+**Errors.** Every error body is `{ "error": code }` (plus `retryAfter` and a `Retry-After` header on 429), never user text; `COPY.md` maps codes to words in the app. Our SQL functions raise SQLSTATE class `CL`, and `_shared/http.ts` maps each to a status and code:
+
+| SQLSTATE | Code | Status |
+|---|---|---|
+| `CLTXT` | `text_blocked` | 422 |
+| `CLCAP` | `friend_cap`, `group_cap` | 409 |
+| `CLLIV` | `live_flare_exists` | 409 |
+| `CLRTL` | `rate_limited` (detail = seconds left) | 429 |
+| `CLEND` | `flare_ended` | 404 |
+| `CLINV` | `invite_code` | 404 |
+| `CLSUS` | `suspended` | 403 |
+| `CLBAD` | `bad_input` | 400 |
+| `CLNFD` | `not_found` | 404 |
+| `CLBLK` | answers exactly as `not_found`, so a block is never revealed | 404 |
+| `CLCON` | `conflict`: a widget log id that belongs to another account (0019) | 409 |
+| `CLOLD` | retired by 0020 (was `too_old`); nothing raises it, and it would answer 500 | |
+
+**widget-api errors** (`WIDGET_API_ERRORS`, what the widget does with each, 3.2):
+
+| Status | Code | Kind | Widget | When |
+|---|---|---|---|---|
+| 401 | `unauthorized` | retryable | Re-read the stored token, retry once, then keep the op and wait for the app | No, malformed, unknown, rotated or revoked token (sign-out, deletion, suspension, another account on the install) |
+| 403 | `suspended` | retryable | Keep | A suspended account with a live token (normally revoked first, so 401) |
+| 429 | `rate_limited` | retryable | Retry after `retryAfter` | Over 120 calls in the hour for this device, all routes (8.3) |
+| 500 | `internal` | retryable | Retry | Anything unexpected |
+| 400 | `bad_input` | malformed | Drop | Schema, unknown keys, category doesn't match the drink, water with a slot, impossible date, bad JSON |
+| 422 | `unknown_drink` | malformed | Drop | `drinkId` not in the catalog |
+| 409 | `conflict` | malformed | Drop | The log id belongs to another account |
+| 404, 405, 413 | `not_found`, `method_not_allowed`, `too_large` | malformed | Drop | Wrong path, wrong method (OPTIONS included), body over 16 KB |
+| 409 | `usual_changed` | stale | Drop | Custom drink, but that usual slot no longer holds it |
+
+No code is about time: `loggedAt` is clamped (3.2), so the widget never drops a log for its clock.
+
+**CORS. Decision:** only the functions a browser calls answer CORS: `complete-signup`, `register-device` and `delete-account` (the web review build, the web deletion page). `_shared/http.ts` answers `OPTIONS` before auth: `204` with `Access-Control-Allow-Origin: <origin>`, methods `POST, OPTIONS`, headers `authorization, apikey, content-type, x-client-info, x-region`, max age 1 h, for an origin on the allow-list, else `403` with no CORS headers. Every other answer to an allowed origin, errors included, carries `Access-Control-Allow-Origin` and `Vary: Origin`. The allow-list is exact origins, no wildcard: `supabase/projects.json` `corsOrigins` per project, set as `CLINK_CORS_ORIGINS` by the deploy script (clink-dev: `http://localhost:8081`; the web domain is added when it exists; plain http is refused outside dev). `widget-api` is native-only and has no CORS: `OPTIONS` is `405`. Reason: browsers need it, and an exact list keeps other sites from reading our answers in a signed-in browser.
 
 **SQL functions in `private`** (security definer, `search_path = ''`, execute only for `service_role`): `accept_friend_request`, `block_user`, `redeem_invite`, `resolve_audience`, `settle_flare`, `award_xp`, `hit_rate_limit`, `check_text`, `recompute_last_drink`. They take the acting user as an argument because only the service role can call them, and each edge function passes the caller from the verified JWT or widget token.
 
@@ -992,6 +1049,8 @@ The daily 03:00 UTC job enforces this. Legal copies the table into the privacy p
 | `auth.audit_log_entries` | 90 days | Daily job with the service role |
 | `app_events` | 13 months | Daily job |
 | `push_devices` not seen | 90 days | Daily job |
+| `private.install_history` (install ids and push-token hashes per account, for the invite XP abuse rule, 4.5) | 30 days after last seen, also after account deletion | Daily job |
+| `private.widget_credentials` revoked | 30 days after revocation | Daily job |
 | `moderation_notices` | 1 year | Daily job |
 | Database backups | Rolling, as the Supabase plan keeps them (7 days on Pro at last check, **verify**) | Stated in the policy |
 | Sentry events | 90 days or the plan default, whichever is shorter **(verify)** | Sentry project setting |
@@ -1024,7 +1083,7 @@ v1 handles GDPR Article 15 and 20 (and CCPA right-to-know) requests by email, wi
   - Controls: Twilio Verify Fraud Guard on; geo permissions limited to launch countries; Supabase Auth SMS rate limits per number and per IP; resend after 30 s (F1); a code is valid 10 minutes; **after 5 wrong codes, verification for that number is refused for 15 minutes** (`err.code_locked`).
 - **Age check (M-05).** After any sign-in method succeeds for a new identity, the app shows the age screen and calls `complete-signup` (4.4) before any profile exists. The minimum lives in `app_config` (`min_age`, set per CEO question 1; build and test with 16). Where a US state app-store age law applies in a launch state **(verify their court status before launch)**, the app also reads Apple's Declared Age Range API and Google Play's Age Signals API at sign-up and treats a "minor" signal like an under-age answer.
 - **Phone for Apple and Google users:** asked on the invite step (F5) so contacts can match them. Added with `updateUser({ phone })`, which sends an OTP. We verify every number, otherwise anyone could claim someone else's number and get matched as them. Changing the number needs an OTP to the new number and a fresh session.
-- **Session storage:** the Supabase session is larger than `expo-secure-store`'s comfortable value size on Android, so we keep an AES key in SecureStore and the encrypted session in MMKV.
+- **Session storage:** the Supabase session is larger than `expo-secure-store`'s comfortable value size on Android, so we keep an AES-256-GCM key in SecureStore (Keychain / Keystore, after first unlock, this device only) and the encrypted session in AsyncStorage. **Decision:** AsyncStorage, not the MMKV planned here: MMKV 4 needs `react-native-nitro-modules`, which isn't in Expo's bundled set, and the key never leaves the Keychain / Keystore either way, so the protection is the same (`docs/build-notes/app-supabase.md`). The same sealed store holds the offline log queue and the app's copy of the widget token (3.1).
 - **Account linking:** the verified phone number is the bridge between platforms. Supabase manual identity linking lets a signed-in user add Apple or Google later in Settings.
 - **New-device sign-in (S-04).** When `register-device` sees a new `install_id` for an account, it sends the account's other devices `n.new_signin` with a "Not me" action. "Not me" signs out every session (`auth.admin.signOut(user, 'global')`), revokes all widget tokens and opens Settings > Account.
 
@@ -1189,7 +1248,7 @@ Spend controls: the Supabase spend cap stays on, and Twilio has a monthly spend 
 - **Block:** friendship removed, requests cancelled, group memberships removed, live-flare recipient and response rows removed both ways, clear messages to both, no future requests or invite redemptions between the two.
 - **Text filter (v1, free).** `private.check_text()` matches text against `private.blocked_terms` (slurs, sexual terms, common evasions; English in v1). It runs in every function that writes text another person sees, and in triggers on `profiles.display_name` and `usual_drinks.custom_name` / `details`. Refusal: `422 text_blocked`, shown as `err.text_blocked`. The list changes without a release.
 - **Image screening.** Before public App Store submission, `share-snap` and `send-flare` pass the 480 px thumb to an image moderation API and hold the fan-out until it returns. A high nudity or violence score sets `hidden_at` and opens a priority report. The vendor must run no face recognition and keep no images for training, and its DPA must say so. Vendor and cost: CEO question 2. During TestFlight and the Play closed beta, a named person reviews reports daily and the text filter runs.
-- **Suspension.** A row in `private.suspensions` (not on `profiles`, so users can't clear it). While suspended: every edge function and `widget-api` returns 403 `suspended`; RLS hides the user's profile, snaps, flares, flare photos, usual 3 and last drink from others (`private.is_suspended`); pushes from and to them stop; friends get a clear message. A Studio SQL snippet suspends and lifts, and writes `private.moderation_log`.
+- **Suspension.** A row in `private.suspensions` (not on `profiles`, so users can't clear it). While suspended: every edge function returns 403 `suspended`, and `widget-api` answers 401 because suspension revokes the account's widget tokens (3.1); RLS hides the user's profile, snaps, flares, flare photos, usual 3 and last drink from others (`private.is_suspended`); pushes from and to them stop; friends get a clear message. A Studio SQL snippet suspends and lifts, and writes `private.moderation_log`.
 - **Statement of reasons.** When moderation hides content or suspends an account, the function writes a `moderation_notices` row. The app shows it on next open: what was removed, which rule, and how to appeal (reply to support@). A suspended user sees `err.suspended` with the same details.
 - **Review.** Reports email the moderation inbox with the report id, reason and a Studio link only, never an image or a signed URL. Moderation views live in `private` with `security_invoker = true`, and Studio reads them as the service role. Only named moderators have Studio access, each with 2FA. Every action is logged in `private.moderation_log`. The 24-hour review target needs a named person (CEO question 2).
 - **Non-users** report through `web/report` (description, reason, contact email), which writes a report with `reporter_id` null.
@@ -1202,11 +1261,11 @@ Spend controls: the Supabase spend cap stays on, and Twilio has a monthly spend 
 |---|---|---|
 | APNs .p8, FCM service account, phone pepper, Twilio, Apple Sign in key, invite-token HMAC secret, moderation API key | Supabase function secrets | EAS, repo, app |
 | Supabase service role / secret key | Supabase function secrets | CI, EAS, app |
-| Supabase anon / publishable key, Sentry DSN | App config (public by design) | |
+| Supabase project URL, publishable key and region, Sentry DSN | App config (public by design) | |
 | iOS signing, Android keystore | EAS credentials | repo |
 | Supabase access token for deploys | GitHub Environment secret; the prod environment needs approval | |
 
-- Anything in `app.config.ts` `extra` or an `EXPO_PUBLIC_*` variable ships inside the app and is public. Only the two public values above go there.
+- Anything in `app.config.ts` `extra` or an `EXPO_PUBLIC_*` variable ships inside the app and is public. Only the public values above go there: `extra.supabase` (URL and publishable key) and `extra.supabaseRegion` (for widget-api's `x-region`, 3.2), all from `supabase/projects.json` or the build environment. The config refuses an `sb_secret_` key.
 - GitHub secret scanning with push protection, and Dependabot, are on from day one.
 - The CEO keeps an offline copy of the pepper in a password manager. Losing it means recomputing every `phone_hmac` from `auth.users`.
 - A rotation note per secret lives in `docs/runbooks/`.
@@ -1225,6 +1284,7 @@ Spend controls: the Supabase spend cap stays on, and Twilio has a monthly spend 
 
 - Invites and auth redirects use the https domain (Universal Links / App Links with `autoVerify="true"`), never the custom URL scheme, which any app can register.
 - Android receivers and services are `exported="false"` unless the system must call them; `PendingIntent`s use `FLAG_IMMUTABLE`.
+- Android `allowBackup="false"`. **Decision:** the sealed store's keys live in the Keystore and never restore to another phone, so a backup would carry ciphertext nobody can open plus the plain store (install id, pending sign-out marker); a restored install starts clean and registers again.
 - The app never reads the clipboard by code (6).
 
 ### 8.8 Vendors and legal records (M-12, S-23)

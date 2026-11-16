@@ -1196,6 +1196,9 @@ Screen readers only; never shown. One key per row of `DESIGN.md` 5.6, which refe
 |---|---|---|
 | `a11y.w.tracker` | Tracker block, one element | {drinks, plural, one {# drink} other {# drinks}} and {water, plural, one {# water} other {# waters}} today. Last drink {ago_words} ago. |
 | `a11y.w.tracker_none` | Tracker block, nothing yet | No drinks yet today. |
+| `a11y.w.tracker_at` | Tracker block, one element (Android widget: the last drink as a time of day, which never goes stale) | {drinks, plural, one {# drink} other {# drinks}} and {water, plural, one {# water} other {# waters}} today. Last drink at {time}. |
+| `a11y.w.tracker_water` | Tracker block, water only so far | {water, plural, one {# water} other {# waters}} today. No drinks yet. |
+| `a11y.w.plate` | Usual #1 tile on the idle widget (opens the picker) | {drink}, your usual. Log a drink |
 | `a11y.w.log` | +1 Drink | Log a drink |
 | `a11y.w.pick` | Picker drink button | Log {drink} |
 | `a11y.w.pick_water` | Picker water button | Log water |
@@ -1387,7 +1390,8 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 | `ws.setup` | Not signed in or not set up | Open Clink | 12 |
 | `ws.drinks` | Idle, count | {n, plural, one {# drink} other {# drinks}} | 10 |
 | `ws.water` | Idle, count | {n, plural, one {# water} other {# waters}} | 10 |
-| `ws.last` | Idle, last drink | Last {ago} | 12 |
+| `ws.last` | Idle, last drink (iOS; Android uses `ws.last_at`) | Last {ago} | 12 |
+| `ws.last_at` | Idle, last drink as a time of day. The small widget writes `{time}` without AM/PM ("Last 7:30") | Last {time} | 10 |
 | `ws.last_none` | Idle, nothing today | No drinks yet | 14 |
 | `ws.log` | Button | +1 Drink | 9 |
 | `ws.pick.water` | Picker cell | Water | 8 |
@@ -1397,6 +1401,7 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 | `ws.live.counts` | Your live flare | {in} in | 8 |
 | `ws.in.title` | Friend's flare | {name} | 12 |
 | `ws.in.sub` | Friend's flare | {cat_cap} · {mins} | 16 |
+| `ws.in.left` | Friend's flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS | {timer} left | 10 |
 | `ws.in.btn` | Button | I'm in | 8 |
 | `ws.in.done` | After replying | You're in | 10 |
 | `ws.more` | More flares open | +{n} | 3 |
@@ -1411,10 +1416,12 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 | `wm.setup` | Not set up | Open Clink to finish setup | 28 |
 | `wm.signin` | Signed out | Sign in to Clink | 18 |
 | `wm.counts` | Idle | {drinks} · {water} (each from the small strings) | 22 |
-| `wm.last` | Idle | Last drink {ago} ago | 22 |
+| `wm.last` | Idle (iOS; Android uses `wm.last_at`) | Last drink {ago} ago | 22 |
+| `wm.last_at` | Idle, last drink as a time of day in the device's 12/24 h format. Exact, never stale, no ticking | Last drink {time} | 22 |
 | `wm.last_now` | Idle, under a minute | Last drink just now | 22 |
 | `wm.last_none` | Idle | No drinks yet today | 20 |
 | `wm.usual` | Idle sub-line | {drink_short} | 15 |
+| `wm.usual_none` | Idle drink tile, no usual 3 yet (opens the usual 3 editor) | Pick your usual 3 | 18 |
 | `wm.caff` | Idle sub-line after 4 caffeinated | Herbal tea next? | 18 |
 | `wm.snap` | Snap caption | {name} · {ago} | 22 |
 | `wm.snap_none` | Empty snap slot | Friends' snaps land here | 26 |
@@ -1441,6 +1448,7 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 | `wm.live.more` | More replies than chips | +{n} more | 8 |
 | `wm.in.title` | Friend's flare (may wrap to 2 lines of 24: name, then "wants …") | {name} wants {wants} | 29 |
 | `wm.in.meta` | Friend's flare | {place} · {mins} | 28 |
+| `wm.in.left` | Friend's flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS | {timer} left | 16 |
 | `wm.in.btn_in` | Button | I'm in | 8 |
 | `wm.in.btn_bring` | Button | Bring me one | 14 |
 | `wm.in.more` | More flares | +{n} | 3 |
