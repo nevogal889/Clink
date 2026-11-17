@@ -151,3 +151,9 @@ Every decision the CEO has approved so far. When this file and `original-prd.md`
 - **Android 16:** the ongoing notification is a promoted Live Update by default (status bar chip, top of the lock screen). Older Android versions get the plain ongoing notification. This replaces "evaluate in M4".
 - **Buttons on the live view:** one button, We're going, which closes the flare as done without opening the app. Cancel stays in the app so a pocket tap can't cancel a flare.
 - **When:** built in M4 with flares, after friends in M3. No early demo.
+
+## CEO answers after placing the Android widget
+- **Medium widget split:** counts get 60% of the width, the usual #1 panel with Who joins? gets 40%. The count fills the height it is given; empty space under it is a bug.
+- **Water on the widget:** one small secondary line under the count with the water glyph, the number and the last drink time ("◦ 4 · Last 7:30 AM"). Water is less important than drinks and never gets its own large numeral.
+- **Invite friends on the widget** opens the app on the invite screen (PRD F15), never Settings.
+- **This round** also takes the design review fixes: minute countdowns ("13 min left"), clearer dark-mode cups, "No replies yet" instead of "0 in", a ✕ on the medium picker, every flare category visible on the flare panel, and one empty line on the tracker.
