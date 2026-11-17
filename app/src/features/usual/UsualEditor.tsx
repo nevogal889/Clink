@@ -33,6 +33,7 @@ import { Icon } from '@/ui/icons';
 import { useSnackbar } from '@/ui/Snackbar';
 import { radius, spacing } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
+import { useLargeText } from '@/ui/useLargeText';
 import { useTheme } from '@/ui/useTheme';
 
 const SLOT_H = 72;
@@ -261,6 +262,11 @@ export interface UsualEditorParts {
   blocks: ReactNode[];
   /** Index (inside `blocks`) of the category tabs, for stickyHeaderIndices. */
   tabsIndex: number;
+  /**
+   * stickyHeaderIndices for the screen's ScrollView: the tabs, or none from 1.5x text, where the
+   * wrapped tabs would cover too much of the screen to stay pinned (DESIGN.md 4.14).
+   */
+  sticky: number[] | undefined;
   /** Sheets; render them once, outside the ScrollView. */
   overlays: ReactNode;
 }
@@ -276,6 +282,7 @@ export function useUsualEditor({
 }): UsualEditorParts {
   const { c } = useTheme();
   const snack = useSnackbar();
+  const large = useLargeText();
   const [category, setCategory] = useState<FlareCategory>(list[0]?.category ?? 'coffee');
   const [editing, setEditing] = useState<number | null>(null);
   const [addOwn, setAddOwn] = useState(false);
@@ -407,5 +414,7 @@ export function useUsualEditor({
     </>
   );
 
-  return { blocks, tabsIndex: blocks.indexOf(tabs), overlays };
+  const tabsIndex = blocks.indexOf(tabs);
+  // +1: the screen's title block comes before the editor's blocks.
+  return { blocks, tabsIndex, sticky: large ? undefined : [tabsIndex + 1], overlays };
 }

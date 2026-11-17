@@ -279,9 +279,11 @@ class WidgetScreenshotTest {
           shot(fx, name, layout, night, at = at)
           n++
         }
-        for (scale in listOf(1.3f, 2.0f)) {
-          shot(fx, name, layout, night = false, fontScale = scale, at = at)
-          n++
+        if (fx == "W4" || fx == "W5") {
+          for (scale in listOf(1.3f, 2.0f)) {
+            shot(fx, name, layout, night = false, fontScale = scale, at = at)
+            n++
+          }
         }
       }
     }

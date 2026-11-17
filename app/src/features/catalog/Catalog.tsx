@@ -2,7 +2,7 @@
 // and ten drink rows. Used by the usual 3 editor and by the tracker's "Something else".
 import { FLARE_CATEGORIES, TEXT_LIMITS, drinksIn, t, type FlareCategory } from '@clink/shared';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { DrinkIcon, Glyph } from '@/ui/Art';
 import { Chip, Field, PrimaryButton, Press } from '@/ui/controls';
@@ -25,29 +25,34 @@ export function CategoryTabs({
   background?: string;
 }) {
   const theme = useTheme();
+  // All four categories in view, wrapping onto a second line, never a sideways scroll: a
+  // scrolled row hid Smoothie & Juice on a 360 dp phone (DESIGN.md 4.14).
   return (
     <View
-      style={{ backgroundColor: background ?? theme.c.surfaceBase, paddingVertical: spacing.s2 }}
+      testID="cat-tabs"
+      accessibilityRole="tablist"
+      style={{
+        backgroundColor: background ?? theme.c.surfaceBase,
+        paddingVertical: spacing.s2,
+        paddingHorizontal: spacing.gutter,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: spacing.s2,
+      }}
     >
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: spacing.gutter, gap: spacing.s2 }}
-        accessibilityRole="tablist"
-      >
-        {FLARE_CATEGORIES.map((cat) => (
-          <Chip
-            key={cat}
-            testID={`tab-${cat}`}
-            accessibilityRole="tab"
-            label={catName(cat)}
-            accessibilityLabel={t('a11y.chip.cat', { cat_name: catName(cat) })}
-            selected={value === cat}
-            onPress={() => onChange(cat)}
-            leading={(ink) => <Glyph category={cat} size={18} color={ink} />}
-          />
-        ))}
-      </ScrollView>
+      {FLARE_CATEGORIES.map((cat) => (
+        <Chip
+          key={cat}
+          testID={`tab-${cat}`}
+          accessibilityRole="tab"
+          label={catName(cat)}
+          accessibilityLabel={t('a11y.chip.cat', { cat_name: catName(cat) })}
+          selected={value === cat}
+          lines={2}
+          onPress={() => onChange(cat)}
+          leading={(ink) => <Glyph category={cat} size={18} color={ink} />}
+        />
+      ))}
     </View>
   );
 }
@@ -277,6 +282,7 @@ export function AddOwnSheet({
             accessibilityRole="radio"
             label={catName(c)}
             selected={cat === c}
+            lines={2}
             onPress={() => setCat(c)}
             leading={(ink) => <Glyph category={c} size={18} color={ink} />}
           />

@@ -859,8 +859,8 @@ private fun planCells(s: Scale, labels: List<String>, cellW: Float, cellH: Float
     if (lines > 2) continue
     val artH = minOf(64f, innerH - s.h(size, lines) - 2f)
     // A name tells two look-alike cups apart (review item 4), so it keeps its place down to a
-    // 24 dp picture.
-    if (artH >= 24f) return CellPlan(innerW, artH, size, lines)
+    // 22 dp picture.
+    if (artH >= 22f) return CellPlan(innerW, artH, size, lines)
   }
   for (size in listOf(SECONDARY, NAME, MICRO)) {
     val nameW = labels.maxOf { l -> l.split(' ').maxOf { s.w(it, size) } }

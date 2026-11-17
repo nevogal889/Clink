@@ -11,7 +11,7 @@
 // panel is the obvious next step. Side by side, a 168 pt button left a 20-character group name
 // about 150 pt and cut it.
 import { FLARE_CATEGORIES, TEXT_LIMITS, TIMING_PILLS, t, type FlareCategory } from '@clink/shared';
-import { ActivityIndicator, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { formatClock, formatMins } from '@/lib/format';
 import { catName } from '@/features/catalog/Catalog';
@@ -20,8 +20,8 @@ import { Chip, Field, Press } from '@/ui/controls';
 import { Icon } from '@/ui/icons';
 import { PourHero, PourPanel } from '@/ui/Pour';
 import { radius, spacing } from '@/ui/theme';
-import { reviewTextScale } from '@/ui/theme/look';
 import { Txt } from '@/ui/Txt';
+import { useLargeText } from '@/ui/useLargeText';
 import { useTheme } from '@/ui/useTheme';
 
 import type { ResolvedAudience } from './audience';
@@ -64,8 +64,7 @@ export function FlarePanel({
   const { c } = theme;
   // From 1.5x text the hero gives its width to the To: line, which would otherwise wrap word by
   // word beside it (DESIGN.md 4.4 "Large text").
-  const { fontScale } = useWindowDimensions();
-  const showHero = Math.max(fontScale, reviewTextScale()) < 1.5;
+  const showHero = !useLargeText();
   const empty = !noFriends && audience.count === 0;
   const meetAt = new Date(now.getTime() + timing.minutes * 60_000);
   // Group emoji + name, in full: it wraps rather than truncates (DESIGN.md 4.5).

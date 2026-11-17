@@ -206,6 +206,47 @@ const GROUPS = [
       ],
     ],
   },
+  {
+    // Catalog category tabs: onboarding step 3, the usual 3 editor and the tracker's catalog.
+    query: '?look=android',
+    states: [
+      [
+        '26-onb-usual-tabs',
+        async (p) => {
+          await tap(p, 'signin-primary');
+          await tap(p, 'onb-continue');
+          await p.locator(id('cat-tabs')).last().scrollIntoViewIfNeeded();
+          await pause(p);
+        },
+      ],
+      ['26b-onb-usual-smoothie', (p) => tap(p, 'tab-smoothie_juice')],
+    ],
+  },
+  {
+    query: '?mock=setup&look=android',
+    states: [
+      [
+        '27-tracker-something-else',
+        async (p) => {
+          await tap(p, 'top-tracker');
+          await tap(p, 'quick-other');
+        },
+      ],
+    ],
+  },
+  {
+    query: '?mock=setup&look=android&text=max',
+    path: 'usual',
+    states: [
+      [
+        '28-usual-tabs-largest-text',
+        async (p) => {
+          await p.locator(id('cat-tabs')).last().scrollIntoViewIfNeeded();
+          await pause(p);
+        },
+      ],
+    ],
+  },
 ];
 
 mkdirSync(outDir, { recursive: true });

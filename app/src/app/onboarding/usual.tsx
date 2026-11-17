@@ -40,7 +40,7 @@ export default function UsualStep() {
         step={stepNumber('usual')}
         title={t('onb.usual.title')}
         sub={t('onb.usual.sub')}
-        stickyHeaderIndices={[editor.tabsIndex + 1]}
+        stickyHeaderIndices={editor.sticky}
         actions={
           <>
             <PrimaryButton

@@ -1044,11 +1044,12 @@ Purpose: save three drinks once, with exactly how you like them.
    - An empty slot is a dashed `line.control` outline row reading "Add a drink".
 2. **Presets:** four chips (`COPY.md` 2.8) in one sideways-scrolling row, each showing 3 S icons and the preset name. Tapping one fills all slots and shows an undo snackbar.
 3. **Catalog:**
-   - Category tabs (glyph + name), sticky under the slots while scrolling.
+   - Category tabs (glyph + name), sticky under the slots while scrolling. All four always in view: they take the full width and wrap onto a second line (Coffee, Matcha, Tea, then Smoothie & Juice on a 360 pt phone), never a sideways scroll. Reason: the scrolled row hid Smoothie & Juice on a 360 dp Android phone, the same fault as the flare panel chips (4.4). The same tabs head the "Something else" catalog in the tracker (4.15).
+   - Large text: a tab may take a line of its own and its name wraps to two lines rather than being cut. From 1.5x text the tabs stop being sticky, because the wrapped rows would cover most of the screen.
    - **Category header** (this is where guideline 2 lands): category tint, `rim.thick` band, category name in `display.l` on the left, "10 drinks" in `caption`, hero 168 pt on the right. The header changes with the pour motion (2.9).
    - Ten drink rows, 64 pt: icon L 40, name `headline`. Trailing: the slot number badge (1, 2, 3 in a cobalt circle) if picked, else a "+" button.
    - Tapping a row adds it to the next free slot. A 4th replaces #3, with a snackbar "Replaced Jasmine Tea · Undo".
-   - Last row: "Add your own" opens a small sheet: name field (30 chars), category chips (4), Add.
+   - Last row: "Add your own" opens a small sheet: name field (30 chars), category chips (4, wrapping, same rules as the tabs), Add.
 
 **Make it yours** (details editor, large sheet):
 - Header: icon L 64, drink name, and a live summary line ("Regular · Iced · Oat milk · No sugar · Double shot") with a `caption` saying friends see this when you ask for one.

@@ -33,7 +33,7 @@ export default function UsualScreen() {
         }}
       />
       <ScrollView
-        stickyHeaderIndices={[editor.tabsIndex + 1]}
+        stickyHeaderIndices={editor.sticky}
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.s8 }}
       >
         <View style={{ paddingHorizontal: spacing.gutter, paddingTop: spacing.s2 }}>
