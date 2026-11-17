@@ -951,6 +951,7 @@ All events carry: pseudonymous `user_id`, `platform`, `app_version`, `ts`. None 
 | `notification_permission` | `result` (granted, denied, not_now) | client |
 | `account_deleted` | none (written with no `user_id`) | server (`delete-account`) |
 | `app_opened` | `entry` (icon, widget, notification, link) | client |
+| `widget_log_rejected` | `code` (a widget-api drop code, or other), `kind` (malformed, stale, other), `category` | client (the app, on foreground, for each log the widget's `rejected` list hands it; ARCHITECTURE.md 3.2). Reason: a refused widget log is otherwise invisible, and Sentry isn't wired yet. |
 
 ---
 

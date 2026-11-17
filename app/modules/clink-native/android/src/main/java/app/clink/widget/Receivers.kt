@@ -67,8 +67,8 @@ class ClinkSmallWidgetReceiver : ClinkWidgetReceiverBase(WidgetSize.SMALL)
 class ClinkMediumWidgetReceiver : ClinkWidgetReceiverBase(WidgetSize.MEDIUM)
 
 /**
- * Boot, clock and zone changes: the Chronometer bases and the midnight job depend on the clock, so
- * every widget redraws and the jobs are planned again.
+ * Boot, clock and zone changes: the minute countdowns, the last-drink time and the midnight job
+ * depend on the clock, so every widget redraws and the jobs are planned again.
  */
 class ClinkSystemEventsReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {

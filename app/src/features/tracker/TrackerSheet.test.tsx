@@ -74,10 +74,21 @@ describe('TrackerSheet', () => {
     expect(r.api.state.logs.some((l) => l.id === water.id)).toBe(true);
   });
 
-  it('shows the empty line when nothing is logged', async () => {
+  it('shows one empty line when nothing is logged, under the quick-log row', async () => {
     await open('new');
     expect(screen.getByTestId('today-empty')).toHaveTextContent(t('empty.today'));
-    expect(screen.getByTestId('last-drink')).toHaveTextContent(t('today.last_none'));
+    // DECISIONS.md "after placing the Android widget": one empty line, not two.
+    expect(screen.queryByTestId('last-drink')).toBeNull();
+    expect(screen.queryByText('No drinks yet today')).toBeNull();
+  });
+
+  it('shows no last-drink line while only water is logged', async () => {
+    const r = await open('new');
+    await fireEvent.press(screen.getByTestId('quick-water'));
+    await waitFor(() => expect(screen.getByTestId('count-water')).toHaveTextContent('1'));
+    expect(r.api.state.logs).toHaveLength(1);
+    expect(screen.queryByTestId('today-empty')).toBeNull();
+    expect(screen.queryByTestId('last-drink')).toBeNull();
   });
 
   it('"Something else" logs any catalog drink without touching the usual 3', async () => {

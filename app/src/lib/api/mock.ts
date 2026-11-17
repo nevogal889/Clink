@@ -24,6 +24,7 @@ import type {
   PermissionResult,
   Session,
   UsualDrink,
+  WidgetLogRejected,
   XpState,
 } from './types';
 
@@ -52,6 +53,10 @@ interface MockState {
   contactsAllowed: boolean | null;
   contacts: ContactMatch[];
   shares: number;
+  /** The surface of each recorded share tap, in order. */
+  shareSurfaces: string[];
+  /** widget_log_rejected events recorded, in order. */
+  widgetRejects: WidgetLogRejected[];
   notifications: PermissionResult | null;
   /** register-device calls that issued a token. */
   registrations: number;
@@ -90,6 +95,8 @@ function seed(scenario: MockScenario, now: Date): MockState {
       { id: 'c_sam', name: 'Sam Okafor', state: 'none' },
     ],
     shares: 0,
+    shareSurfaces: [],
+    widgetRejects: [],
     notifications: null,
     registrations: 0,
     snapsShared: 0,
@@ -292,8 +299,12 @@ export function createMockApi(opts: MockOptions = {}): ClinkApi & { state: MockS
     },
 
     getInviteUrl: () => wait('https://example.invalid/i/MOCK0000'),
-    async recordInviteShare() {
+    async recordInviteShare(_channel, surface = 'onboarding') {
       state.shares += 1;
+      state.shareSurfaces.push(surface);
+    },
+    async recordWidgetLogRejected(props) {
+      state.widgetRejects.push({ ...props });
     },
     async requestContacts() {
       state.contactsAllowed = true;

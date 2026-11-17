@@ -9,24 +9,19 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { DRINK_IDS } from './draw-icons.mjs';
+import { darkIcon } from './dark-icon.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ICONS = join(HERE, '..');
 const ROOT = join(HERE, '../../../../..');
 const OUT = join(ROOT, 'docs/art/icons-sheet.html');
-const theme = JSON.parse(readFileSync(join(ICONS, 'theme.json'), 'utf8'));
 const catalog = JSON.parse(
   readFileSync(join(ROOT, 'packages/shared/generated/catalog.json'), 'utf8'),
 );
 const names = Object.fromEntries(catalog.drinks.map((d) => [d.id, d.name]));
 
-export function toDark(svg) {
-  let out = svg;
-  for (const [from, to] of Object.entries(theme.dark)) out = out.split(from).join(to);
-  return out
-    .split(`stroke-opacity="${theme.gleamOpacity.light}"`)
-    .join(`stroke-opacity="${theme.gleamOpacity.dark}"`);
-}
+// The shared dark rule (dark-icon.mjs): the same one the widget and the app export.
+export const toDark = darkIcon;
 const strip = (svg) => svg.replace(/<!--[\s\S]*?-->\n?/g, '').trim();
 const sized = (svg, px) => svg.replace(/width="\d+" height="\d+"/, `width="${px}" height="${px}"`);
 
@@ -103,7 +98,7 @@ const html = `<!doctype html>
 <body>
 <header>
   <h1>Drink icons, ${DRINK_IDS.length} drinks</h1>
-  <p>Generated from app/assets/art/icons by _source/build-sheet.mjs. Light masters as shipped; dark uses the swap in theme.json. Review per DESIGN.md 3.5 before each release that changes art.</p>
+  <p>Generated from app/assets/art/icons by _source/build-sheet.mjs. Light masters as shipped; dark uses the shared contour rule (_source/dark-icon.mjs, theme.json). Review per DESIGN.md 3.5 before each release that changes art.</p>
 </header>
 ${panel('light')}
 ${panel('dark')}

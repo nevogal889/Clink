@@ -4,6 +4,7 @@ import app.clink.nativemodule.R
 import app.clink.widget.AppRoute
 import app.clink.widget.model.Confirmation
 import app.clink.widget.model.ConfirmationKind
+import app.clink.widget.model.Countdown
 import app.clink.widget.model.IncomingFlare
 import app.clink.widget.model.LogCategory
 import app.clink.widget.model.MyResponse
@@ -135,6 +136,21 @@ class ModelBuilder(private val copy: Copy) {
 
   private fun minutesBetween(a: Instant, b: Instant): Long = Duration.between(a, b).toMinutes()
 
+  /**
+   * The countdown as text, longest first (DESIGN.md 5.1 "Time", round 3): whole minutes left,
+   * rounded up so it never reads 0 while the flare is open ("14 min left", then "14 min"), and
+   * "Under a minute left" in the last minute. Redrawn at each minute boundary (Deadlines).
+   */
+  private fun leftOptions(now: Instant, at: Instant, small: Boolean): Pair<String?, List<String>> {
+    val m = Countdown.minutesLeft(now, at)
+    if (m < 1) {
+      val under = if (small) listOf(copy.t(R.string.clink_ws_in_left_under)) else listOf(copy.t(R.string.clink_wm_in_left_under), copy.t(R.string.clink_ws_in_left_under))
+      return null to under
+    }
+    val full = copy.t(if (small) R.string.clink_ws_in_left else R.string.clink_wm_in_left, "n" to m)
+    return m.toString() to listOf(full, copy.t(R.string.clink_ws_in_left_short, "n" to m)).distinct()
+  }
+
   private fun tracker(s: WidgetState.Ready, v: WidgetView.Idle, layout: Layout, fontScale: Float, now: Instant, zone: ZoneId): TrackerModel {
     // Only the small widget uses the short line ("Last 7:30"); every 4x2 has room for
     // "Last drink 7:30 AM" in the tracker column (polish pass).
@@ -149,22 +165,21 @@ class ModelBuilder(private val copy: Copy) {
         s.today.localDate == Resolve.localDateAt(now, zone) && Resolve.localDateAt(it, zone) == s.today.localDate
       }
     // The time of day of the last drink (Head of Product, polish pass): exact and never stale, so
-    // the widget needs no ticking text. Midnight clears it with the counts. Longest first; the
-    // layout keeps the first that fits ("Last drink 12:54 PM", "Last 12:54 PM", "Last 12:54").
+    // the widget needs no ticking text. Midnight clears it with the counts. With no drink today
+    // there is no line at all: never "No drinks yet" next to a 0 (CEO, 2026-11-17).
     val lastOptions =
+      if (last != null && small) listOf(copy.t(R.string.clink_ws_last_at, "time" to copy.time(last, zone, short = true))) else emptyList()
+    // The 4x2's one small line under the numeral (CEO, 2026-11-17): "◦ 4 · Last 7:30 AM", then the
+    // short time, then the water count alone. Water never gets a numeral of its own.
+    val waterLine =
       if (last != null) {
-        val full = copy.time(last, zone)
-        val short = copy.time(last, zone, short = true)
-        (if (small) listOf(copy.t(R.string.clink_ws_last_at, "time" to short))
-        else
-          listOf(
-            copy.t(R.string.clink_wm_last_at, "time" to full),
-            copy.t(R.string.clink_ws_last_at, "time" to full),
-            copy.t(R.string.clink_ws_last_at, "time" to short),
-          )).distinct()
+        listOf(
+          copy.t(R.string.clink_wm_water_last, "water" to v.water, "time" to copy.time(last, zone)),
+          copy.t(R.string.clink_wm_water_last, "water" to v.water, "time" to copy.time(last, zone, short = true)),
+          Copy.splitCount(water).first.ifEmpty { water },
+        ).distinct()
       } else {
-        (if (small) listOf(copy.t(R.string.clink_ws_last_none))
-        else listOf(copy.t(R.string.clink_wm_last_none), copy.t(R.string.clink_ws_last_none))).distinct()
+        listOf(Copy.splitCount(water).first.ifEmpty { water })
       }
     val a11y =
       when {
@@ -179,6 +194,7 @@ class ModelBuilder(private val copy: Copy) {
       waterWord = ww,
       waterText = water,
       lastOptions = lastOptions,
+      waterLine = waterLine,
       a11y = a11y,
     )
   }
@@ -278,7 +294,8 @@ class ModelBuilder(private val copy: Copy) {
           icon = R.drawable.clink_ui_share_on_cobalt,
           background = R.drawable.clink_bg_pill_cobalt,
           textColor = R.color.clink_on_cobalt,
-          tap = Tap.Open(AppRoute.SETTINGS),
+          // PRD F15: no friends opens the app on the invite screen (CEO, 2026-11-17), never Settings.
+          tap = Tap.Open(AppRoute.INVITE),
           a11y = copy.t(R.string.clink_a11y_w_invite),
         )
       } else if (first == null) {
@@ -300,13 +317,19 @@ class ModelBuilder(private val copy: Copy) {
           subLabel = label,
         )
       } else {
-        val r = Res.of(first.category)
+        // After the caffeine note the panel is tea, and Who joins? follows it (review item 10): the
+        // note offers a tea, and the button under it asks friends for one.
+        val cat = if (v.caffeineNote) app.clink.widget.model.FlareCategory.TEA else first.category
+        val r = Res.of(cat)
         val (label, spoken) = audienceLabel(s, v)
-        // M4 sends the quick flare from here; until then Who joins? opens the camera screen.
+        val groupName = v.audience?.groupId?.let { id -> s.groups.firstOrNull { it.id == id }?.name }
+        // M4 sends the quick flare from here; until then Who joins? opens the camera screen. An
+        // empty audience opens Settings > Widgets, where the widget's audience is picked (PRD 3.3
+        // edge cases, F15 "audience empty: app hint"), and says so on the button.
         ButtonModel(
           label = copy.t(R.string.clink_wm_flare),
           icon = r.glyphOnSolid,
-          background = Res.flare(first.category).pillSolid,
+          background = Res.flare(cat).pillSolid,
           textColor = r.onSolid,
           tap = Tap.Open(if (v.audienceEmpty) AppRoute.SETTINGS else AppRoute.CAMERA),
           a11y =
@@ -316,7 +339,8 @@ class ModelBuilder(private val copy: Copy) {
               "audience" to spoken,
               "mins" to copy.mins(0),
             ),
-          subLabel = label,
+          subLabel =
+            if (v.audienceEmpty) copy.t(R.string.clink_wm_audience_empty, "group" to Copy.truncate(groupName ?: "", Copy.GROUP)) else label,
         )
       }
     // The panel takes the colours of what it shows: the herbal tea note in tea, else the usual #1,
@@ -379,7 +403,9 @@ class ModelBuilder(private val copy: Copy) {
     val r = Res.of(f.category)
     val fr = Res.flare(f.category)
     val toMeet = maxOf(0L, minutesBetween(now, f.meetAt))
-    val left = maxOf(0L, minutesBetween(now, f.expiresAt))
+    // Spoken at minute precision, rounded up like the visible countdown.
+    val left = maxOf(1L, Countdown.minutesLeft(now, f.expiresAt))
+    val (leftNum, leftTexts) = leftOptions(now, f.expiresAt, layout.small)
     val chips =
       f.replies.take(2).map {
         when (it) {
@@ -412,12 +438,14 @@ class ModelBuilder(private val copy: Copy) {
         if (layout.small) copy.t(R.string.clink_ws_live, "cat" to f.label)
         else copy.t(R.string.clink_wm_live_title, "cat_cap" to cap(f.label), "mins" to copy.mins(toMeet)),
       place = f.place?.let { copy.t(R.string.clink_wm_live_place, "place" to Copy.truncate(it, Copy.PLACE)) },
-      expiresAt = f.expiresAt,
+      leftNum = leftNum,
+      leftWords = if (leftNum == null) leftTexts else leftTexts.map { Copy.splitCount(it).second },
       chips = chips,
       chipBackground = fr.pillTint,
       moreByShown = moreByShown,
       noneText = if (f.replies.isEmpty()) copy.t(R.string.clink_wm_live_none) else null,
-      counts = copy.t(R.string.clink_ws_live_counts, "in" to ins),
+      // "No replies yet", never "0 in" (review item 9).
+      counts = if (ins == 0) copy.t(R.string.clink_ws_live_none) else copy.t(R.string.clink_ws_live_counts, "in" to ins),
       a11y = spoken,
       overlay = overlay,
     )
@@ -428,7 +456,7 @@ class ModelBuilder(private val copy: Copy) {
     val r = Res.of(f.category)
     val fr = Res.flare(f.category)
     val toMeet = maxOf(0L, minutesBetween(now, f.meetAt))
-    val left = maxOf(0L, minutesBetween(now, f.expiresAt))
+    val left = maxOf(1L, Countdown.minutesLeft(now, f.expiresAt))
     val name = Copy.truncate(f.senderName, Copy.NAME)
     val small = layout.small
     val spoken =
@@ -482,8 +510,7 @@ class ModelBuilder(private val copy: Copy) {
           f.place?.let { copy.t(R.string.clink_wm_in_meta, "place" to Copy.truncate(it, Copy.PLACE), "mins" to copy.mins(toMeet)) },
           copy.mins(toMeet, capital = true),
         ),
-      expiresAt = f.expiresAt,
-      leftFormat = copy.raw(if (small) R.string.clink_ws_in_left else R.string.clink_wm_in_left).replace("{timer}", "%s"),
+      leftOptions = leftOptions(now, f.expiresAt, small).second,
       more = v.more.takeIf { it > 0 }?.let { copy.t(if (small) R.string.clink_ws_more else R.string.clink_wm_in_more, "n" to it) },
       moreA11y = v.more.takeIf { it > 0 }?.let { copy.t(R.string.clink_a11y_w_more, "n" to it) },
       join = if (replied == null) join else null,

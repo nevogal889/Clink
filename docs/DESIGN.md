@@ -576,7 +576,7 @@ Within each category every icon differs from the others by vessel, marker or gar
 | App: usual 3 slots, Bring me one picker | Icon L | 48 pt |
 | App: order ticket | Icon L | 64 pt |
 | App: Show to barista | Icon L | 96 pt |
-| App: camera flare panel | Hero | 112 pt |
+| App: camera flare panel | Hero | 88 pt |
 | App: catalog category header | Hero | 168 pt |
 | App: incoming flare, live flare header | Hero | 240 pt / 160 pt |
 
@@ -745,11 +745,14 @@ Purpose: share a snap, or send a flare with defaults in one tap.
 │ └─────────────────────────────────────────┘ │
 │  [snaps]            ( ◯ )              ↺    │  shutter row, 96
 │ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀ rim.thick, category ink ▀▀▀▀ │
-│  (Coffee) (Matcha) (Tea) (Smoothie & Juice)  │  flare panel on
-│  [ Kaffa Roastery            ]   ┌───────┐  │  category tint
-│  (Now) (5m) (15m) (30m) (Other)  │ hero  │  │
-│  Meet 10:30                      └───────┘  │
-│  [ To: Work ▾ ]        [  Who joins?     ]  │  56 high
+│  (Coffee) (Matcha) (Tea)                    │  flare panel on
+│  (Smoothie & Juice)                         │  category tint;
+│  [ Kaffa Roastery                        ]  │  chips wrap
+│  (Now) (5m) (15m) (30m) (Other)             │
+│  Meet 10:30                      ┌──────┐   │
+│  To: 💼 Work  Auto ▾             │ hero │   │
+│                                  └──────┘   │
+│  [            Who joins?                 ]  │  56 high, pinned
 └─────────────────────────────────────────────┘
 ```
 
@@ -769,11 +772,12 @@ Purpose: share a snap, or send a flare with defaults in one tap.
 
 **Flare panel**, from the shutter row to the bottom:
 - Category tint background, `rim.thick` top band in category ink, top corners 28 pt.
-- Row 1: four category chips (glyph + name). Selected: category solid with `onSolid`. Unselected: `ink.secondary` outline. Scrolls sideways if they don't fit.
-- Row 2: place field (`callout`, 40 chars, pencil glyph, empty placeholder from COPY.md), width minus 128.
-- Row 3: timing pills (4.6) and under them "Meet 10:30" in `caption`.
-- Hero, 112 pt, on the right of rows 2 and 3.
-- Row 4: To: chip on the left (4.5). **Who joins?** on the right: category solid, at least 168 pt wide, 56 pt high, category glyph left of the label.
+- Row 1: four category chips (glyph + name), full width, wrapping onto a second line. Never a sideways scroll: on a 360 pt phone at text size 1.0 it reads Coffee, Matcha, Tea, then Smoothie & Juice. At large text sizes a chip may take a line of its own, and its name wraps to two lines rather than being cut. Selected: category solid with `onSolid`. Unselected: `ink.secondary` outline.
+- Row 2: place field (`callout`, 40 chars, pencil glyph, empty placeholder from COPY.md), full width.
+- Row 3: timing pills (4.6), sharing the full width in one row (labels centred), so all five fit on a 360 pt phone.
+- Row 4: "Meet 10:30" in `caption`, and under it the To: line (4.5). Hero, 88 pt, on the right of row 4.
+- **Who joins?** under the panel, pinned: category solid, full width, 56 pt high, category glyph left of the label.
+- **Layout call (2026-11-17):** the chips get the full width and the hero moves down beside Meet and To:, because beside the hero the chip row was cut at "Te" and Smoothie & Juice was off screen on a 360 dp Android phone, so people didn't know the category existed (DECISIONS.md, "every flare category visible on the flare panel").
 
 **Defaults:** category of usual #1, last place, Now, audience from the automatic rule (PRD 3.5).
 
@@ -791,7 +795,7 @@ States:
 | Widget not added | A one-line notice under the top bar: "Add the widget" with a close button. Shown until a widget is detected. |
 | Sending | Who joins? shows a spinner and "Sending…". After 30 s a danger caption "Couldn't send. Tap to retry." Dropped after 2 minutes (PRD 3.20). |
 | Offline | An "Offline" pill (`off.pill`) in the top bar, `ink.secondary`. |
-| Large text | The panel scrolls, Who joins? stays pinned, chips wrap. |
+| Large text | The panel scrolls, Who joins? stays pinned, chips and timing pills wrap (a chip name on up to two lines). From 1.5x text the hero beside Meet and To: is left out, so the To: line gets the full width instead of wrapping word by word. |
 
 **Small screens** (under 700 pt tall): the viewfinder shrinks, staying square and at least 240 pt, centred in the width.
 
@@ -1069,7 +1073,7 @@ Sheet, medium detent (large when scrolled):
 4. **Quick log:** six buttons in a sideways-scrolling row (usual 3, still water, sparkling water, Something else). Each is 72 × 88 with icon L 40 and a two-line name. A tap logs, rolls the count, plays a light haptic, and shows an undo snackbar. "Something else" uses a plus glyph and opens the catalog (4.14 catalog part, in a sheet); a tap on a drink there logs it and closes the sheet, without touching the usual 3.
 5. **Entries:** header "Entries" with an "Undo last" text button on the right. Rows 56: time (tabular, `ink.secondary`), icon S 24, name. A trailing remove button (44 pt) removes that entry, with an undo snackbar.
 
-Empty: "Nothing yet today." under the quick-log row.
+Empty: one line, `empty.today`, under the quick-log row. The "Last drink" line under the counts only shows once there is a last drink, so an empty sheet never says it twice (DECISIONS.md, "one empty line on the tracker").
 
 Taps: undo is 2 from the camera (tracker chip, Undo last).
 

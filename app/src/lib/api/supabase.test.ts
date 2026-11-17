@@ -934,6 +934,46 @@ describe('invites', () => {
       props: { channel: 'whatsapp', surface: 'onboarding' },
     });
   });
+
+  it('records where the share buttons were', async () => {
+    const { api, fake } = setup();
+    fake.signedIn();
+    await api.recordInviteShare('messages', 'widget');
+    expect(fake.on('app_events')[0]?.values).toMatchObject({
+      props: { channel: 'messages', surface: 'widget' },
+    });
+  });
+});
+
+describe('widget_log_rejected (ARCHITECTURE.md 3.2)', () => {
+  const props = { code: 'unknown_drink', kind: 'malformed', category: 'tea' } as const;
+
+  it('writes the enums only, as the signed-in user', async () => {
+    const { api, fake } = setup();
+    fake.signedIn();
+    await api.recordWidgetLogRejected(props);
+    expect(fake.on('app_events')[0]?.values).toEqual({
+      user_id: UID,
+      name: 'widget_log_rejected',
+      props,
+    });
+  });
+
+  it('resolves when RLS refuses it (usage stats off), and throws only when offline', async () => {
+    const { api, fake } = setup();
+    fake.signedIn();
+    fake.onQuery = () => ({ error: { code: '42501', message: 'rls' }, status: 403 });
+    await expect(api.recordWidgetLogRejected(props)).resolves.toBeUndefined();
+    fake.onQuery = () => ({ error: { message: 'Network request failed' }, status: 0 });
+    await expect(api.recordWidgetLogRejected(props)).rejects.toMatchObject({ code: 'network' });
+  });
+
+  it('never sends a prop the event schema does not list', async () => {
+    const { api, fake } = setup();
+    fake.signedIn();
+    await api.recordWidgetLogRejected({ ...props, drinkId: 'tea.jasmine' } as never);
+    expect(fake.on('app_events')).toHaveLength(0);
+  });
 });
 
 describe('widget token and widget-api/state', () => {

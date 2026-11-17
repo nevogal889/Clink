@@ -17,9 +17,6 @@ class Copy(private val lookup: (Int) -> String, private val is24Hour: () -> Bool
 
   fun t(id: Int, vararg vars: Pair<String, Any>): String = Icu.render(lookup(id), mapOf(*vars))
 
-  /** The raw message, for the Chronometer format (its {ago} becomes the ticking %s). */
-  fun raw(id: Int): String = lookup(id)
-
   /** {ago}: "just now", "12m", "1h 42m". */
   fun ago(minutes: Long): String {
     if (minutes < 1) return t(R.string.clink_fmt_ago_now)

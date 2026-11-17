@@ -40,11 +40,18 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 // The Glance widget (ARCHITECTURE.md 1.1, 3; DESIGN.md 5.5). One GlanceAppWidget serves both
-// providers (ClinkSmallWidgetReceiver, ClinkMediumWidgetReceiver); the layout follows the size the
-// launcher gives it, with three responsive sizes plus a tall 2x2.
+// providers (ClinkSmallWidgetReceiver, ClinkMediumWidgetReceiver).
+//
+// SizeMode.Exact (round 3): the widget is composed at the size the launcher really gives it, once
+// per orientation, and Layout picks the arrangement with the same breakpoints as before (2x2 under
+// 230 dp wide, tall from 150 dp high, wide from 300 dp). With Responsive the layout was worked out
+// for the nearest of five fixed sizes and then stretched: the CEO's Pixel 8 4x2 is taller than
+// 160 dp, so the space under the count stayed empty. Exact also composes 2 layouts per update
+// instead of 5.
 
 class ClinkWidget : GlanceAppWidget() {
   companion object {
+    // The smallest size of each arrangement, for tests, renders and previews.
     val SMALL = DpSize(120.dp, 120.dp)
     val SMALL_TALL = DpSize(120.dp, 150.dp)
     val MEDIUM_SHORT = DpSize(250.dp, 120.dp)
@@ -52,7 +59,7 @@ class ClinkWidget : GlanceAppWidget() {
     val MEDIUM_WIDE = DpSize(300.dp, 160.dp)
   }
 
-  override val sizeMode = SizeMode.Responsive(setOf(SMALL, SMALL_TALL, MEDIUM_SHORT, MEDIUM, MEDIUM_WIDE))
+  override val sizeMode = SizeMode.Exact
 
   override suspend fun provideGlance(context: Context, id: GlanceId) {
     val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)

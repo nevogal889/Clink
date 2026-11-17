@@ -14,6 +14,7 @@ import {
   isCaffeinated,
   isFlareDrink,
   LOG_CATEGORIES,
+  parseEventProps,
   registerDeviceResponse,
   WIDGET_API_PATHS,
   WIDGET_API_REGION_HEADER,
@@ -1057,17 +1058,33 @@ export function createSupabaseApi(deps: SupabaseApiDeps): ClinkApi {
       return `${deps.inviteBase ?? 'https://example.invalid'}/i/${row.code}`;
     },
 
-    async recordInviteShare(channel) {
+    async recordInviteShare(channel, surface = 'onboarding') {
       // First-party analytics (PRD 6). RLS refuses it when "Share usage stats" is off; that's fine.
       try {
         const u = await uid();
         await sb.from('app_events').insert({
           user_id: u,
           name: 'invite_share_tapped',
-          props: { channel, surface: 'onboarding' },
+          props: { channel, surface },
         });
       } catch {
         // never blocks sharing
+      }
+    },
+
+    async recordWidgetLogRejected(props) {
+      // Enums only (events schema); RLS refuses it when "Share usage stats" is off, which is final.
+      try {
+        const u = await uid();
+        await q(
+          sb.from('app_events').insert({
+            user_id: u,
+            name: 'widget_log_rejected',
+            props: parseEventProps('widget_log_rejected', props),
+          }),
+        );
+      } catch (e) {
+        if (e instanceof ApiError && e.code === 'network') throw e;
       }
     },
 

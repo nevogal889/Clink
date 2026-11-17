@@ -3,10 +3,10 @@
 import type { WidgetState } from '@clink/shared';
 
 import { ApiError } from '../api/errors';
-import type { ClinkApi } from '../api/types';
+import type { ClinkApi, WidgetLogRejected } from '../api/types';
 import { createPreviewHost } from './host';
 import { buildWidgetState, isoSeconds, type AppWidgetInput } from './state';
-import { createWidgetSync } from './sync';
+import { createWidgetSync, rejectReport } from './sync';
 
 const TOKEN = 'T0k3n_-'.repeat(6) + 'x'; // 43 characters, test value
 const NOW = new Date(2026, 10, 16, 10, 30);
@@ -47,12 +47,16 @@ const serverState = (drinks: number): WidgetState =>
     },
   }) as WidgetState;
 
-type Api = Pick<ClinkApi, 'registerDevice' | 'getWidgetState'>;
+type Api = Pick<ClinkApi, 'registerDevice' | 'getWidgetState' | 'recordWidgetLogRejected'>;
 
 function setup(api: Partial<Api> = {}, hostOpts: Parameters<typeof createPreviewHost>[0] = {}) {
   const host = createPreviewHost(hostOpts);
   const calls = { register: 0, state: 0 };
+  const reports: WidgetLogRejected[] = [];
   const full: Api = {
+    recordWidgetLogRejected: async (props) => {
+      reports.push(props);
+    },
     registerDevice: async () => {
       calls.register += 1;
       return { widgetToken: TOKEN };
@@ -69,7 +73,7 @@ function setup(api: Partial<Api> = {}, hostOpts: Parameters<typeof createPreview
     now: () => NOW,
     timeZone: () => 'Europe/London',
   });
-  return { host, sync, calls };
+  return { host, sync, calls, reports };
 }
 
 const pushed = (host: ReturnType<typeof createPreviewHost>) =>
@@ -163,7 +167,9 @@ describe('widget sync', () => {
   });
 
   it('keeps the last good state when the widget refuses one', async () => {
-    const bad = { ...serverState(1), extra: true } as unknown as WidgetState;
+    // A newer version than this app knows: every decoder refuses it (an unknown key alone is
+    // dropped, not refused).
+    const bad = { ...serverState(1), v: 2 } as unknown as WidgetState;
     const { host, sync } = setup({ getWidgetState: async () => bad });
     await sync.register('u1');
     expect(await sync.push(input)).toBe('refused');
@@ -194,6 +200,90 @@ describe('widget sync', () => {
     expect(fg.pending).toEqual(pending);
     expect(host.calls).toEqual(['drainOutbox', 'getInstalledWidgets', 'getOutbox']);
     expect((await sync.foreground()).dropped).toEqual([]);
+  });
+
+  describe('logs the server refused for good (ARCHITECTURE.md 3.2, review item 7)', () => {
+    const log = (drinkId: string, category: 'coffee' | 'water') => ({
+      id: '22222222-2222-4222-8222-222222222222',
+      op: 'log' as const,
+      createdAt: '2026-11-16T09:00:00Z',
+      dropAt: null,
+      payload: { drinkId, slot: null, category, loggedAt: '2026-11-16T09:00:00Z' },
+    });
+    const rejected = (
+      code: string | null,
+      kind: 'malformed' | 'stale' | null,
+      status = 422,
+      entry = log('coffee.latte', 'coffee'),
+    ) => ({ entry, status, code, kind, rejectedAt: '2026-11-16T09:01:00Z' });
+
+    it('takes them on foreground and reports each by code, kind and category only', async () => {
+      const { host, sync, reports } = setup(
+        {},
+        {
+          rejected: [
+            rejected('unknown_drink', 'malformed'),
+            rejected('usual_changed', 'stale', 409, log('water.still', 'water')),
+          ],
+        },
+      );
+      await sync.register('u1');
+      await sync.foreground();
+      await sync.reported();
+      expect(host.calls).toContain('takeRejected');
+      expect(host.rejected).toEqual([]);
+      expect(reports).toEqual([
+        { code: 'unknown_drink', kind: 'malformed', category: 'coffee' },
+        { code: 'usual_changed', kind: 'stale', category: 'water' },
+      ]);
+      // Nothing that identifies the drink, the time or the log leaves the device.
+      expect(JSON.stringify(reports)).not.toMatch(/latte|still|2026|2222/);
+      // Taken once: the next foreground has nothing to report.
+      await sync.foreground();
+      await sync.reported();
+      expect(reports).toHaveLength(2);
+    });
+
+    it('sends an unknown code or kind as "other", never the server text', () => {
+      expect(rejectReport(rejected('Drink "Mocha" is not ours', null, 418))).toEqual({
+        code: 'other',
+        kind: 'other',
+        category: 'coffee',
+      });
+      expect(rejectReport(rejected(null, 'malformed', 400))).toMatchObject({ code: 'other' });
+    });
+
+    it('keeps a report that could not be sent and sends it on the next foreground', async () => {
+      let online = false;
+      const sent: WidgetLogRejected[] = [];
+      const { host, sync } = setup(
+        {
+          recordWidgetLogRejected: async (p) => {
+            if (!online) throw new ApiError('network');
+            sent.push(p);
+          },
+        },
+        { rejected: [rejected('bad_input', 'malformed', 400)] },
+      );
+      await sync.register('u1');
+      await sync.foreground();
+      await sync.reported();
+      expect(sent).toEqual([]);
+      expect(host.rejected).toEqual([]); // the widget handed it over; the app holds it now
+      online = true;
+      await sync.foreground();
+      await sync.reported();
+      expect(sent).toEqual([{ code: 'bad_input', kind: 'malformed', category: 'coffee' }]);
+    });
+
+    it('leaves them with the widget while signed out', async () => {
+      const { host, sync, reports } = setup({}, { rejected: [rejected('conflict', 'malformed')] });
+      await sync.foreground();
+      await sync.reported();
+      expect(host.calls).not.toContain('takeRejected');
+      expect(host.rejected).toHaveLength(1);
+      expect(reports).toEqual([]);
+    });
   });
 
   it('clears the widget on sign-out and stops pushing', async () => {

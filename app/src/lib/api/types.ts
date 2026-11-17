@@ -6,6 +6,7 @@
 import type {
   AutoSettings,
   DrinkDetails,
+  EventProps,
   FlareCategory,
   LogCategory,
   WidgetState,
@@ -135,6 +136,10 @@ export interface ContactMatch {
 }
 
 export type ShareChannel = 'whatsapp' | 'messages' | 'more';
+/** Where the share buttons were (the invite_share_tapped `surface`, PRD 6). */
+export type InviteSurface = EventProps<'invite_share_tapped'>['surface'];
+/** One widget log the server refused for good, as its app event (ARCHITECTURE.md 3.2). */
+export type WidgetLogRejected = EventProps<'widget_log_rejected'>;
 
 /** What register-device hands the app for the widget (ARCHITECTURE.md 3.1, 4.4). */
 export interface DeviceRegistration {
@@ -187,7 +192,13 @@ export interface ClinkApi {
 
   /** The invite URL. It only ever goes inside a share message; it is never shown (guideline 6). */
   getInviteUrl(): Promise<string>;
-  recordInviteShare(channel: ShareChannel): Promise<void>;
+  /** First-party event for a share-button tap. `surface` defaults to onboarding. Never fails. */
+  recordInviteShare(channel: ShareChannel, surface?: InviteSurface): Promise<void>;
+  /**
+   * First-party event for a widget log the server refused for good. Throws ApiError `network`
+   * when offline, so the caller can send it later; any other refusal (usage stats off) resolves.
+   */
+  recordWidgetLogRejected(props: WidgetLogRejected): Promise<void>;
   requestContacts(): Promise<PermissionResult>;
   getContactMatches(): Promise<ContactMatch[]>;
   addContact(id: string): Promise<ContactMatch>;

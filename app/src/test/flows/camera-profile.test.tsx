@@ -3,7 +3,8 @@
 // "320 more to reach Usual Order" under the bar (DESIGN.md 4.4, 4.5, 4.16).
 import { t } from '@clink/shared';
 import { Stack } from 'expo-router';
-import { renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
+import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
+import { Dimensions } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { createMockApi } from '@/lib/api';
@@ -55,6 +56,61 @@ describe('camera send block', () => {
     await waitFor(() => expect(screen.getByTestId('who-joins-bar')).toBeTruthy());
     expect(within(screen.getByTestId('who-joins-bar')).getByTestId('cam-send')).toBeTruthy();
     expect(within(screen.getByTestId('flare-panel')).queryByTestId('cam-send')).toBeNull();
+  });
+});
+
+describe('flare panel categories (DECISIONS.md, every flare category visible)', () => {
+  it('shows all four category chips in a wrapping row, never a sideways scroll', async () => {
+    await open('/camera');
+    await waitFor(() => expect(screen.getByTestId('cam-cats')).toBeTruthy());
+    const row = screen.getByTestId('cam-cats');
+    expect(row).toHaveStyle({ flexDirection: 'row', flexWrap: 'wrap' });
+    // The row is a plain view: nothing scrolls it sideways, so no chip can sit off screen.
+    expect(row.type).not.toBe('RCTScrollView');
+    expect(row.parent?.type).not.toBe('RCTScrollView');
+    for (const [cat, name] of [
+      ['coffee', 'Coffee'],
+      ['matcha', 'Matcha'],
+      ['tea', 'Tea'],
+      ['smoothie_juice', 'Smoothie & Juice'],
+    ] as const) {
+      const chip = within(row).getByTestId(`cam-cat-${cat}`);
+      expect(chip).toHaveTextContent(name);
+      expect(chip).toHaveProp('accessibilityLabel', t('a11y.chip.cat', { cat_name: name }));
+    }
+    // At the largest text sizes a long name wraps to a second line instead of being cut.
+    expect(within(row).getByText('Smoothie & Juice').props.numberOfLines).toBe(2);
+  });
+
+  it('switches the flare category from the fourth chip', async () => {
+    await open('/camera');
+    await waitFor(() => expect(screen.getByTestId('cam-cat-smoothie_juice')).toBeTruthy());
+    await fireEvent.press(screen.getByTestId('cam-cat-smoothie_juice'));
+    expect(screen.getByTestId('cam-cat-smoothie_juice')).toHaveProp(
+      'accessibilityState',
+      expect.objectContaining({ selected: true }),
+    );
+  });
+});
+
+describe('flare panel at large text', () => {
+  afterEach(() => jest.restoreAllMocks());
+  const atScale = (fontScale: number) =>
+    jest.spyOn(Dimensions, 'get').mockReturnValue({ width: 360, height: 780, scale: 2, fontScale });
+
+  it('shows the hero beside Meet and To: at text size 1.0', async () => {
+    atScale(1);
+    await open('/camera');
+    await waitFor(() => expect(screen.getByTestId('cam-to')).toBeTruthy());
+    expect(screen.getByTestId('cam-hero')).toBeTruthy();
+  });
+
+  it("gives the hero's width to the To: line from 1.5x text", async () => {
+    atScale(2);
+    await open('/camera');
+    await waitFor(() => expect(screen.getByTestId('cam-to')).toBeTruthy());
+    expect(screen.queryByTestId('cam-hero')).toBeNull();
+    expect(screen.getByTestId('cam-cat-smoothie_juice')).toBeTruthy();
   });
 });
 

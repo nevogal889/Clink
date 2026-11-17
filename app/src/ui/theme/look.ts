@@ -18,6 +18,12 @@ export function lookPlatform(): Look {
  */
 export function reviewTextScale(): number {
   if (Platform.OS !== 'web') return 1;
-  const search = typeof window !== 'undefined' ? (window.location?.search ?? '') : '';
-  return /[?&]text=max\b/.test(search) ? 3.1 : 1;
+  // Read once: the entry route's redirect drops the query string, and a screen loaded after it
+  // must still see the same scale as the text it draws.
+  if (reviewScale === null) {
+    const search = typeof window !== 'undefined' ? (window.location?.search ?? '') : '';
+    reviewScale = /[?&]text=max\b/.test(search) ? 3.1 : 1;
+  }
+  return reviewScale;
 }
+let reviewScale: number | null = null;

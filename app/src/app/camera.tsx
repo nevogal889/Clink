@@ -363,7 +363,7 @@ function CameraScreen() {
       >
         <View style={{ gap: spacing.s5 }}>
           {noFriends ? <InviteMeter filled={invites} /> : null}
-          <ShareButtons onShared={() => setInvites((n) => n + 1)} />
+          <ShareButtons surface="camera" onShared={() => setInvites((n) => n + 1)} />
         </View>
       </Sheet>
     </KeyboardAvoidingView>

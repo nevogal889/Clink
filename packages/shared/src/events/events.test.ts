@@ -7,6 +7,7 @@ import {
   EVENT_PROPS,
   EVENT_SENT_BY,
   REACTIONS,
+  WIDGET_LOG_REJECT_CODES,
   clientEventSchema,
   parseEventProps,
 } from './index';
@@ -85,6 +86,27 @@ describe('analytics events (PRD.md 6)', () => {
           true,
         ]);
       }
+    }
+  });
+
+  it('reports a refused widget log by code and kind only (ARCHITECTURE.md 3.2)', () => {
+    expect(CLIENT_EVENTS).toContain('widget_log_rejected');
+    expect(WIDGET_LOG_REJECT_CODES).toEqual(
+      expect.arrayContaining(['bad_input', 'unknown_drink', 'usual_changed']),
+    );
+    expect(WIDGET_LOG_REJECT_CODES).not.toContain('rate_limited');
+    const ok = { code: 'unknown_drink', kind: 'malformed', category: 'coffee' };
+    expect(clientEventSchema.safeParse({ name: 'widget_log_rejected', props: ok }).success).toBe(
+      true,
+    );
+    for (const bad of [
+      { ...ok, code: 'Drink "Mocha" is not in the catalog' },
+      { ...ok, kind: 'retryable' },
+      { ...ok, drinkId: 'coffee.latte' },
+    ]) {
+      expect(clientEventSchema.safeParse({ name: 'widget_log_rejected', props: bad }).success).toBe(
+        false,
+      );
     }
   });
 

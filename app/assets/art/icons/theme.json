@@ -1,12 +1,12 @@
 {
-  "about": "Dark-mode swap for the drink icons (DESIGN.md 3.2 and 3.5). Masters are drawn for light surfaces. The export replaces these literal hex values; liquid and garnish colours stay the same. The gleam uses stroke-opacity 0.85 in light and 0.7 in dark; 0.85 is used by the gleam only.",
-  "dark": {
-    "#17202A": "#EEF2F5",
-    "#4B3527": "#DDC1AE",
-    "#36591A": "#B7D69A",
-    "#6B5306": "#E8CF78",
-    "#9E2460": "#F5B0D0",
-    "#085C74": "#99D9EB"
+  "about": "Dark mode for the drink icons (DESIGN.md 3.2 and 3.5, round 3). Masters are drawn for light surfaces. In dark mode an icon keeps its light drawing and gets a light contour around its outer silhouette, darkContour.width units wide on each side (24 or 64 grid), applied by _source/dark-icon.mjs for every export. Liquid, garnish and body colours stay the same. The gleam uses stroke-opacity 0.85 in light and 0.7 in dark; 0.85 is used by the gleam only.",
+  "darkContour": {
+    "color": "#EEF2F5",
+    "width24": 0.75,
+    "width64": 1.75
   },
-  "gleamOpacity": { "light": "0.85", "dark": "0.7" }
+  "gleamOpacity": {
+    "light": "0.85",
+    "dark": "0.7"
+  }
 }

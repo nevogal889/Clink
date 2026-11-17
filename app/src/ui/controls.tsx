@@ -236,6 +236,8 @@ export function Chip({
   accessibilityRole = 'button',
   fillSelected,
   inkSelected,
+  lines = 1,
+  fill,
 }: {
   label: string;
   selected: boolean;
@@ -249,6 +251,11 @@ export function Chip({
   accessibilityRole?: 'button' | 'radio' | 'checkbox' | 'tab';
   fillSelected?: string;
   inkSelected?: string;
+  /** Lines the label may take before it truncates. Raise it where a chip must stay readable at
+   * the largest text sizes instead of cutting its name (the flare panel's category chips). */
+  lines?: number;
+  /** Grows to share its row with its siblings, label centred (the timing pills). */
+  fill?: boolean;
 }) {
   const { c } = useTheme();
   const selFill = fillSelected ?? (onTint ? c.inkPrimary : c.cobalt);
@@ -268,7 +275,11 @@ export function Chip({
       style={{
         // minHeight, so the label grows with the text size instead of spilling out (chips wrap).
         minHeight: height,
-        paddingHorizontal: spacing.s4,
+        // A chip that may wrap its label also stays inside its row.
+        maxWidth: lines > 1 ? '100%' : undefined,
+        flexGrow: fill ? 1 : undefined,
+        justifyContent: fill ? 'center' : undefined,
+        paddingHorizontal: fill ? spacing.s3 : spacing.s4,
         paddingVertical: spacing.s1,
         borderRadius: radius.chip,
         borderCurve: 'continuous',
@@ -282,7 +293,12 @@ export function Chip({
     >
       {selected && check ? <Icon name="check" size={16} color={selInk} /> : null}
       {leading ? leading(ink) : null}
-      <Txt variant="callout" color={ink} style={{ fontFamily: 'Archivo-Medium' }} numberOfLines={1}>
+      <Txt
+        variant="callout"
+        color={ink}
+        style={{ fontFamily: 'Archivo-Medium', flexShrink: 1 }}
+        numberOfLines={lines}
+      >
         {label}
       </Txt>
     </Press>

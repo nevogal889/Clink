@@ -3,6 +3,7 @@
 // No event carries free text, photos, phone numbers, contact data or place names: every prop
 // below is an enum, a boolean or a small integer, and the schemas are strict.
 import { z } from 'zod';
+import { WIDGET_API_ERRORS } from '../api';
 import { FLARE_CATEGORIES, LOG_CATEGORIES } from '../catalog';
 
 const count = z.number().int().min(0).max(1000);
@@ -22,6 +23,11 @@ export const reactionNameSchema = z.enum(
 );
 
 const none = z.strictObject({});
+
+/** The widget-api codes a widget log can be refused with for good (WIDGET_API_ERRORS "drop"). */
+export const WIDGET_LOG_REJECT_CODES = Object.entries(WIDGET_API_ERRORS)
+  .filter(([, v]) => v.then === 'drop')
+  .map(([k]) => k) as [string, ...string[]];
 
 export const EVENT_PROPS = {
   auth_signed_up: z.strictObject({ method: z.enum(['apple', 'google', 'phone']) }),
@@ -98,6 +104,13 @@ export const EVENT_PROPS = {
   notification_permission: z.strictObject({ result: z.enum(['granted', 'denied', 'not_now']) }),
   account_deleted: none,
   app_opened: z.strictObject({ entry: z.enum(['icon', 'widget', 'notification', 'link']) }),
+  // A widget log the server refused for good (ARCHITECTURE.md 3.2). Codes the table doesn't list
+  // are sent as "other", so a server message never lands here as text.
+  widget_log_rejected: z.strictObject({
+    code: z.enum([...WIDGET_LOG_REJECT_CODES, 'other'] as [string, ...string[]]),
+    kind: z.enum(['malformed', 'stale', 'other']),
+    category: z.enum(LOG_CATEGORIES),
+  }),
 } as const;
 
 export type EventName = keyof typeof EVENT_PROPS;
@@ -139,6 +152,7 @@ export const EVENT_SENT_BY: Record<EventName, 'client' | 'server'> = {
   notification_permission: 'client',
   account_deleted: 'server',
   app_opened: 'client',
+  widget_log_rejected: 'client',
 };
 
 export const CLIENT_EVENTS = EVENT_NAMES.filter((n) => EVENT_SENT_BY[n] === 'client');

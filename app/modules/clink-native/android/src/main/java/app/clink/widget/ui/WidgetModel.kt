@@ -47,11 +47,15 @@ data class TrackerModel(
   /** The whole water count as COPY.md writes it ("4 waters"). */
   val waterText: String,
   /**
-   * The last-drink line, longest first: the layout shows the first that fits, or none (DESIGN.md
-   * 5.1 item 4). A time of day ("Last drink 12:54 PM", "Last 12:54 PM", "Last 12:54"): exact and
-   * never stale, so nothing ticks. With no drink today: "No drinks yet today", "No drinks yet".
+   * The 2x2's last-drink line ("Last 12:54"): a time of day, exact and never stale, so nothing
+   * ticks. Empty with no drink today: never "No drinks yet" next to a 0 (CEO, 2026-11-17).
    */
   val lastOptions: List<String>,
+  /**
+   * The 4x2's one small line after the water glyph, longest first: "4 · Last 7:30 AM",
+   * "4 · Last 7:30", "4". With no drink today only "4". The layout shows the first that fits.
+   */
+  val waterLine: List<String>,
   val a11y: String,
 )
 
@@ -143,7 +147,13 @@ sealed class Content {
     /** Longest first ("Coffee, in 14 min"; small "Your coffee"): the layout shows the first that fits. */
     val title: String,
     val place: String?,
-    val expiresAt: Instant,
+    /** The countdown numeral ("14"), or null in the last minute. */
+    val leftNum: String?,
+    /**
+     * With a numeral: the words after it, longest first ("min left", "min"). Without: the whole
+     * text ("Under a minute left", "Under a minute").
+     */
+    val leftWords: List<String>,
     val chips: List<ReplyChip>,
     val chipBackground: Int,
     /** "+N more" for each number of chips shown (index 0 to chips.size); null when nothing is hidden. */
@@ -164,9 +174,8 @@ sealed class Content {
     val subOptions: List<String>,
     /** Medium: "Café Lumi · in 10 min", then "In 10 min". */
     val metaOptions: List<String>,
-    val expiresAt: Instant,
-    /** Chronometer format for the countdown: COPY.md `wm.in.left` / `ws.in.left` with %s. */
-    val leftFormat: String,
+    /** The countdown, longest first: "13 min left", "13 min" (or "Under a minute left", ...). */
+    val leftOptions: List<String>,
     val more: String?,
     val moreA11y: String?,
     val join: ButtonModel?,

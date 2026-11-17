@@ -254,16 +254,18 @@ export function TrackerSheet({
             color={water.ink}
           />
         </View>
-        <Txt
-          variant="callout"
-          tone="secondary"
-          style={{ marginTop: spacing.s3 }}
-          testID="last-drink"
-        >
-          {summary.lastDrinkAt
-            ? agoLine('today.last', at.getTime() - summary.lastDrinkAt.getTime())
-            : t('today.last_none')}
-        </Txt>
+        {/* Only once there is a last drink. With nothing logged, the one empty line sits under
+            the quick-log row (DESIGN.md 4.15), so the sheet doesn't say it twice. */}
+        {summary.lastDrinkAt ? (
+          <Txt
+            variant="callout"
+            tone="secondary"
+            style={{ marginTop: spacing.s3 }}
+            testID="last-drink"
+          >
+            {agoLine('today.last', at.getTime() - summary.lastDrinkAt.getTime())}
+          </Txt>
+        ) : null}
 
         {summary.caffeineNoteKey ? (
           <View

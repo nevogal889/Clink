@@ -2,10 +2,12 @@
 //   npm run export:web
 //   node docs/screens/capture.mjs            # every state, light and dark
 //   node docs/screens/capture.mjs 13 21      # only states whose file name starts with these
-// 390 x 844 at 2x. The clock starts at Monday 2026-11-16 07:00 local and runs from there (a frozen
+//   node docs/screens/capture.mjs --out=app-round3 --width=360 --height=780 24 25
+//                                            # into docs/screens/app-round3, at 360 x 780
+// 390 x 844 at 2x by default. The clock starts at Monday 2026-11-16 07:00 local and runs from there (a frozen
 // clock would stop every animation), so Automatic resolves to the "other times" group and Meet
 // times are stable between runs.
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { dirname, extname, join } from 'node:path';
@@ -16,7 +18,10 @@ const { chromium } = require('playwright');
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dist = join(here, '..', '..', 'app', 'dist');
-const only = process.argv.slice(2);
+const flag = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1];
+const only = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const outDir = join(here, flag('out') ?? '.');
+const viewport = { width: Number(flag('width') ?? 390), height: Number(flag('height') ?? 844) };
 
 const TYPES = {
   '.html': 'text/html',
@@ -50,11 +55,16 @@ async function tap(page, testId) {
   await pause(page);
 }
 
-async function open(page, base, query = '') {
+async function open(page, base, query = '', path = '') {
   // Review states run on the mock data layer; the default build talks to clink-dev.
   const q = query.includes('mock=') ? query : `?mock=new${query ? `&${query.slice(1)}` : ''}`;
-  await page.goto(`${base}/${q}`);
-  await page.waitForSelector(id(query.includes('mock=setup') ? 'screen-camera' : 'screen-sign-in'));
+  await page.goto(`${base}/${path}${q}`);
+  const first = path
+    ? `screen-${path}`
+    : query.includes('mock=setup')
+      ? 'screen-camera'
+      : 'screen-sign-in';
+  await page.waitForSelector(id(first));
   await pause(page, 900);
 }
 
@@ -160,8 +170,45 @@ const GROUPS = [
     query: '?mock=setup&look=android',
     states: [['23-camera-android-look', async () => undefined]],
   },
+  {
+    // The widget's Invite friends button (<scheme>:///invite).
+    query: '?mock=setup&look=android',
+    path: 'invite',
+    states: [
+      ['24-invite', async () => undefined],
+      ['24b-invite-shared', (p) => tap(p, 'share-messages')],
+    ],
+  },
+  {
+    // All four flare categories on the panel (the flare panel is at the bottom of the camera).
+    query: '?mock=setup&look=android',
+    states: [
+      ['25-flare-panel', async () => undefined],
+      ['25b-flare-panel-smoothie', (p) => tap(p, 'cam-cat-smoothie_juice')],
+    ],
+  },
+  {
+    query: '?mock=setup&look=android&text=max',
+    states: [
+      [
+        '25c-flare-panel-largest-text',
+        async (p) => {
+          await p.locator(id('cam-cats')).last().scrollIntoViewIfNeeded();
+          await pause(p);
+        },
+      ],
+      [
+        '25d-flare-panel-largest-text-scrolled',
+        async (p) => {
+          await p.locator(id('cam-to')).last().scrollIntoViewIfNeeded();
+          await pause(p);
+        },
+      ],
+    ],
+  },
 ];
 
+mkdirSync(outDir, { recursive: true });
 const server = await serve();
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch();
@@ -169,7 +216,7 @@ let shots = 0;
 try {
   for (const scheme of ['light', 'dark']) {
     const context = await browser.newContext({
-      viewport: { width: 390, height: 844 },
+      viewport,
       deviceScaleFactor: 2,
       colorScheme: scheme,
     });
@@ -178,11 +225,11 @@ try {
       if (only.length && !names.some((n) => only.some((o) => n.startsWith(o)))) continue;
       const page = await context.newPage();
       await page.clock.setSystemTime(new Date(2026, 10, 16, 7, 0, 0));
-      await open(page, base, group.query);
+      await open(page, base, group.query, group.path);
       for (const [name, step] of group.states) {
         await step(page);
         if (only.length && !only.some((o) => name.startsWith(o))) continue;
-        await page.screenshot({ path: join(here, `${name}-${scheme}.png`) });
+        await page.screenshot({ path: join(outDir, `${name}-${scheme}.png`) });
         shots += 1;
       }
       await page.close();
@@ -193,4 +240,4 @@ try {
   await browser.close();
   server.close();
 }
-console.log(`capture: ${shots} screenshots in docs/screens`);
+console.log(`capture: ${shots} screenshots in ${outDir}`);

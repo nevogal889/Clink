@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.compose
@@ -129,7 +130,7 @@ class WidgetScreenshotTest {
     if (v is ViewGroup) for (i in 0 until v.childCount) dump(v.getChildAt(i), depth + 1)
   }
 
-  private fun render(fixture: String, layout: Layout, night: Boolean, fontScale: Float = 1f): Bitmap {
+  private fun render(fixture: String, layout: Layout, night: Boolean, fontScale: Float = 1f, at: DpSize? = null): Bitmap {
     RuntimeEnvironment.setQualifiers(if (night) "+night" else "+notnight")
     RuntimeEnvironment.setFontScale(fontScale)
     val context: Context = ApplicationProvider.getApplicationContext()
@@ -138,7 +139,7 @@ class WidgetScreenshotTest {
     val state = WidgetStateDecoder.decode(f.stateJson)
     val model =
       ModelBuilder(Copy(context)).build(state, f.local ?: WidgetLocal.EMPTY, f.config(WidgetSize.MEDIUM), layout, fontScale, f.now, f.zone)
-    val dp = size(layout)
+    val dp = at ?: size(layout)
     val rv = runBlocking { Fixed(model).compose(context, size = dp) }
     val density = context.resources.displayMetrics.density
     val w = (dp.width.value * density).toInt()
@@ -171,7 +172,8 @@ class WidgetScreenshotTest {
     listOf(
       Case("W4", "idle", listOf(Layout.SMALL, Layout.MEDIUM, Layout.MEDIUM_WIDE, Layout.MEDIUM_SHORT, Layout.SMALL_TALL)),
       Case("W3", "idle-snap", listOf(Layout.MEDIUM, Layout.MEDIUM_WIDE)),
-      Case("W5", "idle-no-friends", listOf(Layout.MEDIUM)),
+      Case("W5", "idle-no-friends", listOf(Layout.SMALL, Layout.MEDIUM, Layout.MEDIUM_WIDE, Layout.MEDIUM_SHORT)),
+      Case("W21", "idle-audience-empty", listOf(Layout.MEDIUM)),
       Case("W6", "idle-no-usual", listOf(Layout.SMALL, Layout.MEDIUM)),
       Case("W7", "idle-caffeine-note", listOf(Layout.MEDIUM_WIDE)),
       Case("W22", "idle-new-day", listOf(Layout.SMALL, Layout.MEDIUM)),
@@ -180,7 +182,7 @@ class WidgetScreenshotTest {
       Case("W19", "failed", listOf(Layout.SMALL, Layout.MEDIUM)),
       Case("W1", "signed-out", listOf(Layout.SMALL, Layout.MEDIUM)),
       Case("W2", "setup", listOf(Layout.SMALL, Layout.MEDIUM)),
-      Case("W9", "my-flare", listOf(Layout.SMALL, Layout.MEDIUM, Layout.MEDIUM_WIDE)),
+      Case("W9", "my-flare", listOf(Layout.SMALL, Layout.MEDIUM, Layout.MEDIUM_WIDE, Layout.MEDIUM_SHORT)),
       Case("W10", "my-flare-replies", listOf(Layout.MEDIUM)),
       Case("W11", "incoming", listOf(Layout.SMALL, Layout.MEDIUM, Layout.MEDIUM_WIDE)),
       Case("W13", "incoming-more", listOf(Layout.MEDIUM)),
@@ -233,9 +235,10 @@ class WidgetScreenshotTest {
 
   private val problems = mutableListOf<String>()
 
-  private fun shot(fixture: String, name: String, layout: Layout, night: Boolean, fontScale: Float = 1f): Bitmap {
-    val bmp = render(fixture, layout, night, fontScale)
-    val file = "${fixture.lowercase()}-$name-${layoutName(layout)}-${if (night) "dark" else "light"}${if (fontScale != 1f) "-font${(fontScale * 100).toInt()}" else ""}"
+  private fun shot(fixture: String, name: String, layout: Layout, night: Boolean, fontScale: Float = 1f, at: DpSize? = null): Bitmap {
+    val bmp = render(fixture, layout, night, fontScale, at)
+    val sizeName = at?.let { "-${it.width.value.toInt()}x${it.height.value.toInt()}" } ?: ""
+    val file = "${fixture.lowercase()}-$name-${layoutName(layout)}$sizeName-${if (night) "dark" else "light"}${if (fontScale != 1f) "-font${(fontScale * 100).toInt()}" else ""}"
     for (cut in lastCut) problems += "$file: $cut"
     if (file in goldens) goldenMismatch(file, bmp)?.let { problems += "$file: $it" }
     save(bmp, outDir, "$file.png")
@@ -255,9 +258,29 @@ class WidgetScreenshotTest {
     }
     // Large text (DESIGN.md 2.4, CLAUDE.md "Definition of done"): 1.3 and the largest, 2.0.
     for (scale in listOf(1.3f, 2.0f)) {
-      for ((fx, name) in listOf("W4" to "idle", "W8" to "picker", "W17" to "confirmation", "W1" to "signed-out", "W11" to "incoming", "W9" to "my-flare")) {
+      for ((fx, name) in listOf("W4" to "idle", "W5" to "idle-no-friends", "W8" to "picker", "W17" to "confirmation", "W1" to "signed-out", "W11" to "incoming", "W9" to "my-flare", "W15" to "replied-in")) {
         for (layout in listOf(Layout.SMALL, Layout.SMALL_TALL, Layout.MEDIUM, Layout.MEDIUM_WIDE, Layout.MEDIUM_SHORT)) {
           shot(fx, name, layout, night = false, fontScale = scale)
+          n++
+        }
+      }
+    }
+    // Real cells are taller and wider than the smallest size of each arrangement (round 3: the
+    // CEO's Pixel 8 4x2). The widget is composed at its exact size, so these must fill, not stretch.
+    val real =
+      listOf(
+        DpSize(250.dp, 180.dp), DpSize(250.dp, 200.dp), DpSize(300.dp, 180.dp), DpSize(300.dp, 200.dp),
+        DpSize(360.dp, 200.dp), DpSize(170.dp, 140.dp), DpSize(170.dp, 190.dp), DpSize(330.dp, 140.dp),
+      )
+    for (at in real) {
+      val layout = ModelBuilder.layoutFor(at.width.value, at.height.value)
+      for ((fx, name) in listOf("W4" to "idle", "W5" to "idle-no-friends", "W8" to "picker", "W11" to "incoming", "W9" to "my-flare")) {
+        for (night in listOf(false, true)) {
+          shot(fx, name, layout, night, at = at)
+          n++
+        }
+        for (scale in listOf(1.3f, 2.0f)) {
+          shot(fx, name, layout, night = false, fontScale = scale, at = at)
           n++
         }
       }

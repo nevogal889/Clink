@@ -1,15 +1,17 @@
 // The flare panel on the camera screen (DESIGN.md 4.4, PRD 3.5). Category tint with the rim band,
 // category chips, place, timing pills with Meet time and the To: line. Who joins? is
 // WhoJoinsBar, pinned by the camera screen under the scrolling panel.
-// Layout call: the 112 pt hero sits right of the chips and the place field, so the five timing
-// pills get the full width. Five pills with 44 pt targets don't fit beside the hero on a 390 pt
-// phone.
+// Layout call: the four category chips get the full width and wrap, so all four show without
+// scrolling (Coffee, Matcha and Tea, then Smoothie & Juice on a 360 dp phone). Beside the hero
+// they were cut at "Te" and Smoothie & Juice was off screen. The place field and the five timing
+// pills get the full width too (sharing one row, so five fit at 360 dp), and the hero (88 pt) sits
+// right of the Meet and To: lines, just above Who joins?.
 // The send block is two lines, not one row: the To: line reads in full (group emoji + name, the
 // small Auto marker, a chevron) and Who joins? spans the width, so the one filled button on the
 // panel is the obvious next step. Side by side, a 168 pt button left a 20-character group name
 // about 150 pt and cut it.
 import { FLARE_CATEGORIES, TEXT_LIMITS, TIMING_PILLS, t, type FlareCategory } from '@clink/shared';
-import { ActivityIndicator, ScrollView, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, View, useWindowDimensions } from 'react-native';
 
 import { formatClock, formatMins } from '@/lib/format';
 import { catName } from '@/features/catalog/Catalog';
@@ -18,10 +20,14 @@ import { Chip, Field, Press } from '@/ui/controls';
 import { Icon } from '@/ui/icons';
 import { PourHero, PourPanel } from '@/ui/Pour';
 import { radius, spacing } from '@/ui/theme';
+import { reviewTextScale } from '@/ui/theme/look';
 import { Txt } from '@/ui/Txt';
 import { useTheme } from '@/ui/useTheme';
 
 import type { ResolvedAudience } from './audience';
+
+/** The flare panel's hero, beside the Meet and To: lines (DESIGN.md 3.6, 4.4). */
+const HERO = 88;
 
 export interface Timing {
   minutes: number;
@@ -56,8 +62,10 @@ export function FlarePanel({
 }) {
   const theme = useTheme();
   const { c } = theme;
-  const { width } = useWindowDimensions();
-  const heroSize = width < 360 ? 88 : 112;
+  // From 1.5x text the hero gives its width to the To: line, which would otherwise wrap word by
+  // word beside it (DESIGN.md 4.4 "Large text").
+  const { fontScale } = useWindowDimensions();
+  const showHero = Math.max(fontScale, reviewTextScale()) < 1.5;
   const empty = !noFriends && audience.count === 0;
   const meetAt = new Date(now.getTime() + timing.minutes * 60_000);
   // Group emoji + name, in full: it wraps rather than truncates (DESIGN.md 4.5).
@@ -76,62 +84,49 @@ export function FlarePanel({
         paddingTop: spacing.s4,
       }}
     >
-      <View style={{ flexDirection: 'row' }}>
-        <View style={{ flex: 1, gap: spacing.s3 }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingLeft: spacing.gutter,
-              paddingRight: spacing.s2,
-              gap: spacing.s2,
-            }}
-            accessibilityRole="radiogroup"
-          >
-            {FLARE_CATEGORIES.map((cat) => {
-              const cc = theme.cat(cat);
-              return (
-                <Chip
-                  key={cat}
-                  testID={`cam-cat-${cat}`}
-                  accessibilityRole="radio"
-                  label={catName(cat)}
-                  accessibilityLabel={t('a11y.chip.cat', { cat_name: catName(cat) })}
-                  selected={cat === category}
-                  onTint
-                  fillSelected={cc.solid}
-                  inkSelected={cc.onSolid}
-                  onPress={() => onCategory(cat)}
-                  leading={(ink) => <Glyph category={cat} size={18} color={ink} />}
-                />
-              );
-            })}
-          </ScrollView>
-          <View style={{ paddingLeft: spacing.gutter }}>
-            <Field
-              testID="cam-place"
-              value={place}
-              onChangeText={onPlace}
-              placeholder={t('compose.place')}
-              accessibilityLabel={t('compose.place')}
-              maxLength={TEXT_LIMITS.place}
+      <View
+        testID="cam-cats"
+        accessibilityRole="radiogroup"
+        style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          gap: spacing.s2,
+          paddingHorizontal: spacing.gutter,
+        }}
+      >
+        {FLARE_CATEGORIES.map((cat) => {
+          const cc = theme.cat(cat);
+          return (
+            <Chip
+              key={cat}
+              testID={`cam-cat-${cat}`}
+              accessibilityRole="radio"
+              label={catName(cat)}
+              accessibilityLabel={t('a11y.chip.cat', { cat_name: catName(cat) })}
+              selected={cat === category}
               onTint
-              leading={<Icon name="pencil" size={18} color={c.inkSecondary} />}
-              returnKeyType="done"
-              style={{ fontSize: 15 }}
+              fillSelected={cc.solid}
+              inkSelected={cc.onSolid}
+              lines={2}
+              onPress={() => onCategory(cat)}
+              leading={(ink) => <Glyph category={cat} size={18} color={ink} />}
             />
-          </View>
-        </View>
-        <View
-          style={{
-            width: heroSize + spacing.s3,
-            alignItems: 'flex-end',
-            justifyContent: 'flex-end',
-            paddingRight: spacing.gutter - 8,
-          }}
-        >
-          <PourHero category={category} size={heroSize} />
-        </View>
+          );
+        })}
+      </View>
+      <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s3 }}>
+        <Field
+          testID="cam-place"
+          value={place}
+          onChangeText={onPlace}
+          placeholder={t('compose.place')}
+          accessibilityLabel={t('compose.place')}
+          maxLength={TEXT_LIMITS.place}
+          onTint
+          leading={<Icon name="pencil" size={18} color={c.inkSecondary} />}
+          returnKeyType="done"
+          style={{ fontSize: 15 }}
+        />
       </View>
 
       <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s3 }}>
@@ -155,6 +150,7 @@ export function FlarePanel({
                   }
                   selected={timing.other}
                   onTint
+                  fill
                   onPress={onOther}
                 />
               );
@@ -169,66 +165,85 @@ export function FlarePanel({
                 accessibilityLabel={t('a11y.pill.time', { mins_cap: formatMins(p.minutes, true) })}
                 selected={!timing.other && timing.minutes === p.minutes}
                 onTint
+                fill
                 onPress={() => onTiming({ minutes: p.minutes, other: false })}
               />
             );
           })}
         </View>
-        <Txt variant="caption" tone="secondary" style={{ marginTop: spacing.s2 }} testID="cam-meet">
-          {t('compose.meet', { time: formatClock(meetAt) })}
-        </Txt>
       </View>
 
-      {/* Send block: who it goes to, read in full, then the one filled button. */}
-      <View style={{ paddingHorizontal: spacing.gutter, marginTop: spacing.s2 }}>
-        <Press
-          testID="cam-to"
-          onPress={onAudience}
-          scaleTo={0.99}
-          accessibilityLabel={t('a11y.to', { audience: audience.label })}
-          accessibilityHint={t('a11y.to.hint')}
-          style={{
-            minHeight: 44,
-            alignSelf: 'flex-start',
-            maxWidth: '100%',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: spacing.s2,
-          }}
-        >
-          <Txt variant="headline" style={{ flexShrink: 1 }} testID="cam-to-label">
-            {toLabel}
+      {/* Meet time and who it goes to, read in full, with the hero on the right. Who joins? is
+          right under them (WhoJoinsBar). */}
+      <View style={{ flexDirection: 'row', paddingLeft: spacing.gutter, marginTop: spacing.s2 }}>
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Txt variant="caption" tone="secondary" testID="cam-meet">
+            {t('compose.meet', { time: formatClock(meetAt) })}
           </Txt>
-          {audience.auto ? (
+          <Press
+            testID="cam-to"
+            onPress={onAudience}
+            scaleTo={0.99}
+            accessibilityLabel={t('a11y.to', { audience: audience.label })}
+            accessibilityHint={t('a11y.to.hint')}
+            style={{
+              minHeight: 44,
+              alignSelf: 'flex-start',
+              maxWidth: '100%',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.s2,
+            }}
+          >
+            <Txt variant="headline" style={{ flexShrink: 1 }} testID="cam-to-label">
+              {toLabel}
+            </Txt>
+            {audience.auto ? (
+              <Txt
+                variant="micro"
+                tone="secondary"
+                testID="cam-to-auto"
+                style={{
+                  paddingHorizontal: 5,
+                  paddingVertical: 1,
+                  borderRadius: 4,
+                  borderWidth: 1,
+                  borderColor: c.inkTertiary,
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                }}
+              >
+                {t('compose.auto_tag')}
+              </Txt>
+            ) : null}
+            <Icon name="chevronDown" size={18} color={c.inkSecondary} />
+          </Press>
+          {empty ? (
             <Txt
-              variant="micro"
+              variant="caption"
               tone="secondary"
-              testID="cam-to-auto"
-              style={{
-                paddingHorizontal: 5,
-                paddingVertical: 1,
-                borderRadius: 4,
-                borderWidth: 1,
-                borderColor: c.inkTertiary,
-                overflow: 'hidden',
-                flexShrink: 0,
-              }}
+              accessibilityLiveRegion="polite"
+              style={{ marginBottom: spacing.s2 }}
             >
-              {t('compose.auto_tag')}
+              {t('compose.audience_empty', { group: audience.label })}
             </Txt>
           ) : null}
-          <Icon name="chevronDown" size={18} color={c.inkSecondary} />
-        </Press>
-        {empty ? (
-          <Txt
-            variant="caption"
-            tone="secondary"
-            accessibilityLiveRegion="polite"
-            style={{ marginBottom: spacing.s2 }}
+        </View>
+        {showHero ? (
+          <View
+            testID="cam-hero"
+            style={{
+              width: HERO + spacing.s3,
+              alignItems: 'flex-end',
+              justifyContent: 'flex-end',
+              paddingRight: spacing.gutter - 8,
+            }}
           >
-            {t('compose.audience_empty', { group: audience.label })}
-          </Txt>
-        ) : null}
+            <PourHero category={category} size={HERO} />
+          </View>
+        ) : (
+          <View style={{ width: spacing.gutter }} />
+        )}
       </View>
       <View style={{ height: spacing.s2 }} />
     </PourPanel>

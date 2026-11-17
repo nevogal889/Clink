@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The countdown numeral on your live flare ("14 min left", DESIGN.md 5.1 "Time", round 3): the
+     same count line as clink_numeral_ink, in the category's onSolid colour (a night-aware
+     resource). Minutes, redrawn at each minute boundary; nothing ticks every second. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clink_text"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:fontFamily="sans-serif-condensed"
+    android:textColor="@color/clink_tea_on_solid"
+    android:textSize="34sp"
+    android:fontFeatureSettings="tnum"
+    android:includeFontPadding="false"
+    android:lineSpacingMultiplier="1"
+    android:importantForAccessibility="no"
+    android:maxLines="1" />

@@ -23,16 +23,20 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { REPO_ROOT, writeOrCheck } from '../packages/shared/tools/copy-md.mjs';
+import { darkIcon } from '../app/assets/art/icons/_source/dark-icon.mjs';
 
 const ART = join(REPO_ROOT, 'app/assets/art');
 export const RES = join(REPO_ROOT, 'app/assets/native/android/res');
 const CATEGORIES = ['coffee', 'matcha', 'tea', 'smoothie_juice', 'water'];
 
 // ---------------------------------------------------------------------------------------------
-// Dark-mode rules. Same as app/src/ui/art/art.ts (darkHero, darkIcon), driven by icons/theme.json.
+// Dark-mode rules. Icons: the shared rule in app/assets/art/icons/_source/dark-icon.mjs (a light
+// contour around the silhouette, round 3), which the app's art.ts is to use too. Heroes: same as
+// darkHero in app/src/ui/art/art.ts. Both driven by icons/theme.json.
 
 const THEME = JSON.parse(readFileSync(join(ART, 'icons/theme.json'), 'utf8'));
 const OUTLINE = { light: '#17202A', dark: '#EEF2F5' };
+export { darkIcon };
 
 function swapGleam(svg) {
   const { light, dark } = THEME.gleamOpacity;
@@ -40,14 +44,6 @@ function swapGleam(svg) {
     new RegExp(`((?:fill|stroke)-opacity=")${light.replace('.', '\\.')}(")`, 'g'),
     `$1${dark}$2`,
   );
-}
-
-export function darkIcon(svg) {
-  let out = svg;
-  for (const [from, to] of Object.entries(THEME.dark)) {
-    out = out.split(from).join(to).split(from.toLowerCase()).join(to);
-  }
-  return swapGleam(out);
 }
 
 export function darkHero(svg) {
@@ -537,8 +533,10 @@ export async function buildAssets() {
     both(name, src, darkIcon(src), { sizeDp: 24, source: `app/assets/art/icons/${f}` });
     const large = read(`icons/${id}.64.svg`);
     // Cropped to what is drawn (1 unit of air), so every drink fills its box in the widget: the
-    // picture is the main thing in a picker cell and on the drink panel (polish pass).
-    const viewBox = cropViewBox(large, 1);
+    // picture is the main thing in a picker cell and on the drink panel (polish pass). The crop
+    // is taken from the dark variant, whose contour reaches furthest, so light and dark share
+    // one viewport.
+    const viewBox = cropViewBox(darkIcon(large), 1);
     both(`clink_icon_l_${id.replace(/\./g, '_')}`, large, darkIcon(large), {
       sizeDp: 64 * (Math.max(viewBox[2], viewBox[3]) / 64),
       source: `app/assets/art/icons/${id}.64.svg (cropped to ${viewBox.join(' ')})`,

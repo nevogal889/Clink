@@ -823,7 +823,6 @@ Field labels and values come from section 2.7. Closing the editor any way saves;
 | `today.water` | Count | {n, plural, one {# water} other {# waters}} | 10 |
 | `today.last` | Line | Last drink {ago} ago | 22 |
 | `today.last_now` | Line, under a minute | Last drink just now | 22 |
-| `today.last_none` | Line, nothing yet | No drinks yet today | 20 |
 | `today.row` | Entry row | {time} · {drink} | 42 |
 | `today.entries` | Section header | Entries | 10 |
 | `today.undo` | Button | Undo last | 10 |
@@ -841,6 +840,8 @@ Field labels and values come from section 2.7. Closing the editor any way saves;
 | `caff.widget` | Widget subline version | Herbal tea next? | 18 |
 
 The note shows after the 4th caffeinated drink of the day (`PRD.md` 3.11). No numbers, no health words.
+
+With nothing logged, the sheet shows one line, `empty.today` (4.21), under the quick-log row, and no `today.last` line. The old `today.last_none` key is removed (DECISIONS.md, "CEO answers after placing the Android widget").
 
 ### 4.16 Profile and XP
 
@@ -1391,17 +1392,19 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 | `ws.drinks` | Idle, count | {n, plural, one {# drink} other {# drinks}} | 10 |
 | `ws.water` | Idle, count | {n, plural, one {# water} other {# waters}} | 10 |
 | `ws.last` | Idle, last drink (iOS; Android uses `ws.last_at`) | Last {ago} | 12 |
-| `ws.last_at` | Idle, last drink as a time of day. The small widget writes `{time}` without AM/PM ("Last 7:30"); a narrow 4x2 uses this key with the full time ("Last 7:30 AM") when `wm.last_at` doesn't fit | Last {time} | 13 |
-| `ws.last_none` | Idle, nothing today | No drinks yet | 14 |
+| `ws.last_at` | Idle, last drink as a time of day, under "drinks ◦ 4". The small widget writes `{time}` without AM/PM ("Last 7:30"). With no drink today the line is left out: never a "no drinks" line next to a 0 (CEO, 2026-11-17) | Last {time} | 13 |
 | `ws.log` | Button | +1 Drink | 9 |
 | `ws.pick.water` | Picker cell | Water | 8 |
 | `ws.pick.cancel` | Picker close | Cancel | 8 |
 | `ws.logged` | Confirmation | Logged | 8 |
 | `ws.live` | Your live flare | Your {cat} | 14 |
-| `ws.live.counts` | Your live flare | {in} in | 8 |
+| `ws.live.counts` | Your live flare, one or more people in | {in} in | 8 |
+| `ws.live.none` | Your live flare, no replies yet (never "0 in") | No replies yet | 14 |
 | `ws.in.title` | Friend's flare | {name} | 12 |
 | `ws.in.sub` | Friend's flare | {cat_cap} · {mins} | 16 |
-| `ws.in.left` | Friend's flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS. Where the line has no room for "left", the countdown shows alone (a number, no words) | {timer} left | 10 |
+| `ws.in.left` | Flare countdown in whole minutes, rounded up, redrawn each minute (`{n}` 1 or more). Also the word beside the countdown numeral on your live flare | {n} min left | 11 |
+| `ws.in.left_short` | Same, where "left" has no room. Never a bare number | {n} min | 6 |
+| `ws.in.left_under` | Countdown under one minute | Under a minute | 14 |
 | `ws.in.btn` | Button | I'm in | 8 |
 | `ws.in.done` | After replying | You're in | 10 |
 | `ws.more` | More flares open | +{n} | 3 |
@@ -1417,9 +1420,9 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 | `wm.signin` | Signed out | Sign in to Clink | 18 |
 | `wm.counts` | Idle | {drinks} · {water} (each from the small strings) | 22 |
 | `wm.last` | Idle (iOS; Android uses `wm.last_at`) | Last drink {ago} ago | 22 |
-| `wm.last_at` | Idle, last drink as a time of day in the device's 12/24 h format. Exact, never stale, no ticking | Last drink {time} | 22 |
+| `wm.last_at` | Idle, last drink as a time of day in the device's 12/24 h format (iOS; the Android 4x2 uses `wm.water_last`) | Last drink {time} | 22 |
+| `wm.water_last` | Android 4x2 idle: the one small line under the drinks numeral, after the water glyph: water count, then the last drink as a time of day. With no drink today only the water count shows (CEO, 2026-11-17) | {water} · Last {time} | 18 |
 | `wm.last_now` | Idle, under a minute | Last drink just now | 22 |
-| `wm.last_none` | Idle | No drinks yet today | 20 |
 | `wm.usual` | Idle, the usual #1's name on the drink panel (Android 4x2) or beside its picture (tall 2x2) | {drink_short} | 15 |
 | `wm.usual_none` | Idle drink tile, no usual 3 yet (opens the usual 3 editor) | Pick your usual 3 | 18 |
 | `wm.caff` | Idle, in place of the usual #1's name after 4 caffeinated drinks (Android: on the drink panel, with a chamomile) | Herbal tea next? | 18 |
@@ -1448,7 +1451,8 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 | `wm.live.more` | More replies than chips | +{n} more | 8 |
 | `wm.in.title` | Friend's flare (may wrap to 2 lines of 24: name, then "wants …") | {name} wants {wants} | 29 |
 | `wm.in.meta` | Friend's flare | {place} · {mins} | 28 |
-| `wm.in.left` | Friend's flare countdown. `{timer}` is the system countdown ("14:02"), drawn by the OS. Where the line has no room for "left", the countdown shows alone | {timer} left | 16 |
+| `wm.in.left` | Flare countdown in whole minutes, rounded up, redrawn each minute (`{n}` 1 or more). Also the words beside the countdown numeral on your live flare. Where "left" has no room, `ws.in.left_short` | {n} min left | 12 |
+| `wm.in.left_under` | Countdown under one minute | Under a minute left | 19 |
 | `wm.in.btn_in` | Button | I'm in | 8 |
 | `wm.in.btn_bring` | Button | Bring me one | 14 |
 | `wm.in.more` | More flares | +{n} | 3 |

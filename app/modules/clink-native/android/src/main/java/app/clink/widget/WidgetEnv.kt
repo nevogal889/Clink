@@ -91,6 +91,9 @@ enum class AppRoute(val path: String) {
   HOME(""),
   CAMERA("camera"),
   USUAL("usual"),
+  /** The invite screen with the share buttons (PRD F15: Invite friends on the widget opens it). */
+  INVITE("invite"),
+  /** Settings > Widgets, where a widget's audience is picked (PRD 3.3 group configuration rule 3). */
   SETTINGS("settings");
 
   fun intent(context: Context): Intent {

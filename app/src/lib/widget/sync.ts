@@ -6,13 +6,16 @@
 //                     GET widget-api/state, setWidgetState, reloadWidgets. Offline (or with no
 //                     token) the last server state is patched with the app's own counts.
 //   foreground()      drainOutbox, getInstalledWidgets, and the widget's unsent logs for Today.
+//                     Signed in, it also takes the logs the server refused for good
+//                     (takeRejected) and reports each as a widget_log_rejected app event:
+//                     code, kind and category only, never the drink, its name or a time.
 //   signedOut()       sign-out, account deletion, a session that ended: clearAll.
 // The widget token never comes back out of the bridge, and nothing here logs it or the state.
-import type { OutboxEntry, WidgetState } from '@clink/shared';
+import { WIDGET_LOG_REJECT_CODES, type OutboxEntry, type WidgetState } from '@clink/shared';
 
 import { ApiError } from '../api/errors';
-import type { ClinkApi } from '../api/types';
-import type { DroppedOp, InstalledWidget, WidgetHost } from './host';
+import type { ClinkApi, WidgetLogRejected } from '../api/types';
+import type { DroppedOp, InstalledWidget, RejectedLog, WidgetHost } from './host';
 import { patchWidgetState, type AppWidgetInput } from './state';
 
 export type PushResult = 'server' | 'local' | 'refused' | 'skipped';
@@ -28,11 +31,13 @@ export interface WidgetSync {
   }>;
   installed(): Promise<InstalledWidget[]>;
   signedOut(): Promise<void>;
+  /** Resolves when the reports the last foreground started have finished (tests, sign-out). */
+  reported(): Promise<void>;
 }
 
 export interface WidgetSyncDeps {
   host: WidgetHost;
-  api: Pick<ClinkApi, 'registerDevice' | 'getWidgetState'>;
+  api: Pick<ClinkApi, 'registerDevice' | 'getWidgetState' | 'recordWidgetLogRejected'>;
   now?: () => Date;
   timeZone?: () => string;
 }
@@ -43,6 +48,20 @@ function deviceZone(): string {
   } catch {
     return 'UTC';
   }
+}
+
+/** Reports kept in memory while offline, at most. Older ones go first. */
+const MAX_UNREPORTED = 50;
+
+/**
+ * The app event for one refused widget log (ARCHITECTURE.md 3.2). Only enums leave the device: a
+ * code the shared table doesn't list becomes "other", so server text never lands in analytics.
+ */
+export function rejectReport(r: RejectedLog): WidgetLogRejected | null {
+  if (r.entry.op !== 'log') return null;
+  const code = r.code !== null && WIDGET_LOG_REJECT_CODES.includes(r.code) ? r.code : 'other';
+  const kind = r.kind === 'malformed' || r.kind === 'stale' ? r.kind : 'other';
+  return { code, kind, category: r.entry.payload.category };
 }
 
 export function createWidgetSync(deps: WidgetSyncDeps): WidgetSync {
@@ -56,6 +75,30 @@ export function createWidgetSync(deps: WidgetSyncDeps): WidgetSync {
   let lastServer: WidgetState | null = null;
   // Pushes run one at a time, so an older state can never land after a newer one.
   let chain: Promise<unknown> = Promise.resolve();
+  // Refused logs taken from the widget but not reported yet (offline). Lost if the app is killed;
+  // the widget has already forgotten them.
+  let unreported: WidgetLogRejected[] = [];
+  let reporting: Promise<void> = Promise.resolve();
+
+  async function reportRejected(): Promise<void> {
+    const who = userId;
+    if (!who || !host.takeRejected) return;
+    const taken = await host.takeRejected().catch((): RejectedLog[] => []);
+    for (const r of taken) {
+      const report = rejectReport(r);
+      if (report) unreported.push(report);
+    }
+    const left: WidgetLogRejected[] = [];
+    for (const report of unreported) {
+      try {
+        await api.recordWidgetLogRejected(report);
+      } catch {
+        left.push(report); // offline: try again on the next foreground
+      }
+    }
+    // A sign-out while this ran has already dropped what belonged to that account.
+    unreported = userId === who ? left.slice(-MAX_UNREPORTED) : [];
+  }
 
   function doRegister(): Promise<boolean> {
     registering = (async () => {
@@ -133,7 +176,13 @@ export function createWidgetSync(deps: WidgetSyncDeps): WidgetSync {
       const dropped = await host.drainOutbox().catch(() => []);
       const installed = await host.getInstalledWidgets().catch(() => []);
       const outbox = await host.getOutbox().catch(() => ({ pending: [], dropped: [] }));
+      // Not awaited: a slow network must not hold up Today and the installed widgets.
+      reporting = reporting.catch(() => undefined).then(reportRejected);
       return { installed, dropped, pending: outbox.pending };
+    },
+
+    reported() {
+      return reporting.catch(() => undefined);
     },
 
     async installed() {
@@ -146,6 +195,7 @@ export function createWidgetSync(deps: WidgetSyncDeps): WidgetSync {
       registering = null;
       lastServer = null;
       reauthTried = false;
+      unreported = [];
       if (!supported) return;
       await chain.catch(() => undefined);
       await host.clearAll().catch(() => undefined);

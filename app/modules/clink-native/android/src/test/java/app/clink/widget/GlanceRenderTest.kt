@@ -94,11 +94,11 @@ class GlanceRenderTest {
   fun idleMedium() {
     render(model("W4", Layout.MEDIUM)) {
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_flare))).assertExists()
-      onNode(hasTextEqualTo("4 waters")).assertExists()
-      // The drink panel shows the usual #1 by name (polish pass); about 250 dp wide, the camera
-      // is the first control to go (DESIGN.md 5.1).
+      // One small line under the numeral: water, then the last drink (CEO, 2026-11-17).
+      onNode(hasTextEqualTo("4 · Last 7:30 AM")).assertExists()
+      onNode(hasText("waters")).assertDoesNotExist()
+      // The drink panel shows the usual #1 by name (polish pass), in 40% of the width (round 3).
       onNode(hasTextEqualTo("Flat White")).assertExists()
-      onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_camera))).assertDoesNotExist()
       onNode(hasContentDescriptionEqualTo("Flat White, your usual. Log a drink")).assertHasRunCallbackClickAction<OpenPickerAction>()
     }
     val m = model("W4", Layout.MEDIUM_WIDE)
@@ -107,7 +107,7 @@ class GlanceRenderTest {
       onNode(hasTextEqualTo("Flat White")).assertExists()
       onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_camera))).assertExists()
       // The last drink as a time of day (Head of Product, polish pass), never a ticking timer.
-      onNode(hasTextEqualTo("Last drink 7:30 AM")).assertExists()
+      onNode(hasTextEqualTo("4 · Last 7:30 AM")).assertExists()
       onNode(hasContentDescriptionEqualTo("3 drinks and 4 waters today. Last drink at 7:30 AM.")).assertExists()
       onNode(hasContentDescriptionEqualTo("Send a coffee flare to Work, now")).assertExists()
     }
@@ -184,7 +184,7 @@ class GlanceRenderTest {
       // The confirmation takes the whole action row (DESIGN.md 5.2); the counts and the drink panel stay.
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_log))).assertDoesNotExist()
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_flare))).assertDoesNotExist()
-      onNode(hasTextEqualTo("4 waters")).assertExists()
+      onNode(hasTextEqualTo("4 · Last 7:30 AM")).assertExists()
     }
   }
 
@@ -208,7 +208,61 @@ class GlanceRenderTest {
     assertEquals(app.clink.widget.ui.Tap.Open(AppRoute.USUAL), noUsual.log.tap)
     val noFriends = model("W5", Layout.MEDIUM).content as Content.Idle
     assertEquals(s(app.clink.nativemodule.R.string.clink_wm_invite), noFriends.whoJoins.label)
+    // PRD F15: no friends opens the app's invite screen, never Settings (CEO, 2026-11-17).
+    assertEquals(app.clink.widget.ui.Tap.Open(AppRoute.INVITE), noFriends.whoJoins.tap)
+    assertEquals("invite", AppRoute.INVITE.path)
     val caff = model("W7", Layout.MEDIUM_WIDE).content as Content.Idle
     assertEquals(s(app.clink.nativemodule.R.string.clink_wm_caff), caff.usual?.text)
+    // After the caffeine note Who joins? follows the tea panel (review item 10).
+    assertEquals(app.clink.nativemodule.R.drawable.clink_bg_pill_tea_solid, caff.whoJoins.background)
+    assertEquals("Send a tea flare to Work, now", caff.whoJoins.a11y)
+    // An empty audience opens Settings > Widgets, where the widget's audience is picked (PRD 3.3).
+    val empty = model("W21", Layout.MEDIUM).content as Content.Idle
+    assertEquals(app.clink.widget.ui.Tap.Open(AppRoute.SETTINGS), empty.whoJoins.tap)
+  }
+
+  @Test
+  fun noDrinksYetShowsOnlyTheWaterCount() {
+    // CEO, 2026-11-17: never "No drinks yet today" next to a 0.
+    val m = model("W5", Layout.MEDIUM_WIDE)
+    val idle = m.content as Content.Idle
+    assertEquals(listOf("0"), idle.tracker.waterLine)
+    assertTrue(idle.tracker.lastOptions.isEmpty())
+    render(m) {
+      onNode(hasText("No drinks")).assertDoesNotExist()
+      onNode(hasTextEqualTo("0")).assertExists()
+    }
+    render(model("W5", Layout.SMALL)) { onNode(hasText("No drinks")).assertDoesNotExist() }
+    // Invite friends stays whole in the 40% panel (on two lines if it has to).
+    render(model("W5", Layout.MEDIUM)) {
+      onNode(hasTextEqualTo(s(app.clink.nativemodule.R.string.clink_wm_invite))).assertExists()
+      onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_invite))).assertExists()
+    }
+  }
+
+  @Test
+  fun countdownsReadAsMinutesWithALabel() {
+    // Review item 2: "14 min left", never "14:00".
+    val mine = model("W9", Layout.MEDIUM).content as Content.MyFlare
+    assertEquals("14", mine.leftNum)
+    assertEquals(listOf("min left", "min"), mine.leftWords)
+    val small = model("W9", Layout.SMALL).content as Content.MyFlare
+    // Review item 9: "No replies yet", never "0 in".
+    assertEquals("No replies yet", small.counts)
+    val incoming = model("W11", Layout.MEDIUM).content as Content.Incoming
+    assertEquals(listOf("13 min left", "13 min"), incoming.leftOptions)
+    val incomingSmall = model("W11", Layout.SMALL).content as Content.Incoming
+    assertEquals(listOf("13 min left", "13 min"), incomingSmall.leftOptions)
+    render(model("W11", Layout.SMALL)) {
+      onNode(hasText(":")).assertDoesNotExist()
+      onNode(hasText("min")).assertExists()
+    }
+    // Review item 8: at the largest text the 2x2 keeps who, what, when and I'm in.
+    render(model("W11", Layout.SMALL, fontScale = 2.0f)) {
+      onNode(hasTextEqualTo("Maya")).assertExists()
+      onNode(hasText("Matcha")).assertExists()
+      onNode(hasText("min")).assertExists()
+      onNode(hasText(s(app.clink.nativemodule.R.string.clink_ws_in_btn))).assertExists()
+    }
   }
 }

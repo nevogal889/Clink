@@ -258,4 +258,23 @@ class OutboxAndTimersTest {
       java.util.TimeZone.setDefault(before)
     }
   }
+
+  @Test
+  fun countdownsRoundUpAndRedrawAtEachMinute() {
+    val at = Instant.parse("2026-11-17T09:26:00Z")
+    val c = app.clink.widget.model.Countdown
+    assertEquals(14L, c.minutesLeft(Instant.parse("2026-11-17T09:12:00Z"), at))
+    assertEquals(14L, c.minutesLeft(Instant.parse("2026-11-17T09:12:01Z"), at))
+    assertEquals(13L, c.minutesLeft(Instant.parse("2026-11-17T09:13:00Z"), at))
+    assertEquals(1L, c.minutesLeft(Instant.parse("2026-11-17T09:25:00Z"), at))
+    assertEquals(0L, c.minutesLeft(Instant.parse("2026-11-17T09:25:01Z"), at))
+    assertEquals(Instant.parse("2026-11-17T09:13:00Z"), c.nextChange(Instant.parse("2026-11-17T09:12:00Z"), at))
+    assertEquals(Instant.parse("2026-11-17T09:13:00Z"), c.nextChange(Instant.parse("2026-11-17T09:12:30Z"), at))
+    assertEquals(at, c.nextChange(Instant.parse("2026-11-17T09:25:30Z"), at))
+    assertNull(c.nextChange(at, at))
+    // A flare on screen plans the next redraw at its next minute boundary, not every second.
+    val f = Fixtures.widgetStates().first { it.id == "W9" }
+    val snap = Snapshot(WidgetStateDecoder.decode(f.stateJson), f.now, f.now, emptySet(), OutboxState(), emptyMap(), mapOf(1 to WidgetConfig(WidgetSize.SMALL)), emptyList(), true, 0)
+    assertEquals(Instant.parse("2026-11-17T09:13:00Z"), Deadlines.nextUiChange(snap, f.now, f.zone))
+  }
 }
