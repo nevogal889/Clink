@@ -280,7 +280,8 @@ Both OSes decide when a widget actually redraws. A notification shows within sec
 - Posted natively when the flare is sent. `setOngoing(true)`, `setUsesChronometer(true)`, `setChronometerCountDown(true)`, `setWhen(expiresAt)`, on the low-importance "Your live flare" channel so it makes no sound.
 - Updated in place by the FCM data message on each reply.
 - Done: updated to the done text, `setOngoing(false)` and `setTimeoutAfter` to the same dismissal time as iOS. Cancelled, replaced or expired with no replies: cancelled at once.
-- Android 16 adds promoted "Live Update" notifications. Evaluate in M4 whether our flare qualifies (verify the rules). It's an enhancement, not a dependency.
+- On Android 16 and later the notification is a promoted Live Update by default (DECISIONS.md, live flare outside the app). Meet the platform's promotion rules (verify at build time); if the system declines to promote it, it shows as the plain ongoing notification.
+- One action, We're going: a native broadcast receiver calls `close-flare` with the widget token, no app launch. iOS: the same button as an App Intent on the Live Activity.
 
 ### 3.5 Widget installed detection (F8)
 

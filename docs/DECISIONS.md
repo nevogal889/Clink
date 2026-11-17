@@ -145,3 +145,9 @@ Every decision the CEO has approved so far. When this file and `original-prd.md`
 - **Age step:** stays before name and photo, month and year only, nothing saved, so an under-16 never gives us a name or photo. The helper never names the minimum age (a neutral age screen), and its wording is softer.
 - **Invite goal:** the sub-line reads "Clink gets better when at least 2 friends are on it." The meter fills at 2, then keeps counting invites sent with no ceiling ("3 invited"). The share buttons always stay. Every user is encouraged to invite as many of their break people as they like.
 - **Already on Clink:** after contacts permission, people from your contacts who are on Clink are listed on the invite screen, each with an Add button. Built in M3 with contact matching.
+
+## CEO answers on the live flare outside the app
+- **Lock screen:** your live flare shows on the lock screen and updates as friends reply, so nobody has to open the app or the widget to follow it. iOS: Live Activity and Dynamic Island. Android: the ongoing notification (ARCHITECTURE.md 3.4).
+- **Android 16:** the ongoing notification is a promoted Live Update by default (status bar chip, top of the lock screen). Older Android versions get the plain ongoing notification. This replaces "evaluate in M4".
+- **Buttons on the live view:** one button, We're going, which closes the flare as done without opening the app. Cancel stays in the app so a pocket tap can't cancel a flare.
+- **When:** built in M4 with flares, after friends in M3. No early demo.

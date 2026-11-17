@@ -356,6 +356,7 @@ After your flare closes as done, your widget returns to idle. The run list is in
 9. Quick flare from the widget uses usual #1's category, the last place and Now.
 10. The 4th flare from one sender within 60 minutes reaches widgets but its notifications play no sound.
 11. The Live Activity / ongoing notification starts on send, updates the reply count within 10 seconds of a reply when online, and ends at close or cancel.
+12. The Live Activity / ongoing notification is visible on the lock screen and has one button, We're going, which closes the flare as done without opening the app. Cancel is app-only (DECISIONS.md, live flare outside the app).
 
 ---
 
