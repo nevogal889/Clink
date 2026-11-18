@@ -329,7 +329,9 @@ private fun CountLine(s: Scale, layout: Int, num: String, word: String, numSize:
   }
   val rv = RemoteViews(context.packageName, layout)
   rv.setTextViewText(R.id.clink_text, span)
-  rv.setTextViewTextSize(R.id.clink_text, TypedValue.COMPLEX_UNIT_SP, numSize)
+  // In dp, already times the font scale: Android 14+ scales large sp sizes non-linearly, and the
+  // layout has measured this line at exactly numSize x fontScale.
+  rv.setTextViewTextSize(R.id.clink_text, TypedValue.COMPLEX_UNIT_DIP, numSize * s.m.fontScale)
   // Sized explicitly: an unsized AndroidRemoteViews fills its parent.
   AndroidRemoteViews(rv, GlanceModifier.width((countWidth(s, num, word, numSize, wordSize) + 2f).dp).height(countHeight(s, numSize).dp))
 }
@@ -854,13 +856,15 @@ private data class CellPlan(val artW: Float, val artH: Float, val nameSize: Floa
 private fun planCells(s: Scale, labels: List<String>, cellW: Float, cellH: Float): CellPlan {
   val innerW = cellW - 2 * CELL_PAD
   val innerH = cellH - 2 * CELL_PAD
-  for (size in listOf(SECONDARY, NAME, MICRO)) {
-    val lines = labels.maxOf { s.lines(it, size, innerW) }
-    if (lines > 2) continue
-    val artH = minOf(64f, innerH - s.h(size, lines) - 2f)
-    // A name tells two look-alike cups apart (review item 4), so it keeps its place down to a
-    // 22 dp picture.
-    if (artH >= 22f) return CellPlan(innerW, artH, size, lines)
+  // A name tells two look-alike cups apart (review item 4): names are tried with a 28 dp picture
+  // first (13, 12, 11), then with a picture down to 22 dp before they give way.
+  for (minArt in listOf(28f, 22f)) {
+    for (size in listOf(SECONDARY, NAME, MICRO)) {
+      val lines = labels.maxOf { s.lines(it, size, innerW) }
+      if (lines > 2) continue
+      val artH = minOf(64f, innerH - s.h(size, lines) - 2f)
+      if (artH >= minArt) return CellPlan(innerW, artH, size, lines)
+    }
   }
   for (size in listOf(SECONDARY, NAME, MICRO)) {
     val nameW = labels.maxOf { l -> l.split(' ').maxOf { s.w(it, size) } }
@@ -1130,7 +1134,8 @@ private fun Incoming(model: WidgetModel, s: Scale, c: Content.Incoming, area: Ar
   val titleSize = if (model.layout.wide) 17f else PRIMARY
   class Plan(val heroSize: Float, val headText: String, val avatar: Boolean, val timerInHead: String?, val what: Triple<String, Float, Int>?, val meta: String?, val timerSize: Float = SECONDARY)
   fun plan(headText: String, hero: Boolean): Plan {
-    val heroSize = if (small || !hero) 0f else minOf(if (model.layout.wide) 72f else 56f, area.h - BUTTON_DP - 8f).takeIf { it >= 40f } ?: 0f
+    // 72 dp (DESIGN.md 3.6) where the cell is wide or tall enough; 56 on the smallest 4x2.
+    val heroSize = if (small || !hero) 0f else minOf(if (model.layout.wide || area.h >= 150f) 72f else 56f, area.h - BUTTON_DP - 8f).takeIf { it >= 40f } ?: 0f
     val textW = area.w - (if (heroSize > 0f) heroSize + 8f else 0f)
     val nameW = s.w(headText, SECONDARY)
     // First line: who, then the countdown at the end. Tried in order: avatar and "13 min left", no

@@ -26,6 +26,9 @@ describe('drink art', () => {
   it('has both icon sizes for every catalog drink', () => {
     const missing = DRINKS.filter((d) => !hasIcon(d.id)).map((d) => d.id);
     expect(missing).toEqual([]);
-    expect(iconSvg('coffee.latte', 'S', 'dark')).not.toContain('#17202A');
+    // Dark icons keep the light drawing on a light contour (shared rule, DESIGN.md 3.2).
+    expect(iconSvg('coffee.latte', 'S', 'dark')).toContain('dark-contour');
+    expect(iconSvg('coffee.latte', 'L', 'dark')).toContain('dark-contour');
+    expect(iconSvg('coffee.latte', 'L', 'light')).not.toContain('dark-contour');
   });
 });

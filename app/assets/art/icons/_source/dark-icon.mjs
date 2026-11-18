@@ -1,6 +1,6 @@
 // The dark-mode rule for drink icons (DESIGN.md 3.2 "Outline colour by theme", round 3), shared by
-// every export: scripts/gen-drink-assets.mjs (Android widget), build-sheet.mjs (contact sheet) and,
-// once ported, app/src/ui/art/art.ts (the app). One rule, so the app and the widget match.
+// every export: scripts/gen-drink-assets.mjs (Android widget), build-sheet.mjs (contact sheet) and
+// app/src/ui/art/gen-art.mjs (the app's prebuilt dark icons). One rule, so the app and the widget match.
 //
 // The masters are drawn for light surfaces. Swapping the #17202A outline for #EEF2F5 (the rule
 // until round 3) made a white cup, its pale outline and a white saucer one blob on a dark panel
@@ -51,7 +51,10 @@ function contour(node, style, color, width) {
       .join('');
     if (child.name === 'g') {
       const inner = contour(child, own, color, width);
-      if (inner) out += child.attrs.transform ? `<g transform="${child.attrs.transform}">${inner}</g>` : inner;
+      if (inner)
+        out += child.attrs.transform
+          ? `<g transform="${child.attrs.transform}">${inner}</g>`
+          : inner;
       continue;
     }
     if (!SHAPES.has(child.name)) continue;
@@ -68,7 +71,10 @@ function contour(node, style, color, width) {
 
 /** Contour width per side, in units of the icon's grid. */
 export function contourWidth(svg) {
-  const vb = (parse(svg).attrs.viewBox ?? '0 0 24 24').trim().split(/[\s,]+/).map(Number);
+  const vb = (parse(svg).attrs.viewBox ?? '0 0 24 24')
+    .trim()
+    .split(/[\s,]+/)
+    .map(Number);
   return Math.max(vb[2], vb[3]) <= 24 ? THEME.darkContour.width24 : THEME.darkContour.width64;
 }
 

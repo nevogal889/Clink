@@ -867,7 +867,7 @@ Updated from the prototype for these decisions: no quiet hours, Smoothie & Juice
 
 **F14 Report or block.** Trigger: something inappropriate. Steps: ⋯ on the snap → Report (reason, hidden for you at once, reviewed within 24 h) or Block (hidden and unfriended at once). Edge: required by store rules for apps with user photos; the other person is never told.
 
-**F15 Quick flare from the widget.** Trigger: Who joins? on a medium widget. Steps: sent at once to the widget's audience with usual #1's category, last place, Now → widget shows your live flare → Live Activity (iOS) / ongoing notification (Android). XP: none for sending. Edge: sent by accident → Cancel in the app, it vanishes from friends' widgets; no friends → invite screen; audience empty → app hint.
+**F15 Quick flare from the widget.** Trigger: Who joins? on a medium widget. Steps: sent at once to the widget's audience with usual #1's category, last place, Now → widget shows your live flare → Live Activity (iOS) / ongoing notification (Android). XP: none for sending. Edge: sent by accident → Cancel in the app, it vanishes from friends' widgets; no friends → invite screen; audience empty → app hint; after the caffeine note (4+ caffeinated drinks today) the widget's Who joins? sends a tea flare, matching its tea colour and glyph (Head of Product, 2026-11-18).
 
 **F16 Custom flare from the app.** Trigger: opens the app. Steps: Coffee / Matcha / Tea / Smoothie & Juice → optional photo → place → To: (Automatic, group, Everyone) → Now · 5m · 15m · 30m · Other (5 to 60) → Who joins? → F17. Edge: a live flare exists → "Replace your live flare?"; water is never a flare type; nothing beyond 60 minutes.
 

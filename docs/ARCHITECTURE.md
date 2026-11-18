@@ -253,7 +253,7 @@ iOS gives a frequently viewed widget roughly 40 to 70 background reloads a day (
 2. App-triggered Glance updates have no daily budget. The 30-minute minimum on `updatePeriodMillis` applies only to the system's periodic refresh, and we don't use it.
 3. A WorkManager job every 15 minutes (the platform minimum) refreshes state if it's older than 10 minutes. One-off jobs run at local midnight, at each flare's and each snap's `expiresAt`, and at the next weekday 08:00 and 18:00.
 4. Android rations high-priority FCM messages that don't show a notification. So high priority is used only for messages that do. Snaps, clears and alerts-off flares go normal priority.
-5. Glance has no ticking text. For the flare countdown and the "last drink" timer we embed a `Chronometer` via `AndroidRemoteViews` (count down for flares, count up for last drink). If that proves fragile across launchers, the fallback is minute-level text refreshed by the 15-minute job and on every update.
+5. Glance has no ticking text, and none is needed: the flare countdown is minute text ("14 min left", DESIGN.md 5.1 "Time"), redrawn by a one-off `clink.tick` job at each minute boundary while a flare is on screen, and the last drink is a time of day. (Round 3, 2026-11-17, design review item 2: a `Chronometer` drew "14:00", which read as a clock time. The ongoing notification keeps its system chronometer, 3.4.)
 
 **Clear messages.** Payload `{type: "clear", userId}`. The device drops that user's flares, replies, snaps and avatar from widget state, deletes their cached files and reloads widgets. Sent to both people on block and on removal, to every friend's devices on account deletion and on suspension (S-09, M-03, M-09 in `RISK_REVIEW.md`).
 

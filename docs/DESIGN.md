@@ -406,7 +406,7 @@ These rules make 52 drawings read as one family.
 
 **Light** comes from the top left at 45°: shade on the right, gleam on the left, cast shadow down-right. No steam, no reflections, no table surface.
 
-**Outline colour by theme.** Icons use `#17202A` outlines on light surfaces and `#EEF2F5` on dark. Liquid and garnish colours stay the same in both themes.
+**Outline colour by theme.** Icons keep their `#17202A` outlines in both themes. On dark surfaces an icon also gets a light contour, `#EEF2F5`, around its outer silhouette only: 1.75 units on each side on the 64 grid, 0.75 on the 24 grid, drawn behind the icon. Liquid, garnish and body colours stay the same in both themes. Reason (round 3, design review item 3): swapping the outline to `#EEF2F5` turned a white cup, its outline and its saucer into one pale blob on dark panels; steel lines inside keep the parts apart, and the outer contour is the heroes' dark rule (Heroes, above). One implementation for every export: `app/assets/art/icons/_source/dark-icon.mjs` (values in `icons/theme.json`).
 
 **Illustration palette.** These are the only colours allowed in drink art (plus category inks for rim lines). None of them is used for text.
 
@@ -547,7 +547,7 @@ Within each category every icon differs from the others by vessel, marker or gar
 **SVG rules.**
 - `viewBox` exactly `0 0 24 24`, `0 0 64 64` or `0 0 1024 1024`.
 - No embedded rasters, no filters, no text, no CSS classes.
-- Colours as literal hex in `fill` and `stroke`, so the export script can swap the outline colour for dark mode (`#17202A` becomes `#EEF2F5`).
+- Colours as literal hex in `fill` and `stroke`. Dark mode adds the contour in 3.2 at export (`_source/dark-icon.mjs`); masters stay light.
 - Strokes stay live in masters; the export expands them.
 - Clip paths only where a liquid layer needs clipping to a glass.
 
@@ -566,8 +566,8 @@ Within each category every icon differs from the others by vessel, marker or gar
 | Widget medium, your flare | Hero | 104 pt (iOS) / 96 dp (Android) |
 | Widget medium, friend's flare | Hero, or the flare photo as a tile | 72 pt / 72 dp high |
 | Widget small, flare states | Hero | 48 pt / 48 dp |
-| Widget pickers | Icon S | 28 pt / 28 dp |
-| Widget idle, usual #1 line | Icon S | 16 pt / 16 dp |
+| Widget pickers | Icon S (iOS) / Icon L cropped (Android, 5.5) | 28 pt / as large as the cell allows, same height in every cell |
+| Widget idle, usual #1 | Icon S (iOS) / Icon L cropped (Android drink panel, 5.2) | 16 pt / up to 1.5x its drawn size |
 | Live Activity lock screen | Hero | 52 pt |
 | Dynamic Island expanded | Hero | 44 pt |
 | Dynamic Island compact and minimal | Category glyph | 18 pt |
@@ -1198,18 +1198,20 @@ On a solid background the rim uses the tint, so it reads like the white edge of 
 1. avatars and the audience line inside Who joins?
 2. the usual #1 line (2x2 only; on the Android 4x2 the drink panel stays, and its picture shrinks before its name goes)
 3. the snap tile's name label (the photo stays)
-4. the "last drink" line (Android: font scale 1.3 and up drops it too)
-5. the word "water" (the glyph and count stay)
+4. the "last drink" time (Android 4x2: it shares the water line, "◦ 4 · Last 7:30 AM", and goes when that line doesn't fit whole; the 2x2 drops it at font scale 1.3 and up)
+5. the word "water" (the glyph and count stay; the Android 4x2 never shows the word)
 
-Buttons on the Android 4x2 give way in this order, worked out before drawing: the camera button (the app opens on the camera, one tap away), then labels from 15 to 13, then the Who joins? glyph, then button padding. Flare text gives way in this order: the place, then the avatar, then "left" after the countdown, then the countdown moves to its own line. Pictures in pickers shrink before names; a name that can't fit whole is dropped (it is still spoken), never cut.
+Buttons on the Android 4x2 give way in this order, worked out before drawing, each side in its own share (60% counts, 40% drink panel): the camera button (only when the counts side has no room for it; the app opens on the camera, one tap away), then labels from 15 to 13 (both pills keep one size), then the Who joins? glyph, then button padding, then the Who joins? label on two lines ("Invite / friends"), so the panel stays at 40%. Only if none of that fits does the panel widen to what its button needs. Flare text gives way in this order: the place, then the avatar, then "left" after the countdown, then the countdown moves to its own line. Pictures in pickers shrink before names; a name that can't fit whole is dropped (it is still spoken), never cut.
 
 Never removed: counts, buttons and their labels, a flare's title and countdown. Nothing is ever cut with "…" in a widget, except user text over its COPY.md budget (0.2); the Android render test fails on any clipped or ellipsized text.
 
-**Time.** Flare countdowns use platform timer text (iOS `Text(timerInterval:)`; Android `Chronometer` via `AndroidRemoteViews`, ARCHITECTURE.md 3.3). If the Android chronometer falls back to minute text, show "14 min left" instead of "14:32". The last drink is a time of day on Android ("Last drink 12:54 PM", `wm.last_at`; "Last 12:54", `ws.last_at`), in the device's 12/24 h setting (Head of Product, polish pass: a ticking "1:42:00" read like a clock; a time of day is exact, never stale and needs no redraw). Midnight clears it with the counts. iOS keeps the relative text until its widget is built.
+**Time.** Flare countdowns read in minutes, with a label every time: "14 min left", then "14 min" where "left" has no room, rounded up so an open flare never reads 0, and "Under a minute left" in the last minute (`wm.in.left`, `ws.in.left`, `ws.in.left_short`, `*.in.left_under`). Never a clock-like "14:00". Android redraws at each minute boundary (a WorkManager tick, no per-second `Chronometer`; round 3, review item 2). iOS may keep `Text(timerInterval:)` until its widget is built, but should match these words. The last drink is a time of day on Android (the 4x2's water line "◦ 4 · Last 7:30 AM", `wm.water_last`; the 2x2's "Last 12:54", `ws.last_at`), in the device's 12/24 h setting (Head of Product, polish pass: a ticking "1:42:00" read like a clock; a time of day is exact, never stale and needs no redraw). Midnight clears it with the counts. iOS keeps the relative text until its widget is built.
 
 **Theme.** Light and dark follow the system: asset catalog colours with a dark appearance on iOS, `values-night` on Android.
 
 **Taps.** Tapping the background opens the matching app screen (deep link). Buttons run their action without opening the app (PRD 3.3 rule 1).
+
+**Height.** Nothing on a widget leaves dead space under it at a real cell height (CEO, 2026-11-17): the Android drinks numeral, the countdown numeral and the tall 2x2's usual #1 picture grow with the height they are given (the numeral up to 96 dp), and shrink for width before a word goes. Android composes at the exact size (5.5).
 
 **Sizes for layout.** Lay out for the smallest supported phone, the iPhone SE (2nd and 3rd gen, which run iOS 17.2): small widget 148 pt square, medium about 321 × 148 pt (verify on device). Larger phones go up to about 170 pt small and 364 × 170 pt medium. Re-check the "what drops first" order at the SE size, and check every state in Xcode previews on the smallest and largest phones.
 
@@ -1327,33 +1329,34 @@ Never removed: counts, buttons and their labels, a flare's title and countdown. 
 
 **Who joins? while a flare is already live** (sent from the app or another device): the widget doesn't send; it reloads and shows Your live flare.
 
-**Android 4x2 when short.** Under 150 dp high, the water count joins the count line, the last-drink line goes, the drink panel shows the picture beside its name, and the action row stays 48 dp.
+**Android 4x2 when short.** Under 150 dp high, the water line sits beside the count on the numeral's baseline ("3 drinks  ◦ 4 · Last 7:30", the time going first when it doesn't fit), the drink panel shows the picture beside its name, and the action row stays 48 dp.
 
-**Android 4x2 idle (polish pass 2026-11-16).** Android draws the idle 4x2 as two parts, edge to edge:
+**Android 4x2 idle (polish pass 2026-11-16, round 3 2026-11-17).** Android draws the idle 4x2 as two parts, edge to edge:
 
 ```
-┌▀▀▀▀▀▀▀▀▀ cobalt ▀▀▀▀▀▀▀▀▀▀┬▀▀▀▀▀▀▀ usual #1 ink ▀▀▀▀▀▀▀┐
-│ 3 drinks                 │  [ Flat White picture ]   │  counts on surface.base;
-│ ◦ 4 waters               │  Flat White               │  the panel in the drink's tint
-│ Last drink 12:54 PM      │                           │
-│ (+1 Drink)  (◉)          │ (☕ Who joins?  / Auto · Work) │
-└──────────────────────────┴───────────────────────────┘
+┌▀▀▀▀▀▀▀▀▀▀▀▀ cobalt ▀▀▀▀▀▀▀▀▀▀▀▀▀┬▀▀▀▀ usual #1 ink ▀▀▀▀┐
+│ 3 drinks                       │  [ Flat White ]     │  counts on surface.base (60%);
+│ ◦ 4 · Last 7:30 AM             │  Flat White         │  the panel in the drink's tint (40%)
+│ (+1 Drink)  (◉)                │ (☕ Who joins?)      │
+└────────────────────────────────┴─────────────────────┘
 ```
-- **Counts (left):** "3" in `numeral.l` and "drinks" 13 on one baseline (one RemoteViews text, no font padding); the water glyph and "4 waters" 13 in water ink; the last drink 13 `ink.secondary`.
-- **Drink panel (right, about 45%, at least as wide as Who joins? needs):** the usual #1's Icon L, as large as the panel allows up to 1.5 times its drawn size, and its short name 15 (13 when tight), under the picture or beside it, whichever leaves the bigger picture. Tap opens the picker. Who joins? sits at the bottom of the panel, in the drink's solid: the drink a quick flare sends is right above the button that sends it.
-- **Variants:** a friend's snap today replaces the picture with the photo tile (12 dp corners, scrim, "Leo · 38m"). No usual 3: the panel is cobalt tint with the rim mark and "Pick your usual 3" in cobalt; Who joins? is cobalt. After 4 caffeinated drinks: the panel turns tea, with a chamomile and "Herbal tea next?"; Who joins? keeps the usual #1's colour. No friends: Who joins? becomes "Invite friends" in cobalt.
+- **Counts (left, 60%, CEO 2026-11-17):** "3" in the condensed numeral and "drinks" on one baseline (one RemoteViews text, no font padding). The numeral fills the height the line under it and the buttons leave, from `numeral.l` up to 96 dp; "drinks" is 13, or 15 once the numeral is twice `numeral.l`. Under it one small line, 13 Medium `ink.secondary`: the water glyph in water ink, then "4 · Last 7:30 AM" (`wm.water_last`), then the short time, then the water count alone. Water never gets a numeral of its own. With no drink today the line is "◦ 0": never "No drinks yet" next to a 0.
+- **Drink panel (right, 40%, 10 dp padding each side; wider only when its button can't fit even on two lines):** the usual #1's Icon L, as large as the panel allows up to 1.5 times its drawn size, and its short name 15 (13 when tight), under the picture or beside it, whichever leaves the bigger picture. Tap opens the picker. Who joins? sits at the bottom of the panel, in the drink's solid: the drink a quick flare sends is right above the button that sends it.
+- **Variants:** a friend's snap today replaces the picture with the photo tile (12 dp corners, scrim, "Leo · 38m"). No usual 3: the panel is cobalt tint with the rim mark and "Pick your usual 3" in cobalt; Who joins? is cobalt. After 4 caffeinated drinks: the panel turns tea, with a chamomile and "Herbal tea next?". No friends: Who joins? becomes "Invite friends" in cobalt (two lines when the panel is narrow) and opens the app's invite screen (PRD F15). After 4 caffeinated drinks Who joins? turns tea too, with the tea glyph: the note offers a tea and the button under it asks friends for one (review item 10). An empty audience: Who joins? opens Settings > Widgets with "{group} is empty. Open Clink." under its label when it fits.
 - **Confirmation, Sending, Failed:** one 48 dp row across both parts, on the cobalt tint (the +1 Drink colour): check + "Logged" 15 + the drink's name 13 + its picture. The panel stays in place behind it, so nothing jumps.
-- **Signed out and not set up:** the same split: the wordmark and "Sign in to Clink" on the left, the rim mark on a cobalt-tint panel on the right.
+- **Signed out and not set up:** the same 60/40 split: the wordmark and "Sign in to Clink" on the left, the rim mark on a cobalt-tint panel on the right.
+- **+1 picker on every Android 4x2:** the 2 x 2 cells and a ✕ column at the right, 48 dp wide (the Android size of the 44 pt ✕, 5.1 Buttons; review item 6). Every picture in the picker is drawn at the same height, so a narrow glass doesn't stand twice as tall as a wide cup (review item 11).
+- **Your live flare countdown:** the minutes as a numeral with "min left" beside it on its baseline, like the drinks count, growing with the height.
 - Why: the first M2 build was a stock Material pill row with the brand only in the rim. The panel makes the user's own drink the anchor, uses the drink art, tint and rim the way 1.2 asks, and keeps cards to one.
 
 ### 5.3 iOS small and Android 2x2
 
 | State | Layout |
 |---|---|
-| Idle | Cobalt rim. "3" (`numeral.l`) with "drinks ◦ 4" and "Last 12:54" (13) beside it, their last line on the numeral's baseline. Android tall 2x2 (150 dp and up): the usual #1's picture and its short name (13 or 12, one or two lines) above the button. Bottom: "+1 Drink" tonal (cobalt tint), full width, 48 dp. |
-| +1 picker | Header "Log" 13 SemiBold with ✕ (44 pt hit area). A 2 × 2 grid: usual 1 to 3 and Water, each on its tint, icon S 24 and name 11. Android: no header or ✕ (a tap beside the cells and the 30 s timeout close it); the pictures fill the 50 dp cells and the names are spoken only, because "Ceremonial" can't fit whole there. |
-| Your live flare | Category solid, tint rim. Glyph + "Coffee" 15, countdown `numeral.l`, "2 in · 1 order" 13. Hero 48 at the bottom right. Tap opens 4.7. |
-| Friend's flare | Category tint, ink rim. Avatar 20 + "Maya", "wants matcha" 15 SemiBold, "14:02 left" 13, hero 48 at the top right. Bottom: "I'm in", full width, category solid. Tap elsewhere opens 4.8. Android 2x2: "Maya" and the countdown on line 1, "Matcha · in 10 min" or "Matcha" on line 2, no hero (5.1 flare drop order). |
+| Idle | Cobalt rim. "3" (`numeral.l`, growing with the height) with "drinks ◦ 4" and "Last 12:54" (13) beside it, their last line on the numeral's baseline. No drink today: "drinks" and "◦ 0", no last-drink line. Water stays small, never a numeral. Android tall 2x2 (150 dp and up): the usual #1's picture (as large as the room allows) and its short name (13 or 12, one or two lines) above the button. Bottom: "+1 Drink" tonal (cobalt tint), full width, 48 dp. |
+| +1 picker | Header "Log" 13 SemiBold with ✕ (44 pt hit area). A 2 × 2 grid: usual 1 to 3 and Water, each on its tint, icon S 24 and name 11. Android: no header or ✕ (a tap beside the cells and the 30 s timeout close it); each cell shows its drink's name under the picture whenever every name fits whole (13 to 11, up to 2 lines, picture down to 22 dp), which is every 2x2 from about 140 dp wide. Only the 120 dp minimum cell is pictures alone, with the names spoken (round 3, review item 4). |
+| Your live flare | Category solid, tint rim. Glyph + "Coffee" 15, countdown "14 min left" (numeral and words), "1 in" or "No replies yet" 13 (never "0 in"). Hero 48 at the bottom right. Tap opens 4.7. |
+| Friend's flare | Category tint, ink rim. Avatar 20 + "Maya", "wants matcha" 15 SemiBold, "14 min left" 13, hero 48 at the top right. Bottom: "I'm in", full width, category solid. Tap elsewhere opens 4.8. Android 2x2: "Maya" and "13 min left" (or "13 min") on line 1, "Matcha · in 10 min" or "Matcha" on line 2; at the largest text the countdown drops to 11 before the drink line goes (review item 8); a tall 2x2 shows the hero under the text. |
 | Replied | The button becomes a status row: check + "You're in". |
 | Confirmation / sending / failed | As medium, in the bottom row. |
 | Signed out | Mark 32, "Open Clink" 13. |
@@ -1371,7 +1374,7 @@ Android 2x2 under 150 dp high: the picker drops its header and ✕, and the pick
 
 ### 5.5 Android specifics
 
-- **Glance layout:** `SizeMode.Responsive` (sizes below). Widgets under 230 dp wide use the small layout.
+- **Glance layout:** `SizeMode.Exact` (round 3): composed at the size the launcher really gives, once per orientation, so the layout fills the real cell instead of a stretched bucket. The arrangement still follows the breakpoints below. Widgets under 230 dp wide use the small layout.
 - **Shapes:** container radius from `system_app_widget_background_radius` (Android 12+), inner elements from `system_app_widget_inner_radius`. Below Android 12, a 16 dp rounded background drawable. Glance `cornerRadius` needs Android 12, so older versions get rounded backgrounds from drawables.
 - **Dynamic colour (Material You):** not used. Reason: it would retint the cobalt and the drink colours, and the category colours carry meaning. Light and dark still follow the system.
 - **Configuration activity** (Compose, M3, opens when the widget is added and from "Reconfigure"):
@@ -1381,9 +1384,10 @@ Android 2x2 under 150 dp high: the picker drops its header and ✕, and the pick
   - pill "Done"
 - **Widget picker preview:** `previewLayout` on Android 12+, with a `previewImage` WebP fallback for older versions. Same sample data as iOS.
 - **Font:** system sans (2.4).
-- **Sizes (polish pass):** five responsive sizes: 2x2 120 × 120, tall 2x2 120 × 150, short 4x2 250 × 120, 4x2 250 × 160, wide 4x2 300 × 160 dp. Every layout measures its text with the system font before drawing and picks the first arrangement that fits (5.1 drop order).
-- **Drink pictures:** the widget draws Icon L (shade and gleam) for drinks everywhere, picker cells included, cropped to what is drawn so a short cup and a tall glass both fill their box, and never above 1.5 times the 64 grid (the 3-unit outline turns heavy past that). This replaces Icon S 28 in the 3.6 table for Android widgets; Design please carry it into 3.6. Proof sheet: `docs/screens/widget-android/art-sheet-light.png`, `-dark.png`.
-- **Picker cells:** 12 dp corners, 3 dp padding, a 2 dp ink rim. The picture sits on a common line so names line up; names are 13, then 12, then 11, on up to 2 lines, under the picture, or beside it in a low cell (the short 4x2).
+- **Sizes:** five arrangements, chosen by breakpoint: 2x2 (under 230 dp wide), tall 2x2 (150 dp high and up), short 4x2 (under 150 dp high), 4x2 (230 to 300 dp wide), wide 4x2 (300 dp and up). Their smallest sizes (120 × 120, 120 × 150, 250 × 120, 250 × 160, 300 × 160 dp) are the design floor; the CEO's Pixel 8 4x2 is wider and taller, and every render set includes 180 and 200 dp tall cells. Every layout measures its text with the system font before drawing and picks the first arrangement that fits (5.1 drop order).
+- **Drink pictures:** the widget draws Icon L (shade and gleam) for drinks everywhere, picker cells included, cropped to what is drawn so a short cup and a tall glass both fill their box, and never above 1.5 times the 64 grid (the 3-unit outline turns heavy past that). The 3.6 table now says so. Dark mode uses the contour rule in 3.2. Proof sheet: `docs/screens/widget-android/art-sheet-light.png`, `-dark.png`.
+- **Picker cells:** 12 dp corners, 3 dp padding, a 2 dp ink rim. Every picture in a picker is drawn at one common height and sits on a common line, so names line up; names are 13, then 12, then 11, on up to 2 lines, under the picture, or beside it in a low cell (the short 4x2).
+- **Numerals** are set in dp (the font scale already applied by the layout), because Android 14+ scales large sp sizes non-linearly and the layout measures them exactly.
 
 ### 5.6 Widget screen reader labels
 

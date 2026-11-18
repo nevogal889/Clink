@@ -135,7 +135,29 @@ test('SVG conversion: shapes, inheritance, transforms, refusals', () => {
       source: 't',
     }),
   );
-  assert.equal(darkIcon('stroke="#17202A"'), 'stroke="#EEF2F5"');
+});
+
+test('dark drink icons: the light drawing on a light contour around its silhouette', () => {
+  // Review item 3: swapping the outline to #EEF2F5 merged a white cup and its saucer on dark
+  // panels. The dark icon keeps the light drawing and adds a contour behind it (round 3).
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
+    '<g transform="translate(2 0)"><ellipse cx="20" cy="40" rx="10" ry="3" fill="#F4F6F7" stroke="#17202A" stroke-width="3"/></g>' +
+    '<path d="M5 5L9 9" fill="none" stroke="#FFFFFF" stroke-width="1.68" stroke-opacity="0.85"/></svg>';
+  const dark = darkIcon(svg);
+  // The drawing itself is unchanged apart from the gleam opacity: steel lines stay steel.
+  assert.ok(dark.includes('fill="#F4F6F7" stroke="#17202A" stroke-width="3"'));
+  assert.ok(dark.includes('stroke-opacity="0.7"') && !dark.includes('stroke-opacity="0.85"'));
+  // The contour comes first (drawn behind), keeps transforms, and is 1.75 units wider per side.
+  const contour = dark.match(/<g id="dark-contour">(.*?)<\/g><g transform/)[1];
+  assert.ok(contour.startsWith('<g transform="translate(2 0)"><ellipse'));
+  assert.ok(contour.includes('fill="#EEF2F5" stroke="#EEF2F5" stroke-width="6.5"'));
+  assert.ok(contour.includes('fill="none" stroke="#EEF2F5" stroke-width="5.18"'));
+  // It converts, and the dark crop reaches past the light one by the contour.
+  svgToVector(dark, { sizeDp: 64, source: 't' });
+  const [lx] = cropViewBox(svg, 1);
+  const [dx] = cropViewBox(dark, 1);
+  assert.ok(dx < lx);
 });
 
 test('drink art crop: drawn bounds with strokes, arcs and transforms', () => {

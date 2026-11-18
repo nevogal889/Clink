@@ -2,19 +2,17 @@
 // art-b.md). Masters are drawn for light surfaces; dark variants are derived here, once per file.
 import type { LogCategory } from '@clink/shared';
 
-import { BRAND, GLYPHS, HEROES, ICONS_L, ICONS_S } from './art.generated';
+import {
+  BRAND,
+  GLYPHS,
+  HEROES,
+  ICONS_L,
+  ICONS_L_DARK,
+  ICONS_S,
+  ICONS_S_DARK,
+} from './art.generated';
 
 export const OUTLINE = { light: '#17202A', dark: '#EEF2F5' } as const;
-
-/** Icon dark swap: outline and the five category inks (app/assets/art/icons/theme.json). */
-export const ICON_DARK_SWAP: Record<string, string> = {
-  '#17202A': '#EEF2F5',
-  '#4B3527': '#DDC1AE',
-  '#36591A': '#B7D69A',
-  '#6B5306': '#E8CF78',
-  '#9E2460': '#F5B0D0',
-  '#085C74': '#99D9EB',
-};
 
 function swapGleam(svg: string): string {
   return svg.replace(/((?:fill|stroke)-opacity=")0\.85(")/g, '$10.7$2');
@@ -44,14 +42,6 @@ export function darkHero(svg: string): string {
   return swapGleam(swapped);
 }
 
-export function darkIcon(svg: string): string {
-  let out = svg;
-  for (const [from, to] of Object.entries(ICON_DARK_SWAP)) {
-    out = out.split(from).join(to).split(from.toLowerCase()).join(to);
-  }
-  return swapGleam(out);
-}
-
 /** Glyphs are one colour: they take the colour of the text beside them (DESIGN.md 2.8). */
 export function tintGlyph(svg: string, color: string): string {
   return svg.split(OUTLINE.light).join(color);
@@ -76,9 +66,16 @@ export function heroSvg(category: LogCategory, mode: Mode): string {
 }
 
 export function iconSvg(drinkId: string, size: 'S' | 'L', mode: Mode): string | null {
-  const master = (size === 'S' ? ICONS_S : ICONS_L)[drinkId];
-  if (!master) return null;
-  return mode === 'dark' ? memo(`icon:${size}:${drinkId}`, () => darkIcon(master)) : master;
+  // Dark icons are prebuilt with the shared contour rule (gen-art.mjs, DESIGN.md 3.2).
+  const table =
+    mode === 'dark'
+      ? size === 'S'
+        ? ICONS_S_DARK
+        : ICONS_L_DARK
+      : size === 'S'
+        ? ICONS_S
+        : ICONS_L;
+  return table[drinkId] ?? null;
 }
 
 export function glyphSvg(category: LogCategory, color: string): string {

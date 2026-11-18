@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 // Bundles the SVG masters in app/assets/art into art.generated.ts, so the app can draw them with
-// react-native-svg and apply the dark-mode swaps from DESIGN.md 3.5 at runtime (art.ts).
+// react-native-svg. Dark icons are built here with the shared rule in
+// app/assets/art/icons/_source/dark-icon.mjs, the same one the Android widget uses (DESIGN.md 3.2).
+// Heroes still get their dark swap at runtime (art.ts).
 // Run: node app/src/ui/art/gen-art.mjs        (writes)
 //      node app/src/ui/art/gen-art.mjs --check (fails if the file is stale; run by art.test.ts)
 // The masters stay the source of truth; this file only copies them, minus comments.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { darkIcon } from '../../../assets/art/icons/_source/dark-icon.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const artDir = path.resolve(here, '../../../assets/art');
@@ -49,6 +53,14 @@ const raw = [
   block('GLYPHS', readDir('glyphs')),
   block('ICONS_S', iconsS),
   block('ICONS_L', iconsL),
+  block(
+    'ICONS_S_DARK',
+    iconsS.map(([k, v]) => [k, clean(darkIcon(v))]),
+  ),
+  block(
+    'ICONS_L_DARK',
+    iconsL.map(([k, v]) => [k, clean(darkIcon(v))]),
+  ),
   block('BRAND', brand),
 ].join('\n');
 

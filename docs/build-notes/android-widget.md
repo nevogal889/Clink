@@ -184,3 +184,73 @@ New render-test switch: `-PclinkDump=<fixture>-<LAYOUT>-<night>-<fontScale>` pri
 - **On-device look**: no KVM here; the renders are real RemoteViews drawn by Robolectric, but launcher corner radii, the system font and pixel rounding should be checked on the CEO's emulator (Pixel launcher, 2x2 and 4x2, light and dark, largest text).
 - **Archivo in the widget**: RemoteViews can't use bundled fonts dependably (DESIGN.md 2.4), so the system sans stays.
 - **Snap and flare photos**: the tile keeps the camera glyph until widget-api returns thumbnails (M3 to M5).
+
+## Round 3 (2026-11-17)
+
+Owner: Android. Brief: DECISIONS.md "CEO answers after placing the Android widget" (it wins), plus design review items 1 to 4, 6 and 8 to 11 (`review.md`, polish pass review). The CEO placed the 4x2 on a Pixel 8 emulator (Android 16): it got the MEDIUM layout, the cell was taller than our 160 dp render, and the counts had a big empty gap above +1 Drink, with "0 drinks" next to "No drinks yet today". Picture of the result: `docs/screens/widget-android/overview.png`; the polish-pass renders are now in `before/`.
+
+### What changed
+
+| Problem | Now |
+|---|---|
+| Review item 1: which size does a real 4x2 get? | Answered by the CEO's screenshot: keep the breakpoints. The widget now uses `SizeMode.Exact` (`ClinkWidget.kt`): Glance composes at the size the launcher really gives, once per orientation, and `Layout` picks the arrangement with the same breakpoints. Responsive mode laid out for the nearest of five buckets and the launcher stretched it, which is where the gap came from. Exact also composes 2 layouts per update instead of 5. |
+| Empty gap under the count | Counts 60%, drink panel 40% (CEO). The drinks numeral fills the height the water line and the buttons leave, from 34 up to 96 dp, and shrinks for width before "drinks" goes; "drinks" is 15 next to a numeral twice `numeral.l`. Renders at 160, 180 and 200 dp tall (250, 300 and 360 wide) show no dead space. |
+| Water shown as large as drinks; "0 drinks" + "No drinks yet today" | One small line under the numeral: water glyph, then "4 · Last 7:30 AM" (`wm.water_last`), then the short time, then the water count alone. With no drink today: "◦ 0" only. `wm.last_none` and `ws.last_none` are deleted from COPY.md. The 2x2 keeps "drinks ◦ 4 / Last 7:30" and drops the last-drink line when there is no drink. The short 4x2 puts the water line beside the count. |
+| Invite friends opened Settings | `AppRoute.INVITE` (`invite`, the Expo Router route `app/src/app/invite.tsx` the other engineer added) (PRD F15). Checked the other routes: an empty audience opens Settings, where Settings > Widgets picks a widget's audience (PRD 3.3 group configuration rule 3 and the "no members left" edge case), and Who joins? now says `wm.audience_empty` under its label when it fits. No usual 3 still opens `usual` and the camera. |
+| Review item 2: "14:00" read as a clock | Minute text with a label every time: "14 min left", then "14 min" (`wm.in.left`, `ws.in.left`, `ws.in.left_short`); "Under a minute left" / "Under a minute" in the last minute (`*.in.left_under`). Your live flare shows the minutes as a numeral with "min left" on its baseline. Rounded up, so an open flare never reads 0. |
+| Review item 3: dark cups merged | New dark rule for drink icons, one implementation for every export: `app/assets/art/icons/_source/dark-icon.mjs`. The icon keeps its light drawing (steel lines inside included) and gets a `#EEF2F5` contour around its outer silhouette, 1.75 units per side on the 64 grid (0.75 on the 24 grid), the way heroes already work in dark mode. `theme.json` holds the values; DESIGN.md 3.2 and 3.5 say so. `gen-drink-assets.mjs` and `build-sheet.mjs` use it; the Icon L crop is taken from the dark variant so light and dark share one viewport. Proof: `art-sheet-dark.png`. |
+| Review item 4: look-alike coffees on the 2x2 picker | Names under the pictures whenever every name fits whole (13, 12, 11 sp, up to 2 lines), trying a 28 dp picture first and then down to 22 dp. With exact sizing this covers every 2x2 from about 140 dp wide, which is the common real size (170 x 140 and 170 x 190 renders). Only the 120 dp minimum cell keeps pictures alone (names spoken). |
+| Review item 6: no ✕ on the 250 dp picker | Every 4x2 picker has a 48 dp ✕ column (the Android size for DESIGN.md's 44 pt). The widget root is labelled "Close" only on the 2x2, which has no ✕. |
+| Review item 8: 2x2 friend's flare at font 2.0 lost the drink | The 2x2 keeps its text 2 dp above I'm in, and the countdown may drop to 11 to stay beside the name; "Maya 13 min / Matcha / I'm in" at font 2.0. A tall 2x2 shows the hero under the text. |
+| Review item 9: "0 in" | `ws.live.none` "No replies yet" (new key); "1 in" from one reply up. It wraps to two lines at large text rather than being cut. |
+| Review item 10: Who joins? stayed brown on the tea panel | After the caffeine note Who joins? is tea with the tea glyph, and its label says "Send a tea flare". |
+| Review item 11: baseline and picker heights | The short 4x2's water line is lifted by the difference between the numeral's descent and the text's bottom (`TextFit.belowBaseline`), so both sit on one baseline; the 2x2 column does the same. Every picture in a picker is drawn at one common height. |
+| Found here: numerals at large text | `CountLine` sets its size in dp (numeral x font scale): Android 14+ scales large sp sizes non-linearly, and Robolectric didn't scale them at all, so the numeral came out smaller than the layout measured. |
+| Found here: replied status at font 1.3 on the 2x2 | "You're in" was cut; the check gives way, then two lines. |
+
+### Decisions (one line each)
+
+- **`SizeMode.Exact`, not more Responsive buckets**: any real height fills by construction, and it is cheaper (2 compositions instead of 5).
+- **Minute updates, no Chronometer**: `Deadlines.nextUiChange` adds each visible flare's next minute boundary (`Countdown.nextChange`), so `clink.tick` redraws once a minute while a flare is on screen and never otherwise. WorkManager can run late in Doze, but only while the screen is off, and every render works the text out from the clock, so a late job draws the right minute. PRD 3.3 rule 5 ("countdowns run without a network refresh") still holds: no network is used. Its words "platform timer text" are superseded by the CEO's "13 min left" (DECISIONS.md wins).
+- **Countdown rounded up** ("14 min left" from 14:00 down to 13:01): never "0 min" while open; screen readers say the same minute.
+- **Panel exactly 40%**: the Who joins? label goes to two lines ("Invite / friends", "Who / joins?" at large text) before the panel widens; only when even that can't fit does it widen. Both pills keep one label size.
+- **The camera only drops when the counts side has no room for it** (each side is checked in its own share), so a 250 dp 4x2 keeps it now.
+- **Water line in `ink.secondary`, glyph in water ink**: one phrase, one colour, translatable as a whole key; the glyph carries the water colour.
+- **Dark contour instead of darker enamel**: the white enamel is the brand vessel (DESIGN.md 3.1 V3) and stays white; the contour is the heroes' own dark rule.
+- **Equal-height pictures in pickers**: a tidy row matters more than each picture filling its own cell.
+- **Names on the 2x2 picker, not new art**: changing four coffee drawings is a Design change to the 3.4 table and to the app catalog; with exact sizing, names fit on nearly every real 2x2.
+
+### Keys (COPY.md 6)
+
+New: `ws.live.none`, `ws.in.left_short`, `ws.in.left_under`, `wm.in.left_under`, `wm.water_last`. Changed: `ws.in.left` and `wm.in.left` ("{n} min left", no `{timer}`), `ws.last_at`, `ws.live.counts`, `wm.last_at` descriptions. Deleted: `ws.last_none`, `wm.last_none`. Regenerated with `npm run gen -w @clink/shared`, `node scripts/supabase/sync-shared.mjs` and `node scripts/gen-android-strings.mjs`. No banned words (the strings test checks every key).
+
+### Tests added
+
+- `GlanceRenderTest`: `noDrinksYetShowsOnlyTheWaterCount` (W5: no "No drinks" text at any size, "Invite friends" whole in the 40% panel), `countdownsReadAsMinutesWithALabel` ("14" / "min left", "No replies yet", "13 min left", no ":" on the 2x2, Maya, Matcha, min and I'm in at font 2.0), Invite opens `AppRoute.INVITE`, the caffeine note's tea Who joins?, W21 opens Settings; idle medium asserts the water line and no "waters".
+- `OutboxAndTimersTest.countdownsRoundUpAndRedrawAtEachMinute`: rounding, under a minute, the next boundary, and `Deadlines` planning W9's next redraw at 09:13, not every second.
+- `WidgetScreenshotTest`: every state also at 250 x 180, 250 x 200, 300 x 180, 300 x 200, 360 x 200, 330 x 140, 170 x 140 and 170 x 190 dp (W4, W5, W8, W9, W11, light and dark; W4 and W5 at font 1.3 and 2.0 too), W5 at every size, W21, and W5 and W15 at large text. Nothing cut in any of the 276 renders.
+- `scripts/gen-android.test.mjs`: the dark contour (drawing unchanged, contour behind, transforms kept, widths, converts, crops wider).
+
+### Results (2026-11-17)
+
+| Step | Command | Result |
+|---|---|---|
+| Harness tests | `app/android/gradlew -p app/modules/clink-native/android/standalone testDebugUnitTest --rerun-tasks` (JDK 17, `ANDROID_HOME=~/android-sdk`) | 53/53 |
+| Renders | same, `--tests '*WidgetScreenshotTest*' -PclinkScreens=$PWD/docs/screens/widget-android -PclinkPreviews=$PWD/app/assets/native/android/res` | 276 PNGs plus `art-sheet-{light,dark}.png`; every one looked at |
+| Goldens | same, plus `-PclinkUpdateGoldens` | 20 regenerated, looked at |
+| Overview | a PIL script over `before/` and the new renders (scratch, not in the repo) | `overview.png`: idle 4x2 light, dark, font 2.0, no drinks, a 360 x 200 cell, 2x2, picker light and dark, your flare, friend's flare 2x2 |
+| Generators | `npm run check:gen:android`, `node --test scripts/gen-android.test.mjs` | up to date; 9/9 |
+| Repo | `npm run ci` | green |
+
+### For other owners (not the CEO)
+
+- **App dark icons: done (2026-11-18).** `app/src/ui/art/gen-art.mjs` now prebuilds `ICONS_S_DARK` and `ICONS_L_DARK` with the shared rule in `app/assets/art/icons/_source/dark-icon.mjs`; `ICON_DARK_SWAP` is gone, so the app and the widget match.
+- **Head of Product:** PRD 3.3 rule 5 says "platform timer text"; the widget now draws minute text redrawn each minute (DECISIONS.md, round 3). F15/3.11: after the caffeine note, the widget's Who joins? is tea, so the M4 quick flare from it should go as tea, not as the usual #1's category. Please confirm in PRD F15.
+- **CTO:** ARCHITECTURE.md 3.3 Android item 5 updated to the minute tick (it still described a count-up last-drink Chronometer from M2).
+- **QA:** `QA_PLAN.md` ST9 ("Android Chronometer fallback") is now the only path: minute text redrawn at each minute boundary, not by the 15-minute job. Add an on-device check that "13 min left" changes within a few seconds of the minute with the screen on.
+- **Design:** DESIGN.md 3.2, 3.5 and 3.6 changed for the dark contour and Android widget sizes (3.6 is the brief's exception). The app's `docs/art/icons-sheet.html` is regenerated with the new dark rule.
+
+### Not done, and why
+
+- **On-device check**: still no KVM here. The CEO's emulator should show the 4x2 at its real size now; please check the numeral, the 40% panel and "13 min left" changing at the minute.
+- **The 120 dp 2x2 picker** keeps pictures alone (names don't fit whole at 11 sp in 44 dp); Espresso / Macchiato and Flat White / Cappuccino can still look alike there. Stronger per-drink marks are a Design change to DESIGN.md 3.4.
