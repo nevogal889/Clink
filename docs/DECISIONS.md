@@ -157,3 +157,4 @@ Every decision the CEO has approved so far. When this file and `original-prd.md`
 - **Water on the widget:** one small secondary line under the count with the water glyph, the number and the last drink time ("◦ 4 · Last 7:30 AM"). Water is less important than drinks and never gets its own large numeral.
 - **Invite friends on the widget** opens the app on the invite screen (PRD F15), never Settings.
 - **This round** also takes the design review fixes: minute countdowns ("13 min left"), clearer dark-mode cups, "No replies yet" instead of "0 in", a ✕ on the medium picker, every flare category visible on the flare panel, and one empty line on the tracker.
+- **The count must not read as water (after round 3 on the emulator):** the big number gets a cup glyph and a clear "drinks today" label, plus the last drink time under it. Water leaves the count area: a small "◦ 2" badge in the top-right corner of the counts side. Nothing water-like sits under the number.
