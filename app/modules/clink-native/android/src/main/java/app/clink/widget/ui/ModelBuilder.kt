@@ -157,29 +157,10 @@ class ModelBuilder(private val copy: Copy) {
     val small = layout.small
     val drinks = copy.t(R.string.clink_ws_drinks, "n" to v.drinks)
     val water = copy.t(R.string.clink_ws_water, "n" to v.water)
-    val (dn, dw) = Copy.splitCount(drinks)
-    val (wn, ww) = Copy.splitCount(water)
     // The last-drink line counts only today's drinks: after midnight it is gone with the counts.
     val last =
       s.today.lastDrinkAt?.takeIf {
         s.today.localDate == Resolve.localDateAt(now, zone) && Resolve.localDateAt(it, zone) == s.today.localDate
-      }
-    // The time of day of the last drink (Head of Product, polish pass): exact and never stale, so
-    // the widget needs no ticking text. Midnight clears it with the counts. With no drink today
-    // there is no line at all: never "No drinks yet" next to a 0 (CEO, 2026-11-17).
-    val lastOptions =
-      if (last != null && small) listOf(copy.t(R.string.clink_ws_last_at, "time" to copy.time(last, zone, short = true))) else emptyList()
-    // The 4x2's one small line under the numeral (CEO, 2026-11-17): "◦ 4 · Last 7:30 AM", then the
-    // short time, then the water count alone. Water never gets a numeral of its own.
-    val waterLine =
-      if (last != null) {
-        listOf(
-          copy.t(R.string.clink_wm_water_last, "water" to v.water, "time" to copy.time(last, zone)),
-          copy.t(R.string.clink_wm_water_last, "water" to v.water, "time" to copy.time(last, zone, short = true)),
-          Copy.splitCount(water).first.ifEmpty { water },
-        ).distinct()
-      } else {
-        listOf(Copy.splitCount(water).first.ifEmpty { water })
       }
     val a11y =
       when {
@@ -187,14 +168,15 @@ class ModelBuilder(private val copy: Copy) {
         v.water > 0 -> copy.t(R.string.clink_a11y_w_tracker_water, "water" to v.water)
         else -> copy.t(R.string.clink_a11y_w_tracker_none)
       }
+    // The count reads as drinks (CEO, 2026-11-18): the number with "drinks today" (then "drinks")
+    // under it, the last drink as a time of day under that, and water only as a small badge.
     return TrackerModel(
-      drinksNum = dn,
-      drinksWord = dw,
-      waterNum = wn,
-      waterWord = ww,
-      waterText = water,
-      lastOptions = lastOptions,
-      waterLine = waterLine,
+      drinksNum = Copy.splitCount(drinks).first.ifEmpty { v.drinks.toString() },
+      labelOptions = listOf(copy.t(R.string.clink_ws_drinks_today, "n" to v.drinks), Copy.splitCount(drinks).second).distinct(),
+      last = last?.let { copy.t(R.string.clink_ws_last_at, "time" to copy.time(it, zone, short = small)) },
+      // No badge at 0 (round 4): two zeros side by side read as a scold, and the picker's Water
+      // cell already shows where water goes; the badge appears with the first glass.
+      waterBadge = Copy.splitCount(water).first.takeIf { v.water > 0 },
       a11y = a11y,
     )
   }

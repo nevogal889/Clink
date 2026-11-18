@@ -23,6 +23,7 @@ import androidx.glance.action.Action
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.AndroidRemoteViews
+import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
@@ -257,6 +258,11 @@ fun WidgetContent(model: WidgetModel) {
   Box(
     modifier =
       GlanceModifier.fillMaxSize()
+        // Android 12+: the widget is the launcher's background view and clips to the system
+        // radius, so the square-topped rim bands in drawable-v31 follow the corners exactly
+        // (round 4). Before 12, the drawables carry exact corner pieces themselves.
+        .appWidgetBackground()
+        .cornerRadius(android.R.dimen.system_app_widget_background_radius)
         .background(ImageProvider(model.background))
         .clickable(tapAction(context, model.tap))
         .let { m -> rootLabel?.let { l -> m.semantics { contentDescription = l } } ?: m }
@@ -344,37 +350,29 @@ private fun countWidth(s: Scale, num: String, word: String, numSize: Float, word
 /** Height in dp of a CountLine: the condensed face without font padding is about 1.18 em. */
 private fun countHeight(s: Scale, numSize: Float) = numSize * s.m.fontScale * 1.18f
 
-@Composable
-private fun WaterLine(s: Scale, text: String, color: Int = R.color.clink_ink_secondary) {
-  Row(verticalAlignment = Alignment.CenterVertically) {
-    Image(ImageProvider(R.drawable.clink_ui_tumbler_water_ink), contentDescription = null, modifier = GlanceModifier.size(16.dp))
-    Spacer(GlanceModifier.width(3.dp))
-    Text(text, style = s.style(SECONDARY, color, FontWeight.Medium), maxLines = 1)
-  }
-}
+/** The numeral may be at most this many times its label's size, so they read as one unit (round 4). */
+private const val UNIT_RATIO = 2.5f
 
-private fun waterLineWidth(s: Scale, text: String) = 19f + s.w(text, SECONDARY)
+/** ...and at least this many times, or a line gives way first. */
+private const val UNIT_MIN_RATIO = 1.6f
 
-/** The first option that fits `w` at the secondary size (regular face), or null. */
-private fun firstFitting(s: Scale, options: List<String>, w: Float): String? = options.firstOrNull { s.w(it, SECONDARY, TextFit.Face.REGULAR) <= w }
+/** Cap height of the condensed numeral, per em. */
+private const val CAP = 0.71f
 
-/** Largest numeral on the 4x2, in dp of text size: past this it stops reading as a count. */
-private const val NUMERAL_MAX_DP = 96f
-
-/** The word beside the numeral: 13 next to numeral.l, 15 once the numeral is twice that or more. */
-private fun countWordSize(s: Scale, numSize: Float) = (if (numSize * s.m.fontScale >= 2 * NUMERAL * s.m.textScale) PRIMARY else SECONDARY) * s.m.textScale
+/** The word beside a countdown numeral (your live flare): 13 next to numeral.l, 15 above it. */
+private fun countWordSize(s: Scale, numSize: Float) = (if (numSize * s.m.fontScale > NUMERAL * s.m.textScale * s.m.fontScale) PRIMARY else SECONDARY) * s.m.textScale
 
 /** A count line's plan: the numeral size (scaled sp), its word (or none) and the word's size. */
 private class CountPlan(val numSize: Float, val word: String, val wordSize: Float)
 
 /**
- * The largest count line that fits `w` x `h` dp: the numeral grows with the height it is given
- * (CEO, 2026-11-17: empty space under the count is a bug), and shrinks for the width before the
- * word "drinks" goes. Never below numeral.l unless the height itself is smaller.
+ * The largest count line that fits `w` x `h` dp, with the numeral at most UNIT_RATIO times its
+ * word (round 4: a huge number next to tiny text didn't read as one thing). The numeral shrinks
+ * for the width before the word goes.
  */
 private fun planCount(s: Scale, num: String, word: String, w: Float, h: Float): CountPlan {
   val fs = s.m.fontScale
-  val byH = minOf(h / (1.18f * fs), NUMERAL_MAX_DP / fs)
+  val byH = minOf(h / (1.18f * fs), UNIT_RATIO * PRIMARY * s.m.textScale)
   val floor = minOf(byH, NUMERAL * s.m.textScale)
   var size = byH
   while (size >= floor) {
@@ -382,90 +380,175 @@ private fun planCount(s: Scale, num: String, word: String, w: Float, h: Float): 
     if (word.isNotEmpty() && countWidth(s, num, word, size, ws) <= w) return CountPlan(size, word, ws)
     size -= 1f
   }
-  // No room for the word: the numeral alone, as large as the box allows.
   var bare = byH
   while (bare > 12f && countWidth(s, num, "", bare, bare) > w) bare -= 1f
   return CountPlan(bare, "", countWordSize(s, bare))
 }
 
+/** The mug glyph's box for a numeral of `numDp`: its drawn mug (16 of 24 units) as tall as the digits. */
+private fun mugBox(numDp: Float) = CAP * numDp * 24f / 16f
+
 /**
- * The counts on the 4x2, in `w` x `h` dp (CEO, 2026-11-17):
- *   3 drinks                the numeral fills the height left by the line under it
- *   ◦ 4 · Last 7:30 AM      one small line: the water count, then the last drink
- * Water never gets a numeral of its own. With no drink today the line is only "◦ 4". The short
- * 4x2 (under 150 dp) puts the water line beside the count, on the numeral's baseline.
+ * The drinks number with the mug glyph (DESIGN.md 2.8 drinks counter) standing on its baseline:
+ * a category-neutral cup, so the number reads as drinks (CEO, 2026-11-18).
+ */
+@Composable
+private fun MugNumber(s: Scale, num: String, numSize: Float) {
+  val numDp = numSize * s.m.fontScale
+  val box = mugBox(numDp)
+  // The mug's base is 4 of 24 units above the box bottom; the digits stand on the baseline, a
+  // descent above the numeral view's bottom.
+  val lift = TextFit.belowBaseline(numDp, TextFit.Face.NUMERAL, false) - 0.01f * numDp - box * 4f / 24f
+  Row(verticalAlignment = Alignment.Bottom) {
+    Box(modifier = GlanceModifier.padding(bottom = maxOf(0f, lift).dp)) {
+      Image(ImageProvider(R.drawable.clink_ui_mug), contentDescription = null, modifier = GlanceModifier.size(box.dp))
+    }
+    Spacer(GlanceModifier.width(2.dp))
+    Box(modifier = GlanceModifier.padding(bottom = maxOf(0f, -lift).dp)) {
+      CountLine(s, R.layout.clink_numeral_ink, num, "", numSize, numSize)
+    }
+  }
+}
+
+private fun mugNumberWidth(s: Scale, num: String, numSize: Float): Float {
+  val numDp = numSize * s.m.fontScale
+  return mugBox(numDp) + 2f + TextFit.width(num, numDp, TextFit.Face.NUMERAL) + 2f
+}
+
+/** The water badge: a small tumbler and the number, secondary (CEO, 2026-11-18). */
+@Composable
+private fun WaterBadge(s: Scale, num: String) {
+  Row(verticalAlignment = Alignment.CenterVertically) {
+    Image(ImageProvider(R.drawable.clink_ui_tumbler_ink_secondary), contentDescription = null, modifier = GlanceModifier.size(14.dp))
+    Spacer(GlanceModifier.width(2.dp))
+    Text(num, style = s.style(SECONDARY, R.color.clink_ink_secondary, FontWeight.Medium), maxLines = 1)
+  }
+}
+
+private fun waterBadgeWidth(s: Scale, num: String?) = num?.let { 16f + s.w(it, SECONDARY) } ?: 0f
+
+/** How the counts are drawn, decided before composing. */
+private class UnitPlan(val numSize: Float, val label: String, val labelSize: Float, val last: Boolean, val badge: Boolean)
+
+/**
+ * The counts as one unit (CEO, 2026-11-18), in `w` x `h` dp:
+ *   ☕ 3                       ◦ 2     the mug and the number; water as a small badge, top right
+ *   drinks today
+ *   Last 7:30 AM                       no line with no drink today
+ * The number is at most 2.5 times its label. Drop order: the last-drink line, then the label
+ * from 15 to 13, then "today" ("drinks"), then the badge; the number shrinks before a line goes
+ * but stays at least 1.6 times its label. The label never goes.
+ */
+private fun planUnit(s: Scale, t: TrackerModel, w: Float, h: Float, labelSizes: List<Float>): UnitPlan {
+  val fs = s.m.fontScale
+  val badgeW = waterBadgeWidth(s, t.waterBadge)
+  var fallback: UnitPlan? = null
+  for (badge in listOfNotNull(true.takeIf { t.waterBadge != null }, false)) {
+    for (labelSize in labelSizes) {
+      for (label in t.labelOptions) {
+        if (s.w(label, labelSize) > w) continue
+        for (last in listOfNotNull(true.takeIf { t.last != null && s.w(t.last, SECONDARY, TextFit.Face.REGULAR) <= w }, false)) {
+          val room = h - s.h(labelSize) - (if (last) s.h(SECONDARY) else 0f)
+          var num = minOf(room / (1.18f * fs), UNIT_RATIO * labelSize * s.m.textScale)
+          val min = UNIT_MIN_RATIO * labelSize * s.m.textScale
+          while (num >= min && mugNumberWidth(s, t.drinksNum, num) + (if (badge) 8f + badgeW else 0f) > w) num -= 1f
+          val p = UnitPlan(num, label, labelSize, last, badge)
+          if (num >= min) return p
+          if (fallback == null && num > 12f / fs) fallback = p
+        }
+      }
+    }
+  }
+  return fallback ?: UnitPlan(12f / fs, t.labelOptions.last(), SECONDARY, false, false)
+}
+
+/** The unit, centred in its box, with the water badge in the top right corner. */
+@Composable
+private fun CountUnit(s: Scale, t: TrackerModel, p: UnitPlan, w: Float, h: Float) {
+  Box(modifier = GlanceModifier.width(w.dp).height(h.dp).semantics { contentDescription = t.a11y }) {
+    Column(modifier = GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+      MugNumber(s, t.drinksNum, p.numSize)
+      Text(p.label, style = s.style(p.labelSize, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+      if (p.last && t.last != null) Text(t.last, style = s.style(SECONDARY, R.color.clink_ink_secondary), maxLines = 1)
+    }
+    if (p.badge && t.waterBadge != null) {
+      Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) { WaterBadge(s, t.waterBadge) }
+    }
+  }
+}
+
+/**
+ * The counts on the 4x2, in `w` x `h` dp: the unit above, centred in the space the buttons leave.
+ * The short 4x2 (under 150 dp) sets the label beside the number, on its baseline, and has no room
+ * for the last-drink line.
  */
 @Composable
 private fun Tracker(s: Scale, t: TrackerModel, w: Float, h: Float, short: Boolean) {
-  val num = t.drinksNum.ifEmpty { "0" }
-  Column(modifier = GlanceModifier.semantics { contentDescription = t.a11y }) {
-    if (!short) {
-      val lineH = s.h(SECONDARY)
-      val line = t.waterLine.firstOrNull { waterLineWidth(s, it) <= w } ?: t.waterLine.last()
-      val c = planCount(s, num, t.drinksWord, w, h - lineH - 2f)
-      CountLine(s, R.layout.clink_numeral_ink, num, c.word, c.numSize, c.wordSize)
-      Spacer(GlanceModifier.height(2.dp))
-      WaterLine(s, line, R.color.clink_ink_secondary)
-    } else {
-      // Beside the count: the water count alone fits more often than the whole line.
-      val c0 = planCount(s, num, t.drinksWord, w * 0.55f, h)
-      val countW = countWidth(s, num, c0.word, c0.numSize, c0.wordSize)
-      val line = t.waterLine.firstOrNull { countW + 10f + waterLineWidth(s, it) <= w }
-      val c = if (line != null) c0 else planCount(s, num, "", w - 10f - waterLineWidth(s, t.waterLine.last()), h)
-      val shown = line ?: t.waterLine.last()
-      // The small line's baseline on the numeral's (review item 11): both views end below their
-      // baseline by different amounts, so the line is lifted by the difference.
-      val lift =
-        TextFit.belowBaseline(c.numSize * s.m.fontScale, TextFit.Face.NUMERAL, false) - 0.01f * c.numSize * s.m.fontScale -
-          TextFit.belowBaseline(s.dp(SECONDARY), TextFit.Face.MEDIUM, true)
-      Row(verticalAlignment = Alignment.Bottom) {
-        CountLine(s, R.layout.clink_numeral_ink, num, c.word, c.numSize, c.wordSize)
-        Spacer(GlanceModifier.width(10.dp))
-        Box(modifier = GlanceModifier.padding(bottom = maxOf(0f, lift).dp)) { WaterLine(s, shown, R.color.clink_ink_secondary) }
+  if (!short) {
+    CountUnit(s, t, planUnit(s, t, w, h, listOf(PRIMARY, SECONDARY)), w, h)
+    return
+  }
+  val fs = s.m.fontScale
+  val badgeW = waterBadgeWidth(s, t.waterBadge)
+  class Short(val numSize: Float, val label: String, val labelSize: Float, val badge: Boolean)
+  var plan: Short? = null
+  loop@ for (badge in listOfNotNull(true.takeIf { t.waterBadge != null }, false)) {
+    for (labelSize in listOf(PRIMARY, SECONDARY)) {
+      for (label in t.labelOptions) {
+        var num = minOf(h / (1.18f * fs), UNIT_RATIO * labelSize * s.m.textScale)
+        val min = UNIT_MIN_RATIO * labelSize * s.m.textScale
+        fun width(n: Float) = mugNumberWidth(s, t.drinksNum, n) + 6f + s.w(label, labelSize) + (if (badge) 8f + badgeW else 0f)
+        while (num >= min && width(num) > w) num -= 1f
+        if (num >= min) {
+          plan = Short(num, label, labelSize, badge)
+          break@loop
+        }
       }
+    }
+  }
+  val p = plan ?: Short(NUMERAL * s.m.textScale * 0.7f, t.labelOptions.last(), SECONDARY, false)
+  val numDp = p.numSize * fs
+  // The label's baseline on the numeral's (both views end below their baseline by different amounts).
+  val lift = TextFit.belowBaseline(numDp, TextFit.Face.NUMERAL, false) - 0.01f * numDp - TextFit.belowBaseline(s.dp(p.labelSize), TextFit.Face.MEDIUM, true)
+  Box(modifier = GlanceModifier.width(w.dp).height(h.dp).semantics { contentDescription = t.a11y }) {
+    Row(modifier = GlanceModifier.fillMaxSize(), verticalAlignment = Alignment.Bottom) {
+      MugNumber(s, t.drinksNum, p.numSize)
+      Spacer(GlanceModifier.width(6.dp))
+      Box(modifier = GlanceModifier.padding(bottom = maxOf(0f, lift).dp)) {
+        Text(p.label, style = s.style(p.labelSize, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
+      }
+    }
+    if (p.badge && t.waterBadge != null) {
+      Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) { WaterBadge(s, t.waterBadge) }
     }
   }
 }
 
 /**
  * Small (DESIGN.md 5.3), 100 x 100 dp of content at the smallest:
- *   3 | drinks ◦ 4
- *     | Last 12:54
+ *   ☕ 3       ◦ 2
+ *   drinks today
+ *   Last 7:30
  *   [   +1 Drink   ]
- * The numeral grows with the height it is given. The tall 2x2 adds the usual #1 (its picture and
- * name) above the button. Drop order: usual #1, then the last-drink line (the water count moves
- * under "drinks"), then the word "drinks". With no drink today there is no last-drink line.
+ * The tall 2x2 adds the usual #1 (its picture and name) above the button. Drop order: the usual
+ * #1, then the last-drink line, then "today", then the badge (planUnit).
  */
 @Composable
 private fun IdleSmall(model: WidgetModel, s: Scale, c: Content.Idle, area: Area) {
   val context = LocalContext.current
   val t = c.tracker
-  val num = t.drinksNum.ifEmpty { "0" }
   val fs = s.m.fontScale
-  val base = NUMERAL * s.m.textScale
-  val waterNum = t.waterNum.ifEmpty { t.waterText }
-  val lastOpt = t.lastOptions.firstOrNull()
-  val firstLineW = s.w(t.drinksWord, SECONDARY) + 6f + waterLineWidth(s, waterNum)
-  class Col(val numSize: Float, val last: String?, val wordFits: Boolean)
-  // The column beside the numeral, for a numeral of `numSize`: both lines when they fit beside it.
-  fun col(numSize: Float): Col {
-    val numW = TextFit.width(num, numSize * fs, TextFit.Face.NUMERAL)
-    val colW = area.w - numW - 4f
-    val twoLines = s.h(SECONDARY, 2) <= countHeight(s, numSize) + 4f
-    val last = if (lastOpt != null && twoLines && firstLineW <= colW && s.w(lastOpt, SECONDARY, TextFit.Face.REGULAR) <= colW) lastOpt else null
-    val wordFits = s.w(t.drinksWord, SECONDARY) <= colW && (last != null || twoLines)
-    return Col(numSize, last, wordFits)
-  }
-  // Usual #1 on the tall 2x2: the picture and the name beside it (one or two lines, 13 then 12),
-  // the picture as large as the room allows (up to 1.5x its drawn size).
+  val unitRoom = area.h - BUTTON_DP - 4f
+  // The unit at its smallest comfortable size: what the usual #1 may not take.
+  val unitNeed = s.h(SECONDARY) + (if (t.last != null) s.h(SECONDARY) else 0f) + 1.18f * fs * UNIT_MIN_RATIO * SECONDARY * s.m.textScale
+  // Usual #1 on the tall 2x2: the picture and the name beside it (one or two lines, 13 then 12).
   val u = c.usual
-  val baseH = countHeight(s, minOf(base, (area.h - BUTTON_DP - 4f) / (1.18f * fs)))
-  val rowRoom = area.h - baseH - BUTTON_DP - 8f
+  val rowRoom = minOf(unitRoom - unitNeed - 4f, 64f)
   class UsualPlan(val art: Pair<Float, Float>, val size: Float, val lines: Int) {
     val height get() = maxOf(art.second, 0f)
   }
   val usual: UsualPlan? =
-    u?.takeIf { model.layout == Layout.SMALL_TALL && !s.m.compactText }?.let {
+    u?.takeIf { model.layout == Layout.SMALL_TALL && !s.m.compactText && rowRoom >= 24f }?.let {
       listOf(SECONDARY, NAME).flatMap { size -> listOf(1, 2).map { size to it } }.mapNotNull { (size, lines) ->
         if (s.h(size, lines) > rowRoom) return@mapNotNull null
         val nameW = if (lines == 1) s.w(it.text, size) else it.text.split(' ').maxOf { word -> s.w(word, size) }
@@ -475,54 +558,18 @@ private fun IdleSmall(model: WidgetModel, s: Scale, c: Content.Idle, area: Area)
       }.maxByOrNull { p -> p.art.first * p.art.second }
     }
   val usualH = usual?.let { maxOf(it.height, s.h(it.size, it.lines)) + 4f } ?: 0f
-  // The numeral takes what the button and the usual #1 leave (never a dead gap), then shrinks
-  // until the column beside it keeps its lines.
-  val byH = ((area.h - BUTTON_DP - 4f - usualH) / (1.18f * fs)).coerceAtMost(NUMERAL_MAX_DP / fs)
-  val floor = minOf(base, byH).coerceAtLeast(24f / fs)
-  val want = col(floor)
-  var plan = want
-  var size = byH
-  while (size > floor) {
-    val p = col(size)
-    if ((p.last != null) == (want.last != null) && p.wordFits == want.wordFits) {
-      plan = p
-      break
-    }
-    size -= 1f
-  }
-  val numSize = plan.numSize
-  val last = plan.last
-  // The column's last line sits on the numeral's baseline.
-  val lift = TextFit.belowBaseline(numSize * fs, TextFit.Face.NUMERAL, false) - 0.01f * numSize * fs - TextFit.belowBaseline(s.dp(SECONDARY), TextFit.Face.MEDIUM, true)
+  val unitH = unitRoom - usualH
+  val plan = planUnit(s, t, area.w, unitH, listOf(SECONDARY))
   Column(modifier = GlanceModifier.fillMaxSize()) {
-    Row(modifier = GlanceModifier.fillMaxWidth().semantics { contentDescription = t.a11y }, verticalAlignment = Alignment.Bottom) {
-      CountLine(s, R.layout.clink_numeral_ink, num, "", numSize, numSize)
-      Spacer(GlanceModifier.width(4.dp))
-      Column(modifier = GlanceModifier.padding(bottom = maxOf(0f, lift).dp)) {
-        if (last != null) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(t.drinksWord, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
-            Spacer(GlanceModifier.width(6.dp))
-            WaterLine(s, waterNum)
-          }
-          Text(last, style = s.style(SECONDARY, R.color.clink_ink_secondary), maxLines = 1)
-        } else {
-          if (plan.wordFits) Text(t.drinksWord, style = s.style(SECONDARY, R.color.clink_ink_primary, FontWeight.Medium), maxLines = 1)
-          WaterLine(s, waterNum)
-        }
-      }
-    }
+    CountUnit(s, t, plan, area.w, unitH)
     if (u != null && usual != null) {
-      Spacer(GlanceModifier.defaultWeight())
       Row(verticalAlignment = Alignment.Bottom, modifier = GlanceModifier.fillMaxWidth()) {
         Image(ImageProvider(u.art), contentDescription = null, modifier = GlanceModifier.width(usual.art.first.dp).height(usual.art.second.dp))
         Spacer(GlanceModifier.width(6.dp))
         Text(u.text, style = s.style(usual.size, R.color.clink_ink_primary, FontWeight.Medium), maxLines = usual.lines)
       }
-      Spacer(GlanceModifier.height(4.dp))
-    } else {
-      Spacer(GlanceModifier.defaultWeight())
     }
+    Spacer(GlanceModifier.defaultWeight())
     ActionRow(s, c.overlay, area.w) {
       PillButton(s, c.log, GlanceModifier.fillMaxWidth().height(BUTTON), context, PRIMARY, pad = 12f, glyph = true, sub = false)
     }
@@ -542,7 +589,7 @@ private const val PANEL_PAD = 10f
 private const val PANEL_SHARE = 0.40f
 
 /** What fits on the 4x2, worked out before composing (DESIGN.md 5.1 drop order). */
-private class MediumPlan(val panelW: Float, val label: Float, val pad: Float, val camera: Boolean, val glyph: Boolean, val sub: Boolean, val whoLines: Int = 1)
+private class MediumPlan(val panelW: Float, val label: Float, val pad: Float, val camera: Boolean, val glyph: Boolean, val sub: Boolean, val whoLines: Int = 1, val plusLabel: Float = PRIMARY)
 
 private fun planMedium(s: Scale, c: Content.Idle, w: Float): MediumPlan {
   val panelW = w * PANEL_SHARE
@@ -559,8 +606,7 @@ private fun planMedium(s: Scale, c: Content.Idle, w: Float): MediumPlan {
     return lines == 1 && !s.m.compactText && c.whoJoins.subLabel != null &&
       2 * pad + g + s.w(c.whoJoins.subLabel, MICRO) <= inner && s.h(label) + s.h(MICRO) <= BUTTON_DP
   }
-  // Each side fits its own share: the counts' buttons in 60%, Who joins? in the 40% panel. The
-  // label size is shared so the two pills match. Drop order (DESIGN.md 5.1): the camera (only
+  // Each side fits its own share: the counts' buttons in 60%, Who joins? in the 40% panel. Drop order (DESIGN.md 5.1): the camera (only
   // when the left side has no room for it), labels 15 then 13, the Who joins? glyph, padding,
   // and last the Who joins? label on two lines ("Invite / friends"), so the panel stays 40%.
   val steps =
@@ -571,9 +617,12 @@ private fun planMedium(s: Scale, c: Content.Idle, w: Float): MediumPlan {
   for (lines in 1..2) {
     for ((label, pad, glyph) in steps) {
       if (lines == 2 && (glyph || pad != 6f || s.lines(c.whoJoins.label, label, panelInner - 2 * pad) > 2 || s.h(label, 2) > BUTTON_DP)) continue
-      if (whoW(label, pad, glyph, lines) > panelInner || plusW(label, pad) > leftInner) continue
-      val camera = plusW(label, pad) + GAP + BUTTON_DP <= leftInner
-      return MediumPlan(panelW, label, pad, camera, glyph, sub(label, pad, glyph, lines, panelInner), lines)
+      if (whoW(label, pad, glyph, lines) > panelInner) continue
+      // +1 Drink keeps 15 whenever its own side has room (round 4: its label matches the big
+      // pill); the camera only goes when the counts side can't hold it.
+      val plus = listOf(PRIMARY to 12f, PRIMARY to 10f, SECONDARY to 10f, SECONDARY to 6f).firstOrNull { (l, p) -> plusW(l, p) <= leftInner } ?: (SECONDARY to 6f)
+      val camera = plusW(plus.first, plus.second) + GAP + BUTTON_DP <= leftInner
+      return MediumPlan(panelW, label, pad, camera, glyph, sub(label, pad, glyph, lines, panelInner), lines, plus.first)
     }
   }
   // Nothing fits at 40% (very large text on the narrowest 4x2): the panel takes what Who joins?
@@ -625,7 +674,7 @@ private fun IdleMedium(model: WidgetModel, s: Scale, c: Content.Idle, area: Area
       Box(modifier = GlanceModifier.fillMaxWidth().height(topH.dp)) { Tracker(s, c.tracker, leftW - PAD - SEAM, topH, short) }
       Spacer(GlanceModifier.defaultWeight())
       Row(modifier = GlanceModifier.fillMaxWidth().height(BUTTON), verticalAlignment = Alignment.CenterVertically) {
-        PillButton(s, c.log, GlanceModifier.defaultWeight().height(BUTTON), context, plan.label, plan.pad, glyph = true, sub = false)
+        PillButton(s, c.log, GlanceModifier.defaultWeight().height(BUTTON), context, plan.plusLabel, 10f, glyph = true, sub = false)
         if (plan.camera) {
           Spacer(GlanceModifier.width(GAP.dp))
           IconButton(c.camera, context)

@@ -117,26 +117,92 @@ const RADIUS = {
   cell: { base: '12dp', v31: null },
 };
 
-function rimmed(body, rim, rimDp, radius) {
-  // A rim is a band along the top inside edge, inside the container outline (DESIGN.md
-  // 2.6): the rim colour fills the rounded shape and the body covers all but its top band.
+const dp = (v) => Number(String(v).replace(/dp$/, ''));
+const fmt = (n) => String(Math.round(n * 1000) / 1000);
+
+/**
+ * Round 4 (CEO, 2026-11-18): the rim is a straight band clipped by the container's own corners.
+ * The old rule drew the body with the same radius 4 dp lower, so the rim colour curled down the
+ * corner curves and read as a stroke sticking out of the card.
+ * - A fixed radius (before Android 12, picker cells): the body is the rounded shape, the band is
+ *   a plain strip between the corners, and each corner gets an exact vector piece: the corner's
+ *   quarter disc above the band's lower edge (rimCorner).
+ * - The system radius (Android 12+, drawable-v31): its value isn't known when drawing, so the
+ *   body's top corners are square and the widget root clips to
+ *   system_app_widget_background_radius (Glance cornerRadius, ClinkWidget/WidgetContent).
+ */
+function rimmed(body, rim, rimDp, radius, sides = 'both') {
+  const left = sides === 'both';
+  if (radius.startsWith('@')) {
+    const r = (on) => (on ? radius : '0dp');
+    return [
+      '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">',
+      '    <item>',
+      '        <shape android:shape="rectangle">',
+      `            <solid android:color="${c(rim)}" />`,
+      `            <corners android:topLeftRadius="${r(left)}" android:bottomLeftRadius="${r(left)}" android:topRightRadius="${radius}" android:bottomRightRadius="${radius}" />`,
+      '        </shape>',
+      '    </item>',
+      `    <item android:top="${rimDp}">`,
+      '        <shape android:shape="rectangle">',
+      `            <solid android:color="${c(body)}" />`,
+      `            <corners android:topLeftRadius="0dp" android:bottomLeftRadius="${r(left)}" android:topRightRadius="0dp" android:bottomRightRadius="${radius}" />`,
+      '        </shape>',
+      '    </item>',
+      '</layer-list>',
+    ];
+  }
+  const R = dp(radius);
+  const corner = (side) => `@drawable/${rimCornerName(rim, R, dp(rimDp), side)}`;
   return [
     '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">',
     '    <item>',
     '        <shape android:shape="rectangle">',
-    `            <solid android:color="${c(rim)}" />`,
-    `            <corners android:radius="${radius}" />`,
-    '        </shape>',
-    '    </item>',
-    `    <item android:top="${rimDp}">`,
-    '        <shape android:shape="rectangle">',
     `            <solid android:color="${c(body)}" />`,
-    // Same radius as the outer shape: the band follows the corner curve and thins out down
-    // the sides, like the lip of an enamel mug. Square corners here would poke past the outline.
-    `            <corners android:radius="${radius}" />`,
+    left
+      ? `            <corners android:radius="${radius}" />`
+      : `            <corners android:topLeftRadius="0dp" android:bottomLeftRadius="0dp" android:topRightRadius="${radius}" android:bottomRightRadius="${radius}" />`,
     '        </shape>',
     '    </item>',
+    `    <item android:height="${rimDp}" android:gravity="top|fill_horizontal" android:left="${left ? radius : '0dp'}" android:right="${radius}">`,
+    '        <shape android:shape="rectangle">',
+    `            <solid android:color="${c(rim)}" />`,
+    '        </shape>',
+    '    </item>',
+    ...(left
+      ? [
+          `    <item android:width="${radius}" android:height="${radius}" android:gravity="top|left" android:drawable="${corner('l')}" />`,
+        ]
+      : []),
+    `    <item android:width="${radius}" android:height="${radius}" android:gravity="top|right" android:drawable="${corner('r')}" />`,
     '</layer-list>',
+  ];
+}
+
+/** Corner pieces used by the shapes built so far: name -> [rim token, R, band, side]. */
+const CORNERS = new Map();
+
+export function rimCornerName(rim, R, band, side) {
+  const name = `clink_bg_rimcorner_${resourceName(rim).replace(/^clink_/, '')}_${fmt(R).replace('.', '_')}_${fmt(band).replace('.', '_')}_${side}`;
+  CORNERS.set(name, [rim, R, band, side]);
+  return name;
+}
+
+/** A corner piece: the quarter disc of radius R above y = band, in an R x R box (see rimmed). */
+export function rimCorner(rim, R, band, side) {
+  const x0 = R - Math.sqrt(R * R - (R - band) * (R - band));
+  const d =
+    side === 'l'
+      ? `M${fmt(R)},0 L${fmt(R)},${fmt(band)} L${fmt(x0)},${fmt(band)} A${fmt(R)},${fmt(R)} 0 0,1 ${fmt(R)},0 Z`
+      : `M0,0 A${fmt(R)},${fmt(R)} 0 0,1 ${fmt(R - x0)},${fmt(band)} L0,${fmt(band)} Z`;
+  return [
+    '<vector xmlns:android="http://schemas.android.com/apk/res/android"',
+    `    android:width="${fmt(R)}dp"`,
+    `    android:height="${fmt(R)}dp"`,
+    `    android:viewportWidth="${fmt(R)}"`,
+    `    android:viewportHeight="${fmt(R)}">`,
+    `    <path android:fillColor="${c(rim)}" android:pathData="${d}" />`,
+    '</vector>',
   ];
 }
 
@@ -146,23 +212,7 @@ function rimmed(body, rim, rimDp, radius) {
  * ink continues the widget's cobalt band: two rims side by side, the brand's and the drink's.
  */
 function panel(body, rim, radius) {
-  const corners = `<corners android:topLeftRadius="0dp" android:bottomLeftRadius="0dp" android:topRightRadius="${radius}" android:bottomRightRadius="${radius}" />`;
-  return [
-    '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">',
-    '    <item>',
-    '        <shape android:shape="rectangle">',
-    `            <solid android:color="${c(rim)}" />`,
-    `            ${corners}`,
-    '        </shape>',
-    '    </item>',
-    '    <item android:top="4dp">',
-    '        <shape android:shape="rectangle">',
-    `            <solid android:color="${c(body)}" />`,
-    `            ${corners}`,
-    '        </shape>',
-    '    </item>',
-    '</layer-list>',
-  ];
+  return rimmed(body, rim, '4dp', radius, 'right');
 }
 
 function plain(fill, radius, stroke) {
@@ -256,6 +306,13 @@ export function buildShapes() {
   }
   for (const [name, lines] of Object.entries(STATIC_SHAPES)) {
     out.push([`drawable/${name}.xml`, [...head(name), ...lines, ''].join('\n')]);
+  }
+  // Every corner piece the fixed-radius rims above refer to.
+  for (const [name, [rim, R, band, side]] of [...CORNERS.entries()].sort()) {
+    out.push([
+      `drawable/${name}.xml`,
+      [...head(name), ...rimCorner(rim, R, band, side), ''].join('\n'),
+    ]);
   }
   return out;
 }

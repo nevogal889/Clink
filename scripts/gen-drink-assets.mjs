@@ -485,6 +485,12 @@ const UI_GLYPHS = {
   share: [{ d: 'M12 3.5v11M8 7.5l4-4 4 4' }, { d: 'M8.5 10.5H6.5v10h11v-10h-2' }],
   // Sending (DESIGN.md 5.2): a plain clock face, same stroke rules.
   clock: [{ d: ellipsePath(12, 12, 8.5, 8.5) }, { d: 'M12 7.5V12l3 2' }],
+  // Drinks counter (DESIGN.md 2.8): a plain V3 mug outline, beside the drinks number (round 4).
+  mug: [
+    { d: ellipsePath(10.5, 6, 6, 1.8) },
+    { d: 'M4.5 6V18.2a6 1.8 0 0 0 12 0V6' },
+    { d: 'M16.5 9h1.4a2.6 2.6 0 0 1 2.6 2.6v.8a2.6 2.6 0 0 1-2.6 2.6h-1.4' },
+  ],
   // Water counter (DESIGN.md 2.8): V4 tumbler with a water line.
   tumbler: [
     { d: ellipsePath(12, 5.5, 6.5, 1.95) },
@@ -574,6 +580,8 @@ export async function buildAssets() {
     ['share', 'onCobalt'],
     ['clock', 'inkSecondary'],
     ['tumbler', 'water_ink'],
+    ['tumbler', 'inkSecondary'],
+    ['mug', 'inkPrimary'],
   ];
   for (const [glyph, token] of ui) {
     const suffix =

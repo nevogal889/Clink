@@ -7,7 +7,12 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { REPO_ROOT } from '../packages/shared/tools/copy-md.mjs';
-import { buildShapes, readTokens, resourceName as colorName } from './gen-android-colors.mjs';
+import {
+  buildShapes,
+  readTokens,
+  resourceName as colorName,
+  rimCorner,
+} from './gen-android-colors.mjs';
 import {
   STRINGS_JSON,
   buildXml,
@@ -263,4 +268,44 @@ test('config plugin: Android backup and device transfer are off', () => {
       );
     }
   }
+});
+
+test('rims are straight bands clipped by the corners (round 4)', () => {
+  // CEO, 2026-11-18: the rim curled down the corner curves and stuck out of the card.
+  const shapes = new Map(buildShapes());
+  // Before Android 12: the body is the rounded shape, the band a plain strip between the
+  // corners, and each corner an exact vector piece, all of which exist.
+  const idle = shapes.get('drawable/clink_bg_widget_idle.xml');
+  assert.match(
+    idle,
+    /android:height="4dp" android:gravity="top\|fill_horizontal" android:left="16dp" android:right="16dp"/,
+  );
+  for (const m of [...shapes.values()]
+    .join('\n')
+    .matchAll(/@drawable\/(clink_bg_rimcorner_\w+)/g)) {
+    assert.ok(shapes.has(`drawable/${m[1]}.xml`), `${m[1]} is generated`);
+  }
+  // The piece is the quarter disc above the band: it starts where the circle crosses y = 4.
+  assert.match(
+    rimCorner('cobalt', 16, 4, 'l').join(' '),
+    /M16,0 L16,4 L5\.417,4 A16,16 0 0,1 16,0 Z/,
+  );
+  assert.match(rimCorner('cobalt', 16, 4, 'r').join(' '), /M0,0 A16,16 0 0,1 10\.583,4 L0,4 Z/);
+  // Android 12+: the body's top corners are square; the widget root clips to the system radius.
+  const v31 = shapes.get('drawable-v31/clink_bg_widget_idle.xml');
+  assert.match(
+    v31,
+    /android:top="4dp">[\s\S]*android:topLeftRadius="0dp"[\s\S]*android:topRightRadius="0dp"/,
+  );
+  const kt = readFileSync(
+    join(
+      REPO_ROOT,
+      'app/modules/clink-native/android/src/main/java/app/clink/widget/ui/WidgetContent.kt',
+    ),
+    'utf8',
+  );
+  assert.match(
+    kt,
+    /\.appWidgetBackground\(\)\s*\.cornerRadius\(android\.R\.dimen\.system_app_widget_background_radius\)/,
+  );
 });

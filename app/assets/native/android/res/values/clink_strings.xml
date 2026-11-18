@@ -95,8 +95,8 @@
     <string name="clink_wm_snap_none" formatted="false">Friends\' snaps land here</string>
     <string name="clink_wm_usual" formatted="false">{drink_short}</string>
     <string name="clink_wm_usual_none" formatted="false">Pick your usual 3</string>
-    <string name="clink_wm_water_last" formatted="false">{water} · Last {time}</string>
     <string name="clink_ws_drinks" formatted="false">{n, plural, one {# drink} other {# drinks}}</string>
+    <string name="clink_ws_drinks_today" formatted="false">{n, plural, one {drink today} other {drinks today}}</string>
     <string name="clink_ws_ended" formatted="false">Ended</string>
     <string name="clink_ws_failed" formatted="false">Tap to retry</string>
     <string name="clink_ws_in_btn" formatted="false">I\'m in</string>

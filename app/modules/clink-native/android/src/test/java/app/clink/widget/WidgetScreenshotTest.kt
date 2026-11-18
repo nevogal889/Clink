@@ -130,7 +130,7 @@ class WidgetScreenshotTest {
     if (v is ViewGroup) for (i in 0 until v.childCount) dump(v.getChildAt(i), depth + 1)
   }
 
-  private fun render(fixture: String, layout: Layout, night: Boolean, fontScale: Float = 1f, at: DpSize? = null): Bitmap {
+  private fun render(fixture: String, layout: Layout, night: Boolean, fontScale: Float = 1f, at: DpSize? = null, clip: Boolean = true): Bitmap {
     RuntimeEnvironment.setQualifiers(if (night) "+night" else "+notnight")
     RuntimeEnvironment.setFontScale(fontScale)
     val context: Context = ApplicationProvider.getApplicationContext()
@@ -156,6 +156,11 @@ class WidgetScreenshotTest {
     val canvas = Canvas(bmp)
     canvas.drawColor(if (night) Color.rgb(0x2B, 0x2F, 0x36) else Color.rgb(0xC9, 0xD1, 0xD8))
     canvas.translate(margin.toFloat(), margin.toFloat())
+    // The launcher's clip on Android 12+: the widget root is the background view and clips to
+    // system_app_widget_background_radius (round 4). Software drawing here doesn't apply view
+    // outlines, so the render clips the canvas the same way.
+    val radius = if (clip) context.resources.getDimension(android.R.dimen.system_app_widget_background_radius) else 0f
+    if (clip) canvas.clipPath(android.graphics.Path().apply { addRoundRect(0f, 0f, w.toFloat(), h.toFloat(), radius, radius, android.graphics.Path.Direction.CW) })
     view.draw(canvas)
     return bmp
   }
@@ -291,6 +296,23 @@ class WidgetScreenshotTest {
     val goldenNames = goldens.size
     assertTrue("$goldenNames goldens", goldenNames >= 20)
     assertTrue(problems.joinToString("\n"), problems.isEmpty())
+  }
+
+  /**
+   * Before Android 12 there is no system radius and no outline clip: the drawables carry exact
+   * corner pieces (round 4). Rendered on API 30 with no canvas clip, so the corners shown are the
+   * drawables' own.
+   */
+  @Test
+  @Config(sdk = [30])
+  fun rimFollowsTheCornersBeforeAndroid12() {
+    for (night in listOf(false, true)) {
+      for ((fx, name, layout) in listOf(Triple("W4", "idle", Layout.MEDIUM), Triple("W11", "incoming", Layout.SMALL), Triple("W8", "picker", Layout.MEDIUM))) {
+        val bmp = render(fx, layout, night, clip = false)
+        save(bmp, outDir, "${fx.lowercase()}-$name-${layoutName(layout)}-api30-${if (night) "dark" else "light"}.png")
+        assertTrue(lastCut.joinToString(), lastCut.isEmpty())
+      }
+    }
   }
 
   /** Every drink picture as the widget draws it (cropped, capped at 1.5x), on its picker cell. */

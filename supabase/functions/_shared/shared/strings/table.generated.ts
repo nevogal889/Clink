@@ -750,6 +750,7 @@ export const STRINGS = {
   'ws.setup': 'Open Clink',
   'ws.drinks': '{n, plural, one {# drink} other {# drinks}}',
   'ws.water': '{n, plural, one {# water} other {# waters}}',
+  'ws.drinks_today': '{n, plural, one {drink today} other {drinks today}}',
   'ws.last': 'Last {ago}',
   'ws.last_at': 'Last {time}',
   'ws.log': '+1 Drink',
@@ -775,7 +776,6 @@ export const STRINGS = {
   'wm.counts': '{drinks} · {water}',
   'wm.last': 'Last drink {ago} ago',
   'wm.last_at': 'Last drink {time}',
-  'wm.water_last': '{water} · Last {time}',
   'wm.last_now': 'Last drink just now',
   'wm.usual': '{drink_short}',
   'wm.usual_none': 'Pick your usual 3',
@@ -6262,8 +6262,21 @@ export const STRING_META: Record<
   },
   'ws.water': {
     section: '6.1',
-    context: 'Idle, count',
+    context:
+      'Idle, count. The Android widget shows only its number, in the water badge ("◦ 2", top right of the counts)',
     max: 10,
+    placeholders: [
+      {
+        name: 'n',
+        type: 'plural',
+      },
+    ],
+  },
+  'ws.drinks_today': {
+    section: '6.1',
+    context:
+      'Idle, the label under the big drinks number, both sizes (Android). Where "today" has no room the label is the word from `ws.drinks` ("drinks"); it never goes entirely (CEO, 2026-11-18)',
+    max: 12,
     placeholders: [
       {
         name: 'n',
@@ -6285,7 +6298,7 @@ export const STRING_META: Record<
   'ws.last_at': {
     section: '6.1',
     context:
-      'Idle, last drink as a time of day, under "drinks ◦ 4". The small widget writes `{time}` without AM/PM ("Last 7:30"). With no drink today the line is left out: never a "no drinks" line next to a 0 (CEO, 2026-11-17)',
+      'Idle, last drink as a time of day, under "drinks today". The 4x2 writes the full time ("Last 7:30 AM"), the 2x2 drops AM/PM ("Last 7:30"). With no drink today the line is left out: never a "no drinks" line next to a 0 (CEO, 2026-11-17)',
     max: 13,
     placeholders: [
       {
@@ -6483,25 +6496,9 @@ export const STRING_META: Record<
   'wm.last_at': {
     section: '6.2',
     context:
-      "Idle, last drink as a time of day in the device's 12/24 h format (iOS; the Android 4x2 uses `wm.water_last`)",
+      "Idle, last drink as a time of day in the device's 12/24 h format (iOS; the Android 4x2 uses `ws.last_at`)",
     max: 22,
     placeholders: [
-      {
-        name: 'time',
-        type: 'simple',
-      },
-    ],
-  },
-  'wm.water_last': {
-    section: '6.2',
-    context:
-      'Android 4x2 idle: the one small line under the drinks numeral, after the water glyph: water count, then the last drink as a time of day. With no drink today only the water count shows (CEO, 2026-11-17)',
-    max: 18,
-    placeholders: [
-      {
-        name: 'water',
-        type: 'simple',
-      },
       {
         name: 'time',
         type: 'simple',
@@ -8223,6 +8220,7 @@ export interface StringParams {
   'ws.setup': Record<string, never>;
   'ws.drinks': { n: number };
   'ws.water': { n: number };
+  'ws.drinks_today': { n: number };
   'ws.last': { ago: string | number };
   'ws.last_at': { time: string | number };
   'ws.log': Record<string, never>;
@@ -8248,7 +8246,6 @@ export interface StringParams {
   'wm.counts': { drinks: string | number; water: string | number };
   'wm.last': { ago: string | number };
   'wm.last_at': { time: string | number };
-  'wm.water_last': { water: string | number; time: string | number };
   'wm.last_now': Record<string, never>;
   'wm.usual': { drink_short: string | number };
   'wm.usual_none': Record<string, never>;

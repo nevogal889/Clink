@@ -1390,9 +1390,10 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 |---|---|---|---|
 | `ws.setup` | Not signed in or not set up | Open Clink | 12 |
 | `ws.drinks` | Idle, count | {n, plural, one {# drink} other {# drinks}} | 10 |
-| `ws.water` | Idle, count | {n, plural, one {# water} other {# waters}} | 10 |
+| `ws.water` | Idle, count. The Android widget shows only its number, in the water badge ("◦ 2", top right of the counts) | {n, plural, one {# water} other {# waters}} | 10 |
+| `ws.drinks_today` | Idle, the label under the big drinks number, both sizes (Android). Where "today" has no room the label is the word from `ws.drinks` ("drinks"); it never goes entirely (CEO, 2026-11-18) | {n, plural, one {drink today} other {drinks today}} | 12 |
 | `ws.last` | Idle, last drink (iOS; Android uses `ws.last_at`) | Last {ago} | 12 |
-| `ws.last_at` | Idle, last drink as a time of day, under "drinks ◦ 4". The small widget writes `{time}` without AM/PM ("Last 7:30"). With no drink today the line is left out: never a "no drinks" line next to a 0 (CEO, 2026-11-17) | Last {time} | 13 |
+| `ws.last_at` | Idle, last drink as a time of day, under "drinks today". The 4x2 writes the full time ("Last 7:30 AM"), the 2x2 drops AM/PM ("Last 7:30"). With no drink today the line is left out: never a "no drinks" line next to a 0 (CEO, 2026-11-17) | Last {time} | 13 |
 | `ws.log` | Button | +1 Drink | 9 |
 | `ws.pick.water` | Picker cell | Water | 8 |
 | `ws.pick.cancel` | Picker close | Cancel | 8 |
@@ -1420,8 +1421,7 @@ Limits are hard, for fixed text at the default text size, assuming the layouts i
 | `wm.signin` | Signed out | Sign in to Clink | 18 |
 | `wm.counts` | Idle | {drinks} · {water} (each from the small strings) | 22 |
 | `wm.last` | Idle (iOS; Android uses `wm.last_at`) | Last drink {ago} ago | 22 |
-| `wm.last_at` | Idle, last drink as a time of day in the device's 12/24 h format (iOS; the Android 4x2 uses `wm.water_last`) | Last drink {time} | 22 |
-| `wm.water_last` | Android 4x2 idle: the one small line under the drinks numeral, after the water glyph: water count, then the last drink as a time of day. With no drink today only the water count shows (CEO, 2026-11-17) | {water} · Last {time} | 18 |
+| `wm.last_at` | Idle, last drink as a time of day in the device's 12/24 h format (iOS; the Android 4x2 uses `ws.last_at`) | Last drink {time} | 22 |
 | `wm.last_now` | Idle, under a minute | Last drink just now | 22 |
 | `wm.usual` | Idle, the usual #1's name on the drink panel (Android 4x2) or beside its picture (tall 2x2) | {drink_short} | 15 |
 | `wm.usual_none` | Idle drink tile, no usual 3 yet (opens the usual 3 editor) | Pick your usual 3 | 18 |

@@ -40,22 +40,20 @@ sealed class Tap {
 }
 
 data class TrackerModel(
+  /** The drinks count, set large with the mug glyph beside it ("3"). */
   val drinksNum: String,
-  val drinksWord: String,
-  val waterNum: String,
-  val waterWord: String,
-  /** The whole water count as COPY.md writes it ("4 waters"). */
-  val waterText: String,
   /**
-   * The 2x2's last-drink line ("Last 12:54"): a time of day, exact and never stale, so nothing
-   * ticks. Empty with no drink today: never "No drinks yet" next to a 0 (CEO, 2026-11-17).
+   * The label under the number, longest first: "drinks today", then "drinks" (CEO, 2026-11-18:
+   * the count must not read as water). The label never goes entirely.
    */
-  val lastOptions: List<String>,
+  val labelOptions: List<String>,
   /**
-   * The 4x2's one small line after the water glyph, longest first: "4 · Last 7:30 AM",
-   * "4 · Last 7:30", "4". With no drink today only "4". The layout shows the first that fits.
+   * The last drink as a time of day ("Last 7:30 AM" on the 4x2, "Last 7:30" on the 2x2): exact
+   * and never stale, so nothing ticks. Null with no drink today: never a "no drinks" line.
    */
-  val waterLine: List<String>,
+  val last: String?,
+  /** The water badge's number ("2"), top right of the counts; null with no water today. */
+  val waterBadge: String?,
   val a11y: String,
 )
 

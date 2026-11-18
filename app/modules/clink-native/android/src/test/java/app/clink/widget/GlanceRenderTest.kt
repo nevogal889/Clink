@@ -81,7 +81,7 @@ class GlanceRenderTest {
     val m = model("W4", Layout.SMALL)
     assertTrue(m.content is Content.Idle)
     render(m) {
-      onNode(hasTextEqualTo("drinks")).assertExists()
+      onNode(hasText("drinks")).assertExists()
       onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_log)))
         .assertHasRunCallbackClickAction<OpenPickerAction>()
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_ws_log))).assertExists()
@@ -94,8 +94,11 @@ class GlanceRenderTest {
   fun idleMedium() {
     render(model("W4", Layout.MEDIUM)) {
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_flare))).assertExists()
-      // One small line under the numeral: water, then the last drink (CEO, 2026-11-17).
-      onNode(hasTextEqualTo("4 · Last 7:30 AM")).assertExists()
+      // The count reads as drinks (CEO, 2026-11-18): "drinks today" under the number, the last
+      // drink under that, water only as a small badge ("4"), and no "waters" anywhere.
+      onNode(hasTextEqualTo("drinks today")).assertExists()
+      onNode(hasTextEqualTo("Last 7:30 AM")).assertExists()
+      onNode(hasTextEqualTo("4")).assertExists()
       onNode(hasText("waters")).assertDoesNotExist()
       // The drink panel shows the usual #1 by name (polish pass), in 40% of the width (round 3).
       onNode(hasTextEqualTo("Flat White")).assertExists()
@@ -107,7 +110,7 @@ class GlanceRenderTest {
       onNode(hasTextEqualTo("Flat White")).assertExists()
       onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_camera))).assertExists()
       // The last drink as a time of day (Head of Product, polish pass), never a ticking timer.
-      onNode(hasTextEqualTo("4 · Last 7:30 AM")).assertExists()
+      onNode(hasTextEqualTo("Last 7:30 AM")).assertExists()
       onNode(hasContentDescriptionEqualTo("3 drinks and 4 waters today. Last drink at 7:30 AM.")).assertExists()
       onNode(hasContentDescriptionEqualTo("Send a coffee flare to Work, now")).assertExists()
     }
@@ -184,7 +187,7 @@ class GlanceRenderTest {
       // The confirmation takes the whole action row (DESIGN.md 5.2); the counts and the drink panel stay.
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_log))).assertDoesNotExist()
       onNode(hasText(s(app.clink.nativemodule.R.string.clink_wm_flare))).assertDoesNotExist()
-      onNode(hasTextEqualTo("4 · Last 7:30 AM")).assertExists()
+      onNode(hasTextEqualTo("Last 7:30 AM")).assertExists()
     }
   }
 
@@ -226,11 +229,14 @@ class GlanceRenderTest {
     // CEO, 2026-11-17: never "No drinks yet today" next to a 0.
     val m = model("W5", Layout.MEDIUM_WIDE)
     val idle = m.content as Content.Idle
-    assertEquals(listOf("0"), idle.tracker.waterLine)
-    assertTrue(idle.tracker.lastOptions.isEmpty())
+    assertEquals("0", idle.tracker.drinksNum)
+    assertEquals(listOf("drinks today", "drinks"), idle.tracker.labelOptions)
+    // No last-drink line and no water badge at 0 (round 4).
+    assertEquals(null, idle.tracker.last)
+    assertEquals(null, idle.tracker.waterBadge)
     render(m) {
       onNode(hasText("No drinks")).assertDoesNotExist()
-      onNode(hasTextEqualTo("0")).assertExists()
+      onNode(hasTextEqualTo("drinks today")).assertExists()
     }
     render(model("W5", Layout.SMALL)) { onNode(hasText("No drinks")).assertDoesNotExist() }
     // Invite friends stays whole in the 40% panel (on two lines if it has to).
@@ -238,6 +244,21 @@ class GlanceRenderTest {
       onNode(hasTextEqualTo(s(app.clink.nativemodule.R.string.clink_wm_invite))).assertExists()
       onNode(hasContentDescriptionEqualTo(s(app.clink.nativemodule.R.string.clink_a11y_w_invite))).assertExists()
     }
+  }
+
+  @Test
+  fun theCountReadsAsDrinksAtEverySize() {
+    // CEO, 2026-11-18: the number has the mug and "drinks today"; water is a badge, never a line.
+    for (layout in listOf(Layout.SMALL, Layout.SMALL_TALL, Layout.MEDIUM_SHORT, Layout.MEDIUM, Layout.MEDIUM_WIDE)) {
+      render(model("W4", layout)) {
+        onNode(hasText("drinks")).assertExists()
+        onNode(hasTextEqualTo("4")).assertExists()
+        onNode(hasText("water")).assertDoesNotExist()
+      }
+    }
+    val one = model("W4", Layout.SMALL).content as Content.Idle
+    assertEquals("Last 7:30", one.tracker.last)
+    assertEquals("4", one.tracker.waterBadge)
   }
 
   @Test
